@@ -26,6 +26,7 @@ class ApiError(Exception):
 
 
 MAGNET_ENDPOINT = "http://localhost:8000/games"
+# MAGNET_ENDPOINT = "https://6vppvi.deta.dev/games"
 
 
 async def get_game_magnets(url: str = MAGNET_ENDPOINT) -> List[QuestMagnet]:
