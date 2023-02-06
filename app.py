@@ -6,7 +6,6 @@ import wxasync
 import asyncio
 import logging
 import multiprocessing
-import os
 
 import wx
 
