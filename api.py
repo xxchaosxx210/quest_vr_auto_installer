@@ -3,6 +3,7 @@
 
 import logging
 from typing import List
+import base64
 
 import aiohttp
 
@@ -55,5 +56,20 @@ async def get_game_magnets(url: str = MAGNET_ENDPOINT) -> List[QuestMagnet]:
             games = data_response.get("games", [])
             if list(games) == 0:
                 raise ValueError("No games exist")
-            magnets = list(map(lambda magnet_dict: QuestMagnet(**magnet_dict), games))
+
+            def process_magnet_dict(magnet_dict: dict) -> QuestMagnet:
+                """valid response json and decode base64 magnet link and return
+
+                Args:
+                    magnet_dict (dict): response json
+
+                Returns:
+                    QuestMagnet: _description_
+                """
+                magnet = QuestMagnet(**magnet_dict)
+                bstring = base64.b64decode(magnet.uri)
+                magnet.magnet = bstring.decode("utf-8")
+                return magnet
+
+            magnets = list(map(process_magnet_dict, games))
     return magnets
