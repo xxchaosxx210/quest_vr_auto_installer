@@ -80,7 +80,10 @@ class MagnetsListPanel(ListPanel):
 
     def on_listitem_selected(self, evt: wx.ListEvent) -> None:
         async def get_meta_data() -> None:
-            magnet.meta_data = await deluge_utils.get_magnet_info(magnet.uri)
+            try:
+                magnet.meta_data = await deluge_utils.get_magnet_info(magnet.uri)
+            except Exception as err:
+                raise err
 
         # get the selected magnet from the list
         magnet: MagnetData = self.magnet_data_list[evt.GetIndex()]

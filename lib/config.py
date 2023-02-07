@@ -44,7 +44,9 @@ _Log = logging.getLogger(__name__)
 
 def initalize_logger():
     logging.basicConfig(
-        format="%(asctime)s %(message)s", handlers=[logging.StreamHandler()]
+        format="%(asctime)s %(message)s",
+        handlers=[logging.StreamHandler()],
+        level=logging.INFO,
     )
     file_handler = logging.FileHandler(APP_LOG_PATH)
     file_handler.setLevel(logging.ERROR)

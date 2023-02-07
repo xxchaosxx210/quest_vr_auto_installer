@@ -40,10 +40,11 @@ def catch_connection_error(func):
     async def wrapper(*args, **kwargs):
         try:
             result = await func(*args, **kwargs)
+            _Log.info("Online: Saving Magnets to Local Database")
             save_local_quest_magnets(QUEST_MAGNETS_PATH, result)
             return result
         except aiohttp.ClientConnectionError:
-            _Log.warning("Connection error. Attempting to load from local json file...")
+            _Log.warning("Offline: Loading Magnets from Local Database")
             return load_local_quest_magnets(QUEST_MAGNETS_PATH)
 
     return wrapper
