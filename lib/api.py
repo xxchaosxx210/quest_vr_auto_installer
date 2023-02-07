@@ -4,7 +4,6 @@
 import logging
 from typing import List
 import base64
-import mimetypes
 
 import aiohttp
 
@@ -42,6 +41,7 @@ async def get_game_magnets(url: str = MAGNET_ENDPOINT) -> List[QuestMagnet]:
     Returns:
         List[QuestAppMagnet]: list of magnet objects
     """
+    # await aiohttp.ClientSession()
     magnets: List[QuestMagnet] = []
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
