@@ -5,10 +5,15 @@ import logging
 from typing import List
 import base64
 import functools
-import json
 import aiohttp
 
 from lib.schemas import QuestMagnet
+
+from lib.config import (
+    QUEST_MAGNETS_PATH,
+    save_local_quest_magnets,
+    load_local_quest_magnets,
+)
 
 _Log = logging.getLogger(__name__)
 
@@ -35,18 +40,16 @@ def catch_connection_error(func):
     async def wrapper(*args, **kwargs):
         try:
             result = await func(*args, **kwargs)
-            with open("get_game_magnets.json", "w") as f:
-                json.dump(result, f)
+            save_local_quest_magnets(QUEST_MAGNETS_PATH, result)
             return result
-        except aiohttp.ClientError as e:
-            if os.path.exists("get_game_magnets.json"):
-                with open("get_game_magnets.json") as f:
-                    return json.load(f)
-            raise ConnectionError(str(e))
+        except aiohttp.ClientConnectionError:
+            _Log.warning("Connection error. Attempting to load from local json file...")
+            return load_local_quest_magnets(QUEST_MAGNETS_PATH)
 
     return wrapper
 
 
+@catch_connection_error
 async def get_game_magnets(url: str = MAGNET_ENDPOINT) -> List[QuestMagnet]:
     """gets the Quest 2 magnet links from the q2g server
 
@@ -64,7 +67,7 @@ async def get_game_magnets(url: str = MAGNET_ENDPOINT) -> List[QuestMagnet]:
         async with session.get(url) as response:
             if response.content_type != "application/json":
                 text_response = await response.read()
-                raise ApiError(response.status, text_response)
+                raise ApiError(response.status, text_response.decode("utf-8"))
             data_response = await response.json()
             if not isinstance(data_response, dict):
                 error_message = "JSON Response from API was of not type dict"

@@ -4,7 +4,6 @@ app.py the main module for QuestVRAutoInstaller
 
 import wxasync
 import asyncio
-import logging
 import multiprocessing
 
 import wx
@@ -25,6 +24,7 @@ from adblib.errors import RemoteDeviceError
 
 import lib.config as config
 import lib.quest_installer as quest_installer
+import lib.api
 
 
 class Q2GApp(wxasync.WxAsyncApp):
@@ -59,7 +59,11 @@ class Q2GApp(wxasync.WxAsyncApp):
         Args:
             err (Exception): exception error instance to be processed
         """
-        dialog = ErrorDialog(self.frame, "There was an error!!", err.__str__())
+        if isinstance(err, lib.api.ApiError):
+            error_message = f"{err.message}\n\nCode: {err.status_code}"
+        else:
+            error_message = err.__str__()
+        dialog = ErrorDialog(self.frame, "There was an error!!", error_message)
         dialog.ShowModal()
         dialog.Destroy()
 

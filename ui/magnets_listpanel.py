@@ -49,7 +49,7 @@ class MagnetsListPanel(ListPanel):
             app.exception_handler(err)
             return
         else:
-            self.load_magnets(magnets)
+            await self.load_magnets(magnets)
 
     async def load_magnets(self, magnets: List[QuestMagnet]) -> None:
         self.listctrl.DeleteAllItems()

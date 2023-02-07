@@ -5,7 +5,6 @@ from deluge.utils import MetaData
 
 
 class QuestMagnet(BaseModel):
-
     name: str
     magnet: str
     version: float

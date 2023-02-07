@@ -1,15 +1,15 @@
+import json
 import os
 import sys
 import logging
 import traceback
-import json
 from types import TracebackType
 from typing import List
 
 from pathvalidate import sanitize_filename
 
+from lib.schemas import QuestMagnet
 
-from schemas import QuestMagnet
 
 APP_NAME = "QuestVRAutoinstaller"
 APP_VERSION = "0.1"
@@ -71,20 +71,40 @@ def log_handler(
     _Log.error(formatted_error)
 
 
-async def store_magnets_locally(
-    qm_list: List[QuestMagnet], path: str = QUEST_MAGNETS_PATH
-) -> bool:
-    """stores the list of magnets retrieved from the API server
+def save_local_quest_magnets(path: str, qm_list: List[QuestMagnet]) -> bool:
+    """converts and saves the QuestMagnets to json
 
     Args:
-        qm (List[QuestMagnet]): list of magnet links and extra info on the magnet
-        path (str, optional): The save path. Defaults to QUEST_MAGNETS_PATH.
+        path (str): json file to save to
+        qm_list (List[QuestMagnet]): the questmagnets to be saved
 
     Returns:
-        bool: True if file successfully saved
+        bool: true if successful
     """
-    with open(QUEST_MAGNETS_PATH, "w") as fp:
-        fp.write()
+    try:
+        with open(path, "w") as fp:
+            json.dump(list(map(lambda qm: qm.dict(), qm_list)), fp)
+    except Exception as err:
+        _Log.error(err.__str__())
+        return False
+    else:
+        return True
+
+
+def load_local_quest_magnets(path: str) -> List[QuestMagnet]:
+    """loads QuestMagnets from json file
+
+    Args:
+        path (str): the path of the json file to load
+
+    Returns:
+        List[QuestMagnet]:
+    """
+    if not os.path.exists(path):
+        _Log.error(f"{path} does not exist")
+        return []
+    with open(path, "r") as fp:
+        return list(map(lambda item: QuestMagnet(**item), json.load(fp)))
 
 
 def create_data_paths() -> None:
