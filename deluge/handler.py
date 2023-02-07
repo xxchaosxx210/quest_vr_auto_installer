@@ -41,10 +41,7 @@ TorrentOptions create a dict of the torrent options.
 """
 
 import asyncio
-from enum import (
-    Enum,
-    auto as auto_enum
-)
+from enum import Enum, auto as auto_enum
 from typing import Callable
 from dataclasses import dataclass
 
@@ -64,7 +61,6 @@ ErrorUpdateFunction = Callable[[Exception], None]
 
 
 class QueueRequest(Enum):
-
     PAUSE = auto_enum()
     RESUME = auto_enum()
     CANCEL = auto_enum()
@@ -96,15 +92,17 @@ class MagnetData:
     index: int
     queue: asyncio.Queue = None
     timeout: float = 1.0
+    meta_data: deluge.utils.MetaData = None
 
 
 async def add_magnet_to_session(
-        deluge_client: LocalDelugeRPCClient, magnet_uri: str, options: dict) -> str:
+    deluge_client: LocalDelugeRPCClient, magnet_uri: str, options: dict
+) -> str:
     """add the magnet to the deluge session and return the torrent id
 
     Args:
         magnet_uri (str): the magnet to download
-        options (dict): 
+        options (dict):
             download_path: str
             add_paused: bool
         deluge_client (LocalDelugeRPCClient): the client socket
@@ -116,14 +114,15 @@ async def add_magnet_to_session(
         str: the torrent ID for that session
     """
     try:
-        torrent_id = deluge_client.call(
-            'core.add_torrent_magnet', magnet_uri, options)
+        torrent_id = deluge_client.call("core.add_torrent_magnet", magnet_uri, options)
     except Exception as err:
         torrent_id = None
-        if "deluge.error.AddTorrentError: Torrent already in session" not in err.__str__():
+        if (
+            "deluge.error.AddTorrentError: Torrent already in session"
+            not in err.__str__()
+        ):
             raise Exception(err)
-        match = deluge.utils.TORRENT_ID_IN_ERROR_PATTERN.search(
-            err.__str__())
+        match = deluge.utils.TORRENT_ID_IN_ERROR_PATTERN.search(err.__str__())
         if match:
             torrent_id = match.group(1)
     finally:
@@ -131,9 +130,10 @@ async def add_magnet_to_session(
 
 
 async def download(
-        callback: StatusUpdateFunction,
-        error_callback: ErrorUpdateFunction,
-        magnet_data: MagnetData) -> bool:
+    callback: StatusUpdateFunction,
+    error_callback: ErrorUpdateFunction,
+    magnet_data: MagnetData,
+) -> bool:
     """connects to the deluged daemon, adds the magnet to the session for downloading
     retrieves the torrent ID and gets regular status until download is complete or
     error occurs
@@ -170,15 +170,18 @@ async def download(
     try:
         with LocalDelugeRPCClient() as deluge_client:
             torrent_id = await add_magnet_to_session(
-                deluge_client, magnet_data.uri, {
-                    "download_location": magnet_data.download_path,
-                    "add_paused": False
-                })
+                deluge_client,
+                magnet_data.uri,
+                {"download_location": magnet_data.download_path, "add_paused": False},
+            )
             if not torrent_id:
                 raise TorrentIdNotFound("Could not get Torrent ID from Daemon")
             while True:
-                torrent_status = deluge_client.call("core.get_torrent_status", torrent_id, [
-                    "progress", "state", "download_payload_rate", "eta", "name"])
+                torrent_status = deluge_client.call(
+                    "core.get_torrent_status",
+                    torrent_id,
+                    ["progress", "state", "download_payload_rate", "eta", "name"],
+                )
                 state = torrent_status.get("state", State.Finished)
                 # magnet reference for the calling thread
                 torrent_status["index"] = magnet_data.index
@@ -196,7 +199,9 @@ async def download(
                 elif state == State.Downloading or state == State.Paused:
                     await callback(torrent_status)
                 try:
-                    message = await asyncio.wait_for(magnet_data.queue.get(), timeout=1.0)
+                    message = await asyncio.wait_for(
+                        magnet_data.queue.get(), timeout=1.0
+                    )
                     request = message["request"]
                     if request == QueueRequest.PAUSE:
                         deluge_client.call("core.pause_torrent", torrent_id)
@@ -214,18 +219,13 @@ async def download(
                     pass
             # remove the torrent from the session but dont delete the data
             if torrent_id:
-                deluge_client.call("core.remove_torrent",
-                                   torrent_id, remove_data_when_complete)
+                deluge_client.call(
+                    "core.remove_torrent", torrent_id, remove_data_when_complete
+                )
     except Exception as err:
         error_callback(err)
         asyncio.get_event_loop().call_exception_handler(
-            {"message": err.__str__(), "exception": err})
+            {"message": err.__str__(), "exception": err}
+        )
     finally:
         return ok_to_install
-
-
-async def install(
-        callback: StatusUpdateFunction,
-        error_callback: ErrorUpdateFunction,
-        magnet_data: MagnetData) -> bool:
-    return True

@@ -2,6 +2,7 @@ import re
 import os
 import math
 import base64
+import asyncio
 import logging
 import subprocess
 from typing import Tuple, List, Optional
@@ -127,62 +128,48 @@ def get_deluge_account(client_name: str) -> DelugeAccount:
     return None
 
 
-async def get_magnet_info(magnet_link: str) -> MetaData:
-    """Connects to the Deluge Daemon and requests meta data from the magnet link
+async def get_magnet_info(uri: str, timeout: int = 10) -> MetaData:
+    """
+    gets meta data from the magnet uri. Important if you want extra information about the torrent
+    before adding to deluge session
 
     Args:
-        magnet_link (str): the magnet link to connect to
+        uri (str): the magnet uri
+        timeout (int, optional): how long the connection stays until timing out. Defaults to 10.
 
     Returns:
-        MetaData: check the MetaClass of what meta information will be returned
+        deluge.utils.MetaData: check the deluge.utils module for properties
     """
-
-    with LocalDelugeRPCClient() as deluge:
-        # torrent_id = deluge.call("core.add_torrent_magnet", magnet_link, {})
-
-        torrent_id, b64_str = deluge.call(
-            "core.prefetch_magnet_metadata", magnet_link, 5
-        )
-
-        # torrent_info = deluge.call("core.get_torrent_status", torrent_id, [
-        #                         "name", "total_size", "num_files", "files"])
-
-        # deluge.call("core.remove_torrents", [torrent_id], True)
-
-        bmeta_base64 = str_to_be(b64_str)
-        bin_meta = base64.b64decode(bmeta_base64)
-        bin_meta = bendecode(bin_meta)
-
-        # with open("dump.json", "w") as fp:
-        #     fp.write(json.dumps(decoded_metadata))
-
-        # decoded_dict = {k: v.decode() for k, v in dict.items()}
-
-        # File
-        # length: int
-        # path: List[str]
-
-        # MetaData
-        # files: List[File]
-        # name: str
-        # piece length: int
-        # pieces: bytes
-
-        decoded_meta = {}
-        if hasattr(bin_meta, "files"):
-            decoded_meta["files"] = list(
-                map(lambda bfile: decode_bfile(bfile), bin_meta[b"files"])
+    try:
+        with LocalDelugeRPCClient() as deluge_client:
+            torrent_id, b64_str = deluge_client.call(
+                "core.prefetch_magnet_metadata", uri, timeout
             )
-        decoded_meta["piece_length"] = bin_meta[b"piece length"]
-        decoded_meta["name"] = bin_meta[b"name"].decode()
-        decoded_meta["torrent_id"] = torrent_id
 
-        metadata = MetaData(**decoded_meta)
+            bmeta_base64 = str_to_be(b64_str)
+            bin_meta = base64.b64decode(bmeta_base64)
+            bin_meta = bendecode(bin_meta)
 
-        _Log.info(
-            f"Meta Data recieved. Name: {metadata.name}, Piece Size: {metadata.piece_length}"
-        )
+            decoded_meta = {}
+            if hasattr(bin_meta, "files"):
+                decoded_meta["files"] = list(
+                    map(lambda bfile: decode_bfile(bfile), bin_meta[b"files"])
+                )
+            decoded_meta["piece_length"] = bin_meta[b"piece length"]
+            decoded_meta["name"] = bin_meta[b"name"].decode()
+            decoded_meta["torrent_id"] = torrent_id
 
+            metadata = MetaData(**decoded_meta)
+
+            _Log.info(
+                f"Meta Data recieved. Name: {metadata.name}, Piece Size: {metadata.piece_length}"
+            )
+
+    except Exception as err:
+        loop = asyncio.get_event_loop()
+        loop.call_exception_handler({"message": err.__str__(), "exception": err})
+        metadata = None
+    finally:
         return metadata
 
 

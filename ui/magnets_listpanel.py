@@ -65,15 +65,34 @@ class MagnetsListPanel(ListPanel):
         self.listctrl.SetItem(index, 1, str(magnet.version))
         self.listctrl.SetItem(index, 2, str(magnet.filesize))
 
-    def on_right_click(self, evt: wx.ListEvent):
+    def on_listitem_selected(self, evt: wx.ListEvent) -> None:
+        async def get_meta_data() -> None:
+            magnet.meta_data = await deluge_utils.get_magnet_info(magnet.uri)
+
+        # get the selected magnet from the list
+        magnet: MagnetData = self.magnet_data_list[evt.GetIndex()]
+        # if magnet already has meta data then ignore
+        if magnet.meta_data:
+            return
+        # get the extra information from deluge
+        loop = asyncio.get_event_loop()
+        loop.create_task(get_meta_data(evt.GetIndex()))
+
+    def on_right_click(self, evt: wx.ListEvent) -> None:
         """creates a popup menu when user right clicks on item in listctrl
 
         Args:
             evt (wx.ListEvent): _description_
         """
+        magnet_data = self.get_selected_torrent_item()
+        if not magnet_data or not magnet_data.meta_data:
+            return
         menu = wx.Menu()
-        install_item = menu.Append(wx.ID_ANY, "Download and Install")
-        self.Bind(wx.EVT_MENU, self.on_download_item_selected, install_item)
+        dld_install_item = menu.Append(wx.ID_ANY, "Download and Install")
+        self.Bind(wx.EVT_MENU, self.on_dld_and_install_item, dld_install_item)
+        menu.AppendSeparator()
+        install_only_item = menu.Append(wx.ID_ANY, "Install")
+        self.Bind(wx.EVT_MENU, self.on_install_only_item, install_only_item)
         menu.AppendSeparator()
         pause_item = menu.Append(wx.ID_ANY, "Pause")
         self.Bind(wx.EVT_MENU, self.on_pause_item_selected, pause_item)
@@ -178,7 +197,7 @@ class MagnetsListPanel(ListPanel):
         """gets the magnet data connected to the selected item in the listctrl
 
         Returns:
-            MagnetData: read the deluge.handler module for details
+            MagnetData: read the deluge.handler module for details or None of no item selected
         """
         index: int = self.listctrl.GetFirstSelected()
         if index == -1:
@@ -186,7 +205,7 @@ class MagnetsListPanel(ListPanel):
         item = self.magnet_data_list[index]
         return item
 
-    def on_download_item_selected(self, evt: wx.MenuEvent):
+    def on_dld_and_install_item(self, evt: wx.MenuEvent):
         """gets the selected magnet in the list and starts the install process
 
         Args:
@@ -206,6 +225,18 @@ class MagnetsListPanel(ListPanel):
                 magnet_data=magnet_data,
             )
         )
+
+    def on_install_only_item(self, evt: wx.MenuEvent) -> None:
+        """starts the install process and skips downloading
+        if apk exists in game download directory
+
+        Args:
+            evt (wx.MenuEvent): not used
+        """
+        item = self.get_selected_torrent_item()
+        if not item:
+            return
+        pass
 
     def update_list_item(self, torrent_status: dict):
         """updates the columns on the magnet that is being installed
