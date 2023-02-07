@@ -1,5 +1,5 @@
 """
-app.py the main module for Quest4Games
+app.py the main module for QuestVRAutoInstaller
 """
 
 import wxasync
@@ -52,7 +52,8 @@ class Q2GApp(wxasync.WxAsyncApp):
         Returns:
             bool:
         """
-        self.frame: MainFrame = MainFrame(parent=None, id=-1, title="q2g")
+        title = f"{config.APP_NAME} - version {config.APP_VERSION}"
+        self.frame: MainFrame = MainFrame(parent=None, id=-1, title=title)
         self.frame.Show()
         return super().OnInit()
 
