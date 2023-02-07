@@ -46,9 +46,18 @@ def initalize_logger():
 
 
 def log_handler(exc_type: type, exc_value: Exception, exc_traceback: traceback) -> None:
-    exc_traceback = traceback.format_exception(exc_type, exc_value, exc_traceback)
-    exc_traceback = "".join(exc_traceback)
-    _Log.error(f"Uncaught exception: {exc_traceback}")
+    """file log handler
+
+    Args:
+        exc_type (type): the type of exception
+        exc_value (Exception): the exception instance
+        exc_traceback (traceback): the traceback
+    """
+    tb_frames = traceback.extract_tb(exc_traceback)
+    trunc_frames = tb_frames[-2:]
+    formatted_trunc_frames = traceback.format_list(trunc_frames)
+    formatted_error = "".join(formatted_trunc_frames)
+    _Log.error(formatted_error)
 
 
 def create_data_paths() -> None:
