@@ -162,6 +162,7 @@ async def main():
     daemon = start_deluge_daemon()
     multiprocessing.freeze_support()
     app = Q2GApp()
+    asyncio.get_event_loop().set_exception_handler(config.async_log_handler)
     await app.MainLoop()
     daemon.terminate()
 

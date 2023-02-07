@@ -2,6 +2,7 @@ import json
 import os
 import sys
 import logging
+import asyncio
 import traceback
 from types import TracebackType
 from typing import List
@@ -71,6 +72,20 @@ def log_handler(
     formatted_trunc_frames = traceback.format_list(trunc_frames)
     formatted_error = "".join(formatted_trunc_frames)
     _Log.error(formatted_error)
+
+
+def async_log_handler(loop: asyncio.ProactorEventLoop, context: dict) -> None:
+    """handles exceptions from coroutines and writes to log.txt
+
+    Args:
+        loop (asyncio.ProactorEventLoop): the event loop the exception came from
+        context (dict): contains message: str and exception: BaseException
+    """
+    exception = context.get("exception", None)
+    if not exception:
+        _Log.error(context.get("message", ""))
+        return
+    _Log.error("".join(traceback.format_exception(exception)))
 
 
 def save_local_quest_magnets(path: str, qm_list: List[QuestMagnet]) -> bool:
