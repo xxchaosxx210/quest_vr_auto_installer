@@ -32,7 +32,7 @@ class MainFrame(wx.Frame):
         wx.CallAfter(self.statusbar.SetStatusText, text="Scanning for Quest devices...")
         await asyncio.sleep(0.1)
         task1 = loop.create_task(app.devices_listpanel.load())
-        task2 = loop.create_task(app.magnets_listpanel.load())
+        task2 = loop.create_task(app.magnets_listpanel.load_magnets_from_api())
         while not task1.done() and not task2.done():
             await asyncio.sleep(0.1)
         wx.CallAfter(self.statusbar.SetStatusText, text="All Complete")

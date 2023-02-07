@@ -2,7 +2,14 @@ import os
 import sys
 import logging
 import traceback
+import json
+from types import TracebackType
+from typing import List
+
 from pathvalidate import sanitize_filename
+
+
+from schemas import QuestMagnet
 
 APP_NAME = "QuestVRAutoinstaller"
 APP_VERSION = "0.1"
@@ -20,6 +27,8 @@ APP_DOWNLOADS_PATH = os.path.join(APP_BASE_PATH, "Games")
 
 APP_DATA_PATH = os.path.join(APP_BASE_PATH, "Data")
 APP_LOG_PATH = os.path.join(APP_DATA_PATH, "log.txt")
+
+QUEST_MAGNETS_PATH = os.path.join(APP_DATA_PATH, "questmagnets.json")
 
 QUEST_ROOT = "/sdcard"
 
@@ -45,7 +54,9 @@ def initalize_logger():
     _Log.addHandler(file_handler)
 
 
-def log_handler(exc_type: type, exc_value: Exception, exc_traceback: traceback) -> None:
+def log_handler(
+    exc_type: type, exc_value: Exception, exc_traceback: TracebackType
+) -> None:
     """file log handler
 
     Args:
@@ -58,6 +69,22 @@ def log_handler(exc_type: type, exc_value: Exception, exc_traceback: traceback) 
     formatted_trunc_frames = traceback.format_list(trunc_frames)
     formatted_error = "".join(formatted_trunc_frames)
     _Log.error(formatted_error)
+
+
+async def store_magnets_locally(
+    qm_list: List[QuestMagnet], path: str = QUEST_MAGNETS_PATH
+) -> bool:
+    """stores the list of magnets retrieved from the API server
+
+    Args:
+        qm (List[QuestMagnet]): list of magnet links and extra info on the magnet
+        path (str, optional): The save path. Defaults to QUEST_MAGNETS_PATH.
+
+    Returns:
+        bool: True if file successfully saved
+    """
+    with open(QUEST_MAGNETS_PATH, "w") as fp:
+        fp.write()
 
 
 def create_data_paths() -> None:

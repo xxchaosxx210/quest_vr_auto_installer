@@ -3,6 +3,7 @@ import logging
 import asyncio
 
 import wx
+from aiohttp import ClientConnectionError
 
 import deluge.utils as deluge_utils
 from deluge.handler import MagnetData, QueueRequest
@@ -34,11 +35,23 @@ class MagnetsListPanel(ListPanel):
 
         wx.GetApp().magnets_listpanel = self
 
-    async def load(self):
+    async def load_magnets_from_api(self):
         """makes a request to the Magnet API server and loads the response if successful
         into the listctrl
         """
-        magnets: List[QuestMagnet] = await api.get_game_magnets()
+        app = wx.GetApp()
+        try:
+            magnets: List[QuestMagnet] = await api.get_game_magnets()
+        except ClientConnectionError:
+            # try and load the list locally and go into offline mode
+            return
+        except Exception as err:
+            app.exception_handler(err)
+            return
+        else:
+            self.load_magnets(magnets)
+
+    async def load_magnets(self, magnets: List[QuestMagnet]) -> None:
         self.listctrl.DeleteAllItems()
         self.magnet_data_list.clear()
         for index, magnet in enumerate(magnets):

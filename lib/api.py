@@ -4,7 +4,8 @@
 import logging
 from typing import List
 import base64
-
+import functools
+import json
 import aiohttp
 
 from lib.schemas import QuestMagnet
@@ -29,6 +30,23 @@ MAGNET_ENDPOINT = "http://localhost:8000/games"
 # MAGNET_ENDPOINT = "https://6vppvi.deta.dev/games"
 
 
+def catch_connection_error(func):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            result = await func(*args, **kwargs)
+            with open("get_game_magnets.json", "w") as f:
+                json.dump(result, f)
+            return result
+        except aiohttp.ClientError as e:
+            if os.path.exists("get_game_magnets.json"):
+                with open("get_game_magnets.json") as f:
+                    return json.load(f)
+            raise ConnectionError(str(e))
+
+    return wrapper
+
+
 async def get_game_magnets(url: str = MAGNET_ENDPOINT) -> List[QuestMagnet]:
     """gets the Quest 2 magnet links from the q2g server
 
@@ -41,7 +59,6 @@ async def get_game_magnets(url: str = MAGNET_ENDPOINT) -> List[QuestMagnet]:
     Returns:
         List[QuestAppMagnet]: list of magnet objects
     """
-    # await aiohttp.ClientSession()
     magnets: List[QuestMagnet] = []
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
