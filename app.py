@@ -9,12 +9,12 @@ import multiprocessing
 
 import wx
 
-from ui.main_frame import MainFrame
-from ui.devices_listpanel import DevicesListPanel
-from ui.installed_listpanel import InstalledListPanel
-from ui.magnets_listpanel import MagnetsListPanel
-from ui.dialogs.error_dialog import ErrorDialog
-from ui.dialogs.install_progress_dialog import InstallProgressDialog
+from lib.ui.main_frame import MainFrame
+from lib.ui.devices_listpanel import DevicesListPanel
+from lib.ui.installed_listpanel import InstalledListPanel
+from lib.ui.magnets_listpanel import MagnetsListPanel
+from lib.ui.dialogs.error_dialog import ErrorDialog
+from lib.ui.dialogs.install_progress_dialog import InstallProgressDialog
 
 from deluge.utils import start_deluge_daemon
 from deluge.handler import download, MagnetData
@@ -23,8 +23,8 @@ from adblib import adb_interface
 from adblib.errors import RemoteDeviceError
 
 
-import config
-import quest_installer
+import lib.config as config
+import lib.quest_installer as quest_installer
 
 
 logging.basicConfig(level=logging.INFO)
