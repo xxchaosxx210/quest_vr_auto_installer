@@ -31,7 +31,7 @@ async def install(callback: InstallStatusFunction, device_name: str, path: str) 
         raise FileNotFoundError(f"{apk_path} could not be found")
     if not device_name:
         raise ValueError("No Device selected")
-    if not device_name in adb.get_device_names():
+    if not device_name in await adb.get_device_names():
         raise LookupError("Device disconnected. Please reconnect device and re-install")
     # local_path = os.path.join(apk_path, apk_filename)
     # copy the apk to the temp directory

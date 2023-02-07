@@ -200,7 +200,7 @@ class MagnetsListPanel(ListPanel):
         app = wx.GetApp()
         loop = asyncio.get_event_loop()
         loop.create_task(
-            app.start_install_process(
+            app.start_download_process(
                 callback=app.on_torrent_update,
                 error_callback=app.exception_handler,
                 magnet_data=magnet_data,

@@ -9,10 +9,10 @@ AUTHOR = "Paul Millar"
 HOMEDRIVE = ""
 
 if os.name == "nt":
-    HOMEDRIVE = os.environ.get("HOMEDRIVE", "C:")
+    HOMEDRIVE = os.getenv("HOMEDRIVE", "C:")
 
 # Have to add the Home Drive otherwise Deluge kicks up an error
-DATA_PATH = HOMEDRIVE + os.path.join(os.environ["HOMEPATH"], APP_NAME)
+DATA_PATH = HOMEDRIVE + os.path.join(os.getenv("HOMEPATH"), APP_NAME)
 GAME_DOWNLOAD_PATH = os.path.join(DATA_PATH, "Games")
 
 QUEST_ROOT = "/sdcard"

@@ -20,7 +20,7 @@ class DevicesListPanel(ListPanel):
 
     async def load(self):
         self.listctrl.DeleteAllItems()
-        device_names = adb_interface.get_device_names()
+        device_names = await adb_interface.get_device_names()
         for index, device in enumerate(device_names):
             wx.CallAfter(self.listctrl.InsertItem, index=index, label=device)
 

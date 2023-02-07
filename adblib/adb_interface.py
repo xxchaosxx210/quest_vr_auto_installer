@@ -33,7 +33,7 @@ def _remove_showwindow_flag() -> subprocess.STARTUPINFO:
     return startupinfo
 
 
-def get_device_names() -> List[str]:
+async def get_device_names() -> List[str]:
     """gets all Android devices found using ADB and returns a list of device names
 
     Raises:
@@ -42,19 +42,8 @@ def get_device_names() -> List[str]:
     Returns:
         List[str]: list of device names
     """
-    proc = subprocess.Popen(
-        [ADB_PATH_DEFAULT, "devices"],
-        stdout=subprocess.PIPE,
-        startupinfo=_remove_showwindow_flag(),
-    )
-    output, error = proc.communicate()
-    if error:
-        raise RemoteDeviceError(
-            result=subprocess.CompletedProcess(
-                args=(None,), returncode=1, stdout=output, stderr=error
-            )
-        )
-    output = output.decode()
+    commands = [ADB_PATH_DEFAULT, "devices"]
+    output = await execute_subprocess(commands)
     devices = output.strip().split("\n")[1:]
     connected_devices = []
     for device in devices:
@@ -298,7 +287,7 @@ async def execute_subprocess(commands: List[str]) -> str:
         commands (List[str]): list of commands to send
 
     Returns:
-        str: stdout from the command
+        str: deocded UTF-8 string from the stdout
     """
     process = await asyncio.create_subprocess_exec(
         *commands,
