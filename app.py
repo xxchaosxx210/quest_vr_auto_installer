@@ -27,10 +27,6 @@ import lib.config as config
 import lib.quest_installer as quest_installer
 
 
-logging.basicConfig(level=logging.INFO)
-_Log = logging.getLogger(__name__)
-
-
 class Q2GApp(wxasync.WxAsyncApp):
     # global wxwindow instances
     devices_listpanel: DevicesListPanel = None
@@ -158,6 +154,7 @@ class Q2GApp(wxasync.WxAsyncApp):
 
 async def main():
     config.create_data_paths()
+    config.initalize_logger()
     daemon = start_deluge_daemon()
     multiprocessing.freeze_support()
     app = Q2GApp()
