@@ -6,7 +6,10 @@ APP_NAME = "QuestVRAutoinstaller"
 APP_VERSION = "0.1"
 AUTHOR = "Paul Millar"
 
-HOMEDRIVE = os.environ.get("HOMEDRIVE", "C:")
+HOMEDRIVE = ""
+
+if os.name == "nt":
+    HOMEDRIVE = os.environ.get("HOMEDRIVE", "C:")
 
 # Have to add the Home Drive otherwise Deluge kicks up an error
 DATA_PATH = HOMEDRIVE + os.path.join(os.environ["HOMEPATH"], APP_NAME)
