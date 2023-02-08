@@ -1,3 +1,12 @@
+"""
+config.py
+
+contains functions and enviroment variables for apps IO data
+also contains logger
+
+"""
+
+
 import json
 import os
 import sys
@@ -44,6 +53,9 @@ _Log = logging.getLogger(__name__)
 
 
 def initalize_logger():
+    """
+    sets up the logger and log handler
+    """
     logging.basicConfig(
         format="%(asctime)s %(message)s",
         handlers=[logging.StreamHandler()],
@@ -60,7 +72,7 @@ def initalize_logger():
 def log_handler(
     exc_type: type, exc_value: Exception, exc_traceback: TracebackType
 ) -> None:
-    """file log handler
+    """file log handler. This only catches exceptions from the same thread
 
     Args:
         exc_type (type): the type of exception
