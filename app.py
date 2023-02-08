@@ -25,6 +25,7 @@ from adblib.errors import RemoteDeviceError
 import lib.config as config
 import lib.quest_installer as quest_installer
 import lib.api
+import lib.utils
 
 
 class Q2GApp(wxasync.WxAsyncApp):
@@ -51,6 +52,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         title = f"{config.APP_NAME} - version {config.APP_VERSION}"
         self.frame: MainFrame = MainFrame(parent=None, id=-1, title=title)
         self.frame.Show()
+        asyncio.get_event_loop().create_task(self.check_internet_and_notify())
         return super().OnInit()
 
     def exception_handler(self, err: Exception) -> None:
@@ -154,6 +156,17 @@ class Q2GApp(wxasync.WxAsyncApp):
             await self.install_listpanel.load(device_name)
         finally:
             return
+
+    async def check_internet_and_notify(self) -> None:
+        result = await lib.utils.is_connected_to_internet()
+        if result:
+            return
+        self.exception_handler(
+            ConnectionError(
+                "Unable to connect to the Internet please enable Wifi.\
+                \nLoading in offline mode"
+            )
+        )
 
 
 async def main():

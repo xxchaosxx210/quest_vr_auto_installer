@@ -1,6 +1,20 @@
 import os
+import asyncio
+import ctypes
 from typing import Tuple, List
+
 from deluge.handler import MagnetData
+
+
+async def is_connected_to_internet() -> bool:
+    if os.name == "nt":
+        try:
+            # Check if there's a connection to the internet
+            connection = ctypes.windll.wininet.InternetGetConnectedState(0, 0)
+            return connection != 0
+        except:
+            pass
+        return False
 
 
 def apk_exists(magnetdata: MagnetData) -> str:
