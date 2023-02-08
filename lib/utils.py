@@ -1,20 +1,45 @@
 import os
-import asyncio
+import socket
 import ctypes
+import logging
 from typing import Tuple, List
 
 from deluge.handler import MagnetData
 
 
-async def is_connected_to_internet() -> bool:
+_Log = logging.getLogger(__name__)
+
+
+def is_connected_to_internet() -> bool:
+    """wrapper for the OS specific internet connection check
+
+    Returns:
+        bool: returns true if connection availible or false if internet state is turned off
+    """
     if os.name == "nt":
-        try:
-            # Check if there's a connection to the internet
-            connection = ctypes.windll.wininet.InternetGetConnectedState(0, 0)
-            return connection != 0
-        except:
-            pass
-        return False
+        return win32_is_connected_to_internet()
+    else:
+        return unix_is_connected_to_internet()
+
+
+def win32_is_connected_to_internet() -> bool:
+    try:
+        connection = ctypes.windll.wininet.InternetGetConnectedState(0, 0)
+        return connection != 0
+    except Exception as err:
+        _Log.error(err.__str__())
+    return False
+
+
+def unix_is_connected_to_internet() -> bool:
+    try:
+        host = socket.gethostbyname("www.google.com")
+        with socket.create_connection((host, 80), 2) as s:
+            s.close()
+        return True
+    except (socket.gaierror, socket.error, OSError) as err:
+        _Log.error(err.__str__())
+    return False
 
 
 def apk_exists(magnetdata: MagnetData) -> str:

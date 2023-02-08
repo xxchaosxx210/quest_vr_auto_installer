@@ -158,7 +158,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             return
 
     async def check_internet_and_notify(self) -> None:
-        result = await lib.utils.is_connected_to_internet()
+        result = lib.utils.is_connected_to_internet()
         if result:
             return
         self.exception_handler(
