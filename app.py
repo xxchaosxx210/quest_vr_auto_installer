@@ -52,7 +52,6 @@ class Q2GApp(wxasync.WxAsyncApp):
         title = f"{config.APP_NAME} - version {config.APP_VERSION}"
         self.frame: MainFrame = MainFrame(parent=None, id=-1, title=title)
         self.frame.Show()
-        asyncio.get_event_loop().create_task(self.check_internet_and_notify())
         return super().OnInit()
 
     def exception_handler(self, err: Exception) -> None:
@@ -69,22 +68,29 @@ class Q2GApp(wxasync.WxAsyncApp):
         dialog.ShowModal()
         dialog.Destroy()
 
-    async def start_download_process(self, **kwargs) -> None:
+    async def start_download_process(self, **kwargs) -> str:
         """download using the deluge torrent client
 
         Args:
             callback (StatusUpdateFunction): any updates will be sent to this callback
             error_callback (ErrorUpdateFunction): any errors go to this callback
             magnet_data (MagnetData): extra information about the magnet to be downloaded
+
+        Returns:
+            str: "download-error" | "success" | "install-error"
         """
+
         ok_to_install = await download(**kwargs)
         if not ok_to_install:
-            return
+            return "download-error"
 
         magnet_data: MagnetData = kwargs["magnet_data"]
-        await self.start_install_process(magnet_data.download_path)
+        install_success = await self.start_install_process(magnet_data.download_path)
+        if not install_success:
+            return "install-error"
+        return "success"
 
-    async def start_install_process(self, path: str):
+    async def start_install_process(self, path: str) -> bool:
         """starts the install process communicates with ADB and pushes any data paths onto
         the obb directory
 
@@ -93,9 +99,13 @@ class Q2GApp(wxasync.WxAsyncApp):
 
         Raises:
             Exception: general exception raised
+
+        Returns:
+            bool: True if install was successful. False is no install
         """
         self.install_dialog = InstallProgressDialog(self.frame)
         self.install_dialog.Show()
+        result = False
         try:
             device_name = self.devices_listpanel.selected_device
             if not device_name:
@@ -109,19 +119,26 @@ class Q2GApp(wxasync.WxAsyncApp):
             # show the error dialog
             self.exception_handler(err)
         else:
+            result = True
             # reload the package list
             await self.install_listpanel.load(device_name)
         finally:
             self.install_dialog.Destroy()
             self.install_dialog = None
+            return result
 
-    async def on_torrent_update(self, torrent_status: dict) -> bool:
+    async def on_torrent_update(self, torrent_status: dict) -> None:
+        """passes the torrent status onto the update list item function in the magnet listpanel
+
+        Args:
+            torrent_status (dict): a dict containing torrent download status
+        """
         wx.CallAfter(
             self.magnets_listpanel.update_list_item, torrent_status=torrent_status
         )
 
     async def on_install_update(self, message: str) -> None:
-        """update from the install process
+        """update the Progress Dialog textbox from the install process
 
         Args:
             message (str): the current step in the install process
@@ -176,6 +193,7 @@ async def main():
     multiprocessing.freeze_support()
     app = Q2GApp()
     asyncio.get_event_loop().set_exception_handler(config.async_log_handler)
+    asyncio.get_event_loop().create_task(app.check_internet_and_notify())
     await app.MainLoop()
     daemon.terminate()
 

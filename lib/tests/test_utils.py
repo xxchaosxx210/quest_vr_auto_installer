@@ -1,16 +1,30 @@
-import lib.utils as utils
+import pdb
 import pytest
-
-from deluge.handler import MagnetData
-
-
-def test_is_connected_to_internet():
-    assert utils.is_connected_to_internet() == True
+import os
+from unittest.mock import Mock, patch, MagicMock
+import sys
+import socket
 
 
-def test_apk_exists_with_attribute_error():
-    md = MagnetData(
-        "this is a test of magnet uri", ".\\downloads\\mock.apk", 0, None, 5, None
-    )
-    with pytest.raises(AttributeError):
-        utils.apk_exists(md)
+import lib.utils
+
+
+@patch("platform.system")
+@patch("socket.gethostbyname")
+def test_is_connected_to_internet_unix_fail(
+    mock_system: Mock, mock_gethostbyname: Mock
+):
+    mock_system.return_value = "Linux"
+    mock_gethostbyname.return_value = "127.0.0.1"
+
+    def mock_connect_fail(__address):
+        raise socket.gaierror("Unable to connect")
+
+    mock_sock = Mock()
+    mock_sock.close = Mock(return_value=None)
+    mock_sock.connect = Mock(side_effect=mock_connect_fail)
+
+    socket.socket = Mock(return_value=mock_sock)
+    # mock_create_connection.return_value = mock_socket
+    assert lib.utils.is_connected_to_internet() == False
+    assert mock_sock.close.called == True

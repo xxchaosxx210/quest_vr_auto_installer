@@ -2,6 +2,7 @@ import os
 import socket
 import ctypes
 import logging
+import platform
 from typing import Tuple, List
 
 from deluge.handler import MagnetData
@@ -16,13 +17,14 @@ def is_connected_to_internet() -> bool:
     Returns:
         bool: returns true if connection availible or false if internet state is turned off
     """
-    if os.name == "nt":
-        return win32_is_connected_to_internet()
+    os_name = platform.system()
+    if os_name == "Windows":
+        return _win32_is_connected_to_internet()
     else:
-        return unix_is_connected_to_internet()
+        return _unix_is_connected_to_internet()
 
 
-def win32_is_connected_to_internet() -> bool:
+def _win32_is_connected_to_internet() -> bool:
     try:
         connection = ctypes.windll.wininet.InternetGetConnectedState(0, 0)
         return connection != 0
@@ -31,15 +33,22 @@ def win32_is_connected_to_internet() -> bool:
     return False
 
 
-def unix_is_connected_to_internet() -> bool:
+def _unix_is_connected_to_internet() -> bool:
+    connected = False
     try:
         host = socket.gethostbyname("www.google.com")
-        with socket.create_connection((host, 80), 2) as s:
-            s.close()
-        return True
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.connect((host, 80))
+        # sock = socket.create_connection((host, 80), 2)
+        # sock.connect((host, 80))
     except (socket.gaierror, socket.error, OSError) as err:
         _Log.error(err.__str__())
-    return False
+    else:
+        connected = True
+    finally:
+        if "sock" in locals():
+            sock.close()
+        return connected
 
 
 def apk_exists(magnetdata: MagnetData) -> str:
