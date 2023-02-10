@@ -114,6 +114,7 @@ async def add_magnet_to_session(
         str: the torrent ID for that session
     """
     try:
+        # pdb.set_trace()
         torrent_id = deluge_client.call("core.add_torrent_magnet", magnet_uri, options)
     except Exception as err:
         torrent_id = None
@@ -121,11 +122,13 @@ async def add_magnet_to_session(
             "deluge.error.AddTorrentError: Torrent already in session"
             not in err.__str__()
         ):
-            raise Exception(err)
-        # get the torrent ID
+            raise err
+        # get the torrent ID from the torrent already in deluged session
         match = deluge.utils.TORRENT_ID_IN_ERROR_PATTERN.search(err.__str__())
         if match:
             torrent_id = match.group(1)
+        else:
+            raise TorrentIdNotFound("Could not find Torrent ID in regular expression")
     finally:
         return torrent_id
 
