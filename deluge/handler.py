@@ -122,6 +122,7 @@ async def add_magnet_to_session(
             not in err.__str__()
         ):
             raise Exception(err)
+        # get the torrent ID
         match = deluge.utils.TORRENT_ID_IN_ERROR_PATTERN.search(err.__str__())
         if match:
             torrent_id = match.group(1)

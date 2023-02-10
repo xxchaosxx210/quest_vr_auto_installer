@@ -1,12 +1,18 @@
-import pdb
-import pytest
-import os
-from unittest.mock import Mock, patch, MagicMock
-import sys
+import ctypes
+from unittest.mock import Mock, patch
 import socket
 
 
 import lib.utils
+
+
+@patch("platform.system")
+def test_win32_is_connected_to_internet_fail(mock_system: Mock):
+    ctypes.windll.wininet.InternetGetConnectedState = Mock(return_value=0)
+    mock_system.return_value = "Windows"
+    assert lib.utils.is_connected_to_internet() == False
+    # with unittest.TestCase().assertRaises(OSError) as cm:
+    #     mock_win32_function()
 
 
 @patch("platform.system")
