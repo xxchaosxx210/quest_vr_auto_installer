@@ -189,7 +189,12 @@ class Q2GApp(wxasync.WxAsyncApp):
 async def main():
     config.create_data_paths()
     config.initalize_logger()
-    daemon = start_deluge_daemon()
+    try:
+        daemon = start_deluge_daemon()
+    except FileNotFoundError:
+        # download and install deluge daemon
+        config._Log.error("Unable to locate the Deluge Daemon. Please reinstall Deluge")
+        return
     multiprocessing.freeze_support()
     app = Q2GApp()
     asyncio.get_event_loop().set_exception_handler(config.async_log_handler)

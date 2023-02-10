@@ -1,7 +1,6 @@
 import os
 import platform
 
-from . import errors
 from . import adb_interface
 
 __OS = platform.system()

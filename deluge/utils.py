@@ -41,10 +41,11 @@ class DelugeAccount(BaseModel):
     level: int
 
 
-def start_deluge_daemon():
-    return subprocess.Popen(
+def start_deluge_daemon() -> subprocess.Popen:
+    process = subprocess.Popen(
         [deluge.config.DELUGE_DAEMON_PATH, "--port", f"{deluge.config.DAEMON_PORT}"]
     )
+    return process
 
 
 def format_eta(eta_seconds: int) -> str:
