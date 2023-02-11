@@ -5,6 +5,8 @@ from ui.devices_listpanel import DevicesListPanel
 from ui.magnets_listpanel import MagnetsListPanel
 from ui.installed_listpanel import InstalledListPanel
 
+import lib.image_manager as img_mgr
+
 
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kw):
@@ -17,6 +19,13 @@ class MainFrame(wx.Frame):
         self.SetSizerAndFit(gs)
         self.SetSize((800, 600))
         self.Bind(wx.EVT_SHOW, self.on_show)
+
+        self.init_icon()
+
+    def init_icon(self) -> None:
+        """sets the apps icon"""
+        icon = wx.Icon(img_mgr.ICON_PATH)
+        self.SetIcon(icon)
 
     def on_show(self, evt: wx.CommandEvent):
         """when the window is shown load the listctrls
