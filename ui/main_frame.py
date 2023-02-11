@@ -36,7 +36,13 @@ class MainFrame(wx.Frame):
         loop = asyncio.get_event_loop()
         loop.create_task(self.load_lists(loop))
 
-    async def load_lists(self, loop: asyncio.AbstractEventLoop):
+    async def load_lists(self, loop: asyncio.AbstractEventLoop) -> None:
+        """create seperate coroutines to collect information for the quest device, game torrents
+        load the listctrls
+
+        Args:
+            loop (asyncio.AbstractEventLoop): the event loop to create the tasks
+        """
         app = wx.GetApp()
         wx.CallAfter(self.statusbar.SetStatusText, text="Scanning for Quest devices...")
         await asyncio.sleep(0.1)

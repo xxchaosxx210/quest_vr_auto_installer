@@ -79,6 +79,12 @@ class MagnetsListPanel(ListPanel):
         self.listctrl.SetItem(index, 2, str(magnet.filesize))
 
     def on_listitem_selected(self, evt: wx.ListEvent) -> None:
+        """get the magnet meta data information from the magnet
+
+        Args:
+            evt (wx.ListEvent):
+        """
+
         async def get_meta_data() -> None:
             try:
                 magnet.meta_data = await deluge_utils.get_magnet_info(magnet.uri)
