@@ -33,6 +33,15 @@ def _remove_showwindow_flag() -> subprocess.STARTUPINFO:
     return startupinfo
 
 
+def close_adb() -> str:
+    """kills the adb daemon
+
+    Returns:
+        str: stdout from the process
+    """
+    return execute([ADB_PATH_DEFAULT, "kill-server"])
+
+
 async def get_device_names() -> List[str]:
     """gets all Android devices found using ADB and returns a list of device names
 

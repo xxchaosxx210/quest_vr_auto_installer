@@ -201,6 +201,7 @@ async def main():
     asyncio.get_event_loop().create_task(app.check_internet_and_notify())
     await app.MainLoop()
     daemon.terminate()
+    adb_interface.close_adb()
 
 
 if __name__ == "__main__":
