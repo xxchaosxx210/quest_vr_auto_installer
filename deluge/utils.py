@@ -56,7 +56,6 @@ def start_deluge_daemon() -> subprocess.Popen:
     process = subprocess.Popen(
         [deluge.config.DELUGE_DAEMON_PATH, "--port", f"{deluge.config.DAEMON_PORT}"],
         startupinfo=_remove_showwindow_flag(),
-        creationflags=0x08000000,
     )
     return process
 

@@ -271,7 +271,10 @@ async def execute_subprocess_by_line(commands: List[str]) -> bytes:
         bytes: the line of bytes to return
     """
     process = await asyncio.create_subprocess_exec(
-        *commands, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+        *commands,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        startupinfo=_remove_showwindow_flag()
     )
     while True:
         line = await process.stdout.readline()
@@ -302,6 +305,7 @@ async def execute_subprocess(commands: List[str]) -> str:
         *commands,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        startupinfo=_remove_showwindow_flag()
     )
     stdout, stderr = await process.communicate()
     await process.wait()
