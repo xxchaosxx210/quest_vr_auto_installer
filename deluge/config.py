@@ -7,17 +7,7 @@ if platform.system() != "Windows":
     raise OSError("Linux and OSX version for torrenting not yet implemented")
 
 # DELUGE_PATH = os.path.join(os.getenv("PROGRAMFILES"), "Deluge")
-DELUGE_PATH = (
-    "."
-    + os.path.sep
-    + "deluge"
-    + os.path.sep
-    + "bin"
-    + os.path.sep
-    + "version-211"
-    + os.path.sep
-    + "win64"
-)
+DELUGE_PATH = os.path.join("deluge", "bin", "version-211", "win64")
 DELUGE_DAEMON_PATH = os.path.join(DELUGE_PATH, "deluged.exe")
 DELUGE_DATA_PATH = os.path.join(os.getenv("APPDATA"), "deluge")
 DELUGED_LOG_PATH = os.path.join(DELUGE_DATA_PATH, "deluged.log")
