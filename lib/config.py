@@ -13,6 +13,7 @@ import sys
 import logging
 import asyncio
 import traceback
+import argparse
 from types import TracebackType
 from typing import List
 
@@ -24,6 +25,8 @@ from lib.schemas import QuestMagnet
 APP_NAME = "QuestVRAutoinstaller"
 APP_VERSION = "0.1"
 AUTHOR = "Paul Millar"
+
+DEBUG_MODE = False
 
 HOMEDRIVE = ""
 
@@ -50,6 +53,13 @@ QUEST_APK_TEMP_DIRECTORY = QUEST_ROOT + "/Download"
 
 
 _Log = logging.getLogger(__name__)
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="QuestVRAutoInstaller Parser")
+    parser.add_argument("-d", "--debug", action="store_true", help="Debug mode")
+    args = parser.parse_args()
+    return args
 
 
 def initalize_logger():
