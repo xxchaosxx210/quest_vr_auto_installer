@@ -7,6 +7,8 @@ from ui.listpanel import ListPanel
 
 from adblib import adb_interface
 
+import lib.config
+
 
 _Log = logging.getLogger(__name__)
 
@@ -19,7 +21,12 @@ class InstalledListPanel(ListPanel):
         wx.GetApp().install_listpanel = self
 
     async def load(self, device_name: str):
-        package_names = await adb_interface.get_installed_packages(device_name, ["-3"])
+        if lib.config.DebugSettings.enabled:
+            package_names = lib.config.DebugSettings.package_names
+        else:
+            package_names = await adb_interface.get_installed_packages(
+                device_name, ["-3"]
+            )
         package_names.sort()
         self.listctrl.DeleteAllItems()
         for index, package_name in enumerate(package_names):

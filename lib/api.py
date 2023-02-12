@@ -43,7 +43,8 @@ def catch_connection_error(func):
             _Log.info("Online: Saving Magnets to Local Database")
             save_local_quest_magnets(QUEST_MAGNETS_PATH, result)
             return result
-        except aiohttp.ClientConnectionError:
+        except aiohttp.ClientConnectionError as err:
+            _Log.error(err.__str__())
             _Log.warning("Offline: Loading Magnets from Local Database")
             return load_local_quest_magnets(QUEST_MAGNETS_PATH)
 

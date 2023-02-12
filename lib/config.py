@@ -26,7 +26,6 @@ APP_NAME = "QuestVRAutoinstaller"
 APP_VERSION = "0.1"
 AUTHOR = "Paul Millar"
 
-DEBUG_MODE = False
 
 HOMEDRIVE = ""
 
@@ -53,6 +52,17 @@ QUEST_APK_TEMP_DIRECTORY = QUEST_ROOT + "/Download"
 
 
 _Log = logging.getLogger(__name__)
+
+
+class DebugSettings:
+    enabled: bool = False
+    device_names = ["QUEST1FAKE", "QUEST2FAKE"]
+    package_names = [
+        "com.oculus.TestGame",
+        "com.rockstar.GTAV",
+        "com.ubisoft.SplinterCellConviction",
+        "com.golfcompany.MiniGolfAwesome",
+    ]
 
 
 def parse_args() -> argparse.Namespace:

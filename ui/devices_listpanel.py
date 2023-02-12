@@ -1,9 +1,12 @@
 import asyncio
 import logging
+from typing import List
 
 import wx
 
 import lib.config as config
+import lib.utils as utils
+import adblib.errors
 from adblib import adb_interface
 from ui.listpanel import ListPanel
 
@@ -18,32 +21,76 @@ class DevicesListPanel(ListPanel):
         super().__init__(title="Devices", columns=columns, *args, **kwargs)
         wx.GetApp().devices_listpanel = self
 
+    async def _get_device_names(self) -> List[str]:
+        """loads device names either from debug settings or ADB
+
+        Raises: RemoteDeviceError
+
+        Returns:
+            List[str]: list of device names if found
+        """
+        if config.DebugSettings.enabled:
+            device_names = config.DebugSettings.device_names
+        else:
+            device_names = await adb_interface.get_device_names()
+        return device_names
+
     async def load(self):
         self.listctrl.DeleteAllItems()
-        device_names = await adb_interface.get_device_names()
-        for index, device in enumerate(device_names):
-            wx.CallAfter(self.listctrl.InsertItem, index=index, label=device)
+        try:
+            device_names = await self._get_device_names()
+        except adblib.errors.RemoteDeviceError as err:
+            wx.CallAfter(wx.GetApp().exception_handler, err=err)
+        else:
+            for index, device in enumerate(device_names):
+                wx.CallAfter(self.listctrl.InsertItem, index=index, label=device)
+        finally:
+            return
 
-    def on_listitem_selected(self, evt: wx.ListEvent):
+    def on_listitem_selected(self, evt: wx.ListEvent) -> None:
+        """get the selected device name, create an obb path on the remote device
+        and load the installed apps
+
+        Args:
+            evt (wx.ListEvent):
+
+        Raises:
+            err: unhandled exceptions
+        """
         index = evt.GetSelection()
         item: wx.ListItem = self.listctrl.GetItem(index, 0)
         device_name = item.GetText()
+        # set the global selected device
         self.selected_device = device_name
 
         async def create_obb_dir():
             """create the data directory on the quest device"""
-            result = adb_interface.path_exists(
-                device_name=device_name, path=config.QUEST_OBB_DIRECTORY
-            )
-            if not result:
-                adb_interface.make_dir(
-                    device_name=device_name, path=config.QUEST_OBB_DIRECTORY
-                )
+            try:
+                utils.create_obb_path(device_name, config.QUEST_OBB_DIRECTORY)
+            except adblib.errors.RemoteDeviceError as err:
+                wx.CallAfter(wx.GetApp().exception_handler, err=err)
+            except Exception as err:
+                raise err
+            finally:
+                return
 
         app = wx.GetApp()
         loop = asyncio.get_event_loop()
         loop.create_task(create_obb_dir())
         loop.create_task(app.install_listpanel.load(device_name))
+
+    def get_selected_device_name(self) -> str:
+        """gets the selected device name
+
+        Returns:
+            str: returns None if no device selected
+        """
+        index = self.listctrl.GetFirstSelected()
+        if index < 0:
+            return None
+        item: wx.ListItem = self.listctrl.GetItem(index, 0)
+        device_name = item.GetText()
+        return device_name
 
     def on_right_click(self, evt: wx.ListEvent):
         """creates a popup menu for device list

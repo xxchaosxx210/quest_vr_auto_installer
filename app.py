@@ -188,7 +188,7 @@ class Q2GApp(wxasync.WxAsyncApp):
 
 async def main():
     args = config.parse_args()
-    config.DEBUG_MODE = args.debug
+    config.DebugSettings.enabled = args.debug
     config.create_data_paths()
     config.initalize_logger()
     try:
