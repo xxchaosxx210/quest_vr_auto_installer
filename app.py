@@ -23,9 +23,9 @@ from adblib.errors import RemoteDeviceError
 
 
 import lib.config as config
-import lib.quest_installer as quest_installer
 import lib.api
 import lib.utils
+import lib.quest as quest
 
 
 class Q2GApp(wxasync.WxAsyncApp):
@@ -110,7 +110,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             device_name = self.devices_listpanel.selected_device
             if not device_name:
                 raise Exception("No device selected")
-            await quest_installer.install(
+            await quest.install_game(
                 callback=self.on_install_update,
                 device_name=device_name,
                 path=path,
@@ -123,8 +123,6 @@ class Q2GApp(wxasync.WxAsyncApp):
             # reload the package list
             await self.install_listpanel.load(device_name)
         finally:
-            self.install_dialog.Destroy()
-            self.install_dialog = None
             return result
 
     async def on_torrent_update(self, torrent_status: dict) -> None:

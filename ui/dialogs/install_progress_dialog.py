@@ -22,6 +22,17 @@ class InstallProgressDialog(wx.Dialog):
         self.SetSize((width, 300))
         self.CenterOnParent()
 
+        self.Bind(wx.EVT_BUTTON, self._on_cancel_button, self.cancel_button)
+
     async def write(self, text: str) -> None:
         text += "\n"
         wx.CallAfter(self.text_ctrl.AppendText, text=text)
+
+    def _on_cancel_button(self, evt: wx.CommandEvent) -> None:
+        """cancel the install and destroy the dialog
+
+        Args:
+            evt (wx.CommandEvent):
+        """
+        self.EndModal(wx.CANCEL)
+        wx.GetApp().install_dialog = None

@@ -5,7 +5,6 @@ from typing import List
 import wx
 
 import lib.config as config
-import lib.utils as utils
 import adblib.errors
 from adblib import adb_interface
 from ui.listpanel import ListPanel

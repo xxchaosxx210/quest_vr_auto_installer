@@ -7,9 +7,6 @@ from typing import Tuple, List
 
 from deluge.handler import MagnetData
 
-import lib.config
-import adblib.adb_interface
-
 
 _Log = logging.getLogger(__name__)
 
@@ -42,8 +39,6 @@ def _unix_is_connected_to_internet() -> bool:
         host = socket.gethostbyname("www.google.com")
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.connect((host, 80))
-        # sock = socket.create_connection((host, 80), 2)
-        # sock.connect((host, 80))
     except (socket.gaierror, socket.error, OSError) as err:
         _Log.error(err.__str__())
     else:
@@ -82,6 +77,16 @@ def apk_exists(magnetdata: MagnetData) -> str:
 
 
 async def find_apk_directory_async(root_dir: str) -> Tuple[str, List[str], str]:
+    """scans the game directory path for apk file and any data directory and sub folders
+
+    this is the async function to the function below
+
+    Args:
+        root_dir (str): the root path normally lib.config.APP_DOWNLOADS_PATH
+
+    Returns:
+        Tuple[str, List[str], str]: returns the base path, list of sub directories, and apk filename
+    """
     if not os.path.exists(root_dir):
         return None, [], None
 
