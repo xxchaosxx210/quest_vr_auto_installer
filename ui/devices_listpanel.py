@@ -10,6 +10,8 @@ import adblib.errors
 from adblib import adb_interface
 from ui.listpanel import ListPanel
 
+import lib.quest as quest
+
 _Log = logging.getLogger()
 
 
@@ -66,7 +68,7 @@ class DevicesListPanel(ListPanel):
         async def create_obb_dir():
             """create the data directory on the quest device"""
             try:
-                utils.create_obb_path(device_name, config.QUEST_OBB_DIRECTORY)
+                quest.create_obb_path(device_name, config.QUEST_OBB_DIRECTORY)
             except adblib.errors.RemoteDeviceError as err:
                 wx.CallAfter(wx.GetApp().exception_handler, err=err)
             except Exception as err:
