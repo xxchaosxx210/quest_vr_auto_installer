@@ -129,6 +129,10 @@ class Q2GApp(wxasync.WxAsyncApp):
             self.exception_handler(err)
         else:
             result = True
+            if not config.DebugSettings.emabled:
+                quest.cleanup(
+                    path_to_remove=path, error_callback=self.on_install_update
+                )
             # reload the package list
             await self.install_listpanel.load(device_name)
         finally:

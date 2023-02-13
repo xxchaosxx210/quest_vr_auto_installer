@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import shutil
 import time
 from datetime import timedelta
 from typing import Callable
@@ -23,6 +24,13 @@ class InstallPackage:
     apk_path: str
     apk_sub_directories: str
     apk_filename: str
+
+
+def cleanup(path_to_remove: str, error_callback) -> None:
+    def on_error(func: callable, path: str, exc_info: tuple) -> None:
+        error_callback(exc_info[1].__str__())
+
+    shutil.rmtree(path_to_remove, ignore_errors=False, onerror=on_error)
 
 
 def create_obb_path(
@@ -97,6 +105,9 @@ async def dummy_install_game(
     formatted_time = str(timedelta(seconds=elapsed_time))
 
     await callback("Install has completed successfully. Enjoy!")
+    await callback(f"Install time: {formatted_time}")
+
+    return install_results
 
 
 async def install_game(
