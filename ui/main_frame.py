@@ -11,8 +11,7 @@ import lib.image_manager as img_mgr
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.statusbar = wx.StatusBar(self)
-        self.SetStatusBar(self.statusbar)
+        self._init_ui()
         self.main_panel = MainPanel(parent=self)
         gs = wx.GridSizer(1)
         gs.Add(self.main_panel, 1, wx.ALL | wx.EXPAND, 0)
@@ -20,12 +19,37 @@ class MainFrame(wx.Frame):
         self.SetSize((800, 600))
         self.Bind(wx.EVT_SHOW, self.on_show)
 
-        self.init_icon()
+    def _init_ui(self) -> None:
+        self.statusbar = wx.StatusBar(self)
+        self.SetStatusBar(self.statusbar)
+        self._create_menubar()
+        self.SetIcon(wx.Icon(img_mgr.ICON_PATH))
 
-    def init_icon(self) -> None:
-        """sets the apps icon"""
-        icon = wx.Icon(img_mgr.ICON_PATH)
-        self.SetIcon(icon)
+    def _create_menubar(self) -> None:
+        menubar = wx.MenuBar()
+
+        debug_menu = wx.Menu()
+        mi_show_install_dialog = debug_menu.Append(wx.ID_ANY, "Show Install Dialog")
+        self.Bind(wx.EVT_MENU, self._on_show_install_dialog, mi_show_install_dialog)
+        menubar.Append(debug_menu, "Debug")
+
+        help_menu = wx.Menu()
+        mi_about = help_menu.Append(wx.ID_ANY, "About")
+        self.Bind(wx.EVT_MENU, lambda *args: args, mi_about)
+        menubar.Append(help_menu, "Help")
+
+        self.SetMenuBar(menubar)
+
+    def _on_show_install_dialog(self, evt: wx.MenuEvent) -> None:
+        """shows the install dialog box for testing purposes
+
+        Args:
+            evt (wx.MenuEvent):
+        """
+        from ui.dialogs.install_progress_dialog import InstallProgressDialog
+
+        dlg = InstallProgressDialog(self)
+        dlg.Show()
 
     def on_show(self, evt: wx.CommandEvent):
         """when the window is shown load the listctrls

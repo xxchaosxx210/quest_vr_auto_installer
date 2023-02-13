@@ -34,5 +34,8 @@ class InstallProgressDialog(wx.Dialog):
         Args:
             evt (wx.CommandEvent):
         """
-        self.EndModal(wx.CANCEL)
+        if self.IsModal():
+            self.EndModal(wx.CANCEL)
+        else:
+            self.Destroy()
         wx.GetApp().install_dialog = None
