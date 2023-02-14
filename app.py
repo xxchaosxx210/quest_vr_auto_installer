@@ -120,8 +120,8 @@ class Q2GApp(wxasync.WxAsyncApp):
         result = False
         try:
             device_name = self.devices_listpanel.selected_device
-            # if not device_name:
-            #     raise Exception("No device selected")
+            if not device_name:
+                raise Exception("No device selected")
             if config.DebugSettings.enabled:
                 await quest.dummy_install_game(
                     callback=self.on_install_update,
