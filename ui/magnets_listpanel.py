@@ -74,7 +74,7 @@ class MagnetsListPanel(ListPanel):
             index (int): the offset of the ListCtrl row
             magnet (QuestMagnet): see QuestMagnet class for properties
         """
-        self.listctrl.InsertItem(index, magnet.name)
+        self.listctrl.InsertItem(index, magnet.display_name)
         self.listctrl.SetItem(index, 1, str(magnet.version))
         self.listctrl.SetItem(index, 2, str(magnet.filesize))
 

@@ -31,8 +31,8 @@ class ApiError(Exception):
         super().__init__(*args)
 
 
-MAGNET_ENDPOINT = "http://localhost:8000/games"
-# MAGNET_ENDPOINT = "https://6vppvi.deta.dev/games"
+# MAGNET_ENDPOINT = "http://localhost:8000/games"
+MAGNET_ENDPOINT = "https://6vppvi.deta.dev/games"
 
 
 def catch_connection_error(func):
