@@ -80,6 +80,18 @@ class Q2GApp(wxasync.WxAsyncApp):
             str: "download-error" | "success" | "install-error"
         """
 
+        # check that a device is selected
+        if (
+            not config.DebugSettings.enabled
+            and not self.devices_listpanel.selected_device
+        ):
+            wx.MessageBox(
+                "No device selected. Please connect your Quest Headset into the PC and select it from the Devices List",
+                "No Device selected",
+                style=wx.ICON_WARNING | wx.OK,
+            )
+            return
+
         ok_to_install = await download(**kwargs)
         if not ok_to_install:
             return "download-error"
@@ -108,8 +120,8 @@ class Q2GApp(wxasync.WxAsyncApp):
         result = False
         try:
             device_name = self.devices_listpanel.selected_device
-            if not device_name:
-                raise Exception("No device selected")
+            # if not device_name:
+            #     raise Exception("No device selected")
             if config.DebugSettings.enabled:
                 await quest.dummy_install_game(
                     callback=self.on_install_update,
@@ -129,7 +141,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             self.exception_handler(err)
         else:
             result = True
-            if not config.DebugSettings.emabled:
+            if not config.DebugSettings.enabled:
                 quest.cleanup(
                     path_to_remove=path, error_callback=self.on_install_update
                 )

@@ -163,7 +163,7 @@ async def get_magnet_info(uri: str, timeout: int = 10) -> MetaData:
             bin_meta = bendecode(bin_meta)
 
             decoded_meta = {}
-            if hasattr(bin_meta, "files"):
+            if b"files" in bin_meta:
                 decoded_meta["files"] = list(
                     map(lambda bfile: decode_bfile(bfile), bin_meta[b"files"])
                 )

@@ -55,7 +55,7 @@ class MagnetsListPanel(ListPanel):
         self.listctrl.DeleteAllItems()
         self.magnet_data_list.clear()
         for index, magnet in enumerate(magnets):
-            savepath = config.create_path_from_name(magnet.name)
+            savepath = config.create_path_from_name(magnet.display_name)
             magnet_data = MagnetData(
                 uri=magnet.uri,
                 download_path=savepath,
