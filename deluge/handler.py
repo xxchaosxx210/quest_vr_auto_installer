@@ -90,9 +90,11 @@ class MagnetData:
     uri: str
     download_path: str
     index: int
+    name: str
+    torrent_id: str
     queue: asyncio.Queue = None
     timeout: float = 1.0
-    meta_data: deluge.utils.MetaData = None
+    # meta_data: deluge.utils.MetaData = None
 
 
 async def add_magnet_to_session(

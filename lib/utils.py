@@ -62,11 +62,11 @@ def apk_exists(magnetdata: MagnetData) -> str:
     Returns:
         str: if found then the first Apk filename will be returned. returns None if no found
     """
-    if not magnetdata.meta_data and not magnetdata.meta_data.name:
+    if not magnetdata.name:
         raise AttributeError(
-            "No Meta Data found for this game torrent. Unable to continue"
+            "No Magnet Name found for this game torrent. Unable to continue"
         )
-    full_path = os.path.join(magnetdata.download_path, magnetdata.meta_data.name)
+    full_path = os.path.join(magnetdata.download_path, magnetdata.name)
     if not os.path.exists(full_path):
         return None
     # search for the apk in this path

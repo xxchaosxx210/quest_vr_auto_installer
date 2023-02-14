@@ -62,6 +62,8 @@ class MagnetsListPanel(ListPanel):
                 index=index,
                 queue=asyncio.Queue(),
                 timeout=1.0,
+                name=magnet.name,
+                torrent_id=magnet.id,
             )
             self.magnet_data_list.append(magnet_data)
             # set each item to the listctrl column
@@ -78,27 +80,27 @@ class MagnetsListPanel(ListPanel):
         self.listctrl.SetItem(index, 1, str(magnet.version))
         self.listctrl.SetItem(index, 2, str(magnet.filesize))
 
-    def on_listitem_selected(self, evt: wx.ListEvent) -> None:
-        """get the magnet meta data information from the magnet
+    # def on_listitem_selected(self, evt: wx.ListEvent) -> None:
+    #     """get the magnet meta data information from the magnet
 
-        Args:
-            evt (wx.ListEvent):
-        """
+    #     Args:
+    #         evt (wx.ListEvent):
+    #     """
 
-        async def get_meta_data() -> None:
-            try:
-                magnet.meta_data = await deluge_utils.get_magnet_info(magnet.uri)
-            except Exception as err:
-                raise err
+    #     async def get_meta_data() -> None:
+    #         try:
+    #             magnet.meta_data = await deluge_utils.get_magnet_info(magnet.uri)
+    #         except Exception as err:
+    #             raise err
 
-        # get the selected magnet from the list
-        magnet: MagnetData = self.magnet_data_list[evt.GetIndex()]
-        # if magnet already has meta data then ignore
-        if magnet.meta_data:
-            return
-        # get the extra information from deluge
-        loop = asyncio.get_event_loop()
-        loop.create_task(get_meta_data())
+    #     # get the selected magnet from the list
+    #     magnet: MagnetData = self.magnet_data_list[evt.GetIndex()]
+    #     # if magnet already has meta data then ignore
+    #     if magnet.meta_data:
+    #         return
+    #     # get the extra information from deluge
+    #     loop = asyncio.get_event_loop()
+    #     loop.create_task(get_meta_data())
 
     def on_right_click(self, evt: wx.ListEvent) -> None:
         """creates a popup menu when user right clicks on item in listctrl
@@ -107,7 +109,7 @@ class MagnetsListPanel(ListPanel):
             evt (wx.ListEvent): _description_
         """
         magnet_data = self.get_selected_torrent_item()
-        if not magnet_data or not magnet_data.meta_data:
+        if not magnet_data:
             return
         menu = wx.Menu()
         dld_install_item = menu.Append(wx.ID_ANY, "Download and Install")

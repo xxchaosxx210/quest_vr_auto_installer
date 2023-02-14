@@ -12,7 +12,6 @@ class QuestMagnet(BaseModel):
     filesize: int
     date_added: float
     id: str
-    metadata: Optional[MetaData]
 
     @property
     def uri(self) -> str:
