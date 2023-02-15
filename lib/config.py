@@ -22,6 +22,7 @@ from pathvalidate import sanitize_filename
 from lib.schemas import QuestMagnet
 
 
+# App Meta data
 APP_NAME = "QuestVRAutoinstaller"
 APP_VERSION = "0.1"
 AUTHOR = "Paul Millar"
@@ -29,18 +30,27 @@ AUTHOR = "Paul Millar"
 
 HOMEDRIVE = ""
 
+# check if windows OS and assign the main drive
 if os.name == "nt":
     HOMEDRIVE = os.getenv("HOMEDRIVE", "C:")
+else:
+    raise OSError("OS not yet supported")
 
 # Have to add the Home Drive otherwise Deluge kicks up an error
 APP_BASE_PATH = HOMEDRIVE + os.path.join(os.getenv("HOMEPATH"), APP_NAME)
-
+# The path to save the torrent files to
 APP_DOWNLOADS_PATH = os.path.join(APP_BASE_PATH, "Games")
-
+# Path to save log data, local magnet json file and the APP settings
 APP_DATA_PATH = os.path.join(APP_BASE_PATH, "Data")
 APP_LOG_PATH = os.path.join(APP_DATA_PATH, "log.txt")
+APP_SETTINGS_PATH = os.path.join(APP_DATA_PATH, "settings.json")
 
+
+# local json file for storing local magnet database incase no response from the API
 QUEST_MAGNETS_PATH = os.path.join(APP_DATA_PATH, "questmagnets.json")
+
+
+# Quest Installation paths
 
 QUEST_ROOT = "/sdcard"
 
