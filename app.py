@@ -97,7 +97,9 @@ class Q2GApp(wxasync.WxAsyncApp):
             return "download-error"
 
         magnet_data: MagnetData = kwargs["magnet_data"]
-        install_success = await self.start_install_process(magnet_data.download_path)
+        install_success = await self.start_install_process(
+            magnet_data.download_path + "\\" + magnet_data.name
+        )
         if not install_success:
             return "install-error"
         return "success"
@@ -120,8 +122,8 @@ class Q2GApp(wxasync.WxAsyncApp):
         result = False
         try:
             device_name = self.devices_listpanel.selected_device
-            if not device_name:
-                raise Exception("No device selected")
+            # if not device_name:
+            #     raise Exception("No device selected")
             if config.DebugSettings.enabled:
                 await quest.dummy_install_game(
                     callback=self.on_install_update,

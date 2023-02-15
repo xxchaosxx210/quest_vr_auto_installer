@@ -133,7 +133,7 @@ async def install_game(
 
     # step 3
     # get the package name and create package data dir in OBB dir
-
+    paths = list(lib.utils.find_install_dirs(path))
     apk_path, apk_sub_paths, apk_filename = await lib.utils.find_apk_directory_async(
         path
     )
