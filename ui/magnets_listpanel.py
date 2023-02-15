@@ -49,6 +49,7 @@ class MagnetsListPanel(ListPanel):
             app.exception_handler(err)
             return
         else:
+            magnets = sorted(magnets, key=lambda item: item.display_name.lower())
             await self.load_magnets(magnets)
 
     async def load_magnets(self, magnets: List[QuestMagnet]) -> None:

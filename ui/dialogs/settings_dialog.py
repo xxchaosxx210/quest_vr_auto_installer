@@ -10,7 +10,7 @@ class DownloadPathPanel(wx.Panel):
         super().__init__(*args, **kw)
 
         self.downloadctrl = wx.TextCtrl(
-            self, size=(200, -1), style=wx.TE_NO_VSCROLL | wx.TE_READONLY
+            self, size=(300, -1), style=wx.TE_NO_VSCROLL | wx.TE_READONLY
         )
         self.browse_button = wx.Button(self, -1, "Browse", size=(100, -1))
         self.Bind(wx.EVT_BUTTON, self._on_browse_button, self.browse_button)
