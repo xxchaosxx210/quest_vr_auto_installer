@@ -4,6 +4,8 @@ import asyncio
 from ui.devices_listpanel import DevicesListPanel
 from ui.magnets_listpanel import MagnetsListPanel
 from ui.installed_listpanel import InstalledListPanel
+from ui.dialogs.install_progress_dialog import InstallProgressDialog
+from ui.dialogs.settings_dialog import SettingsDialog
 
 import lib.image_manager as img_mgr
 
@@ -28,6 +30,11 @@ class MainFrame(wx.Frame):
     def _create_menubar(self) -> None:
         menubar = wx.MenuBar()
 
+        install_menu = wx.Menu()
+        mi_settings = install_menu.Append(wx.ID_ANY, "Settings")
+        self.Bind(wx.EVT_MENU, self._on_settings_menu, mi_settings)
+        menubar.Append(install_menu, "Install")
+
         debug_menu = wx.Menu()
         mi_show_install_dialog = debug_menu.Append(wx.ID_ANY, "Show Install Dialog")
         self.Bind(wx.EVT_MENU, self._on_show_install_dialog, mi_show_install_dialog)
@@ -40,14 +47,23 @@ class MainFrame(wx.Frame):
 
         self.SetMenuBar(menubar)
 
+    def _on_settings_menu(self, evt: wx.MenuEvent) -> None:
+        """load the settings dialog
+
+        Args:
+            evt (wx.MenuEvent): Not needed
+        """
+        dlg = SettingsDialog(self, "Settings", (300, 300))
+        if dlg.ShowModal() == wx.ID_OK:
+            dlg.save_from_controls()
+        dlg.Destroy()
+
     def _on_show_install_dialog(self, evt: wx.MenuEvent) -> None:
         """shows the install dialog box for testing purposes
 
         Args:
             evt (wx.MenuEvent):
         """
-        from ui.dialogs.install_progress_dialog import InstallProgressDialog
-
         dlg = InstallProgressDialog(self)
         dlg.Show()
 

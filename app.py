@@ -52,8 +52,6 @@ class Q2GApp(wxasync.WxAsyncApp):
             bool:
         """
         self.settings = config.Settings.load()
-        self.settings.remove_files_after_install = True
-        self.settings.save()
         title = f"{config.APP_NAME} - version {config.APP_VERSION}"
         self.frame: MainFrame = MainFrame(parent=None, id=-1, title=title)
         self.frame.Show()
