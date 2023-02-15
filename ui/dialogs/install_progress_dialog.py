@@ -24,7 +24,7 @@ class InstallProgressDialog(wx.Dialog):
 
         self.Bind(wx.EVT_BUTTON, self._on_cancel_button, self.cancel_button)
 
-    async def write(self, text: str) -> None:
+    def write(self, text: str) -> None:
         text += "\n"
         wx.CallAfter(self.text_ctrl.AppendText, text=text)
 

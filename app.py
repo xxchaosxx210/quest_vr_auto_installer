@@ -97,9 +97,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             return "download-error"
 
         magnet_data: MagnetData = kwargs["magnet_data"]
-        install_success = await self.start_install_process(
-            magnet_data.download_path + "\\" + magnet_data.name
-        )
+        install_success = await self.start_install_process(magnet_data.download_path)
         if not install_success:
             return "install-error"
         return "success"
@@ -124,31 +122,25 @@ class Q2GApp(wxasync.WxAsyncApp):
             device_name = self.devices_listpanel.selected_device
             # if not device_name:
             #     raise Exception("No device selected")
-            if config.DebugSettings.enabled:
-                await quest.dummy_install_game(
-                    callback=self.on_install_update,
-                    device_name=device_name,
-                    path=path,
-                    raise_exception=False,
-                    time_to_install=5.0,
-                )
-            else:
+            for apk_dir in lib.utils.find_install_dirs(path):
                 await quest.install_game(
                     callback=self.on_install_update,
                     device_name=device_name,
-                    path=path,
+                    apk_dir=apk_dir,
                 )
         except Exception as err:
             # show the error dialog
-            self.exception_handler(err)
+            # await asyncio.sleep(0.5)
+            self.on_install_update(f"Error: {err.__str__()}. Installation has quit")
         else:
             result = True
-            if not config.DebugSettings.enabled:
-                quest.cleanup(
-                    path_to_remove=path, error_callback=self.on_install_update
-                )
+            # if not config.DebugSettings.enabled:
+            #     quest.cleanup(
+            #         path_to_remove=path, error_callback=self.on_install_update
+            #     )
             # reload the package list
             await self.install_listpanel.load(device_name)
+            self.on_install_update("Installation has completed. Enjoy!!")
         finally:
             return result
 
@@ -162,7 +154,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             self.magnets_listpanel.update_list_item, torrent_status=torrent_status
         )
 
-    async def on_install_update(self, message: str) -> None:
+    def on_install_update(self, message: str) -> None:
         """update the Progress Dialog textbox from the install process
 
         Args:
@@ -170,7 +162,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         """
         if not self.install_dialog:
             return
-        await self.install_dialog.write(message)
+        self.install_dialog.write(message)
 
     async def remove_package(self, package_name: str) -> None:
         """communicates with the ADB daemon and uninstalls the package from package name

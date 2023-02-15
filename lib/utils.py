@@ -14,6 +14,7 @@ _Log = logging.getLogger(__name__)
 
 @dataclass
 class ApkPath:
+    root: str
     path: str
     data_dirs: List[str]
     file_paths: List[str]
@@ -84,6 +85,41 @@ def apk_exists(magnetdata: MagnetData) -> str:
     return None
 
 
+def get_folder_size(folder_path: str) -> int:
+    """Return the total size of a folder in bytes.
+
+    Args:
+        folder_path (str): The path to the folder.
+
+    Returns:
+        int: The size of the folder in bytes.
+    """
+    size = 0
+    with os.scandir(folder_path) as it:
+        for entry in it:
+            if entry.is_file():
+                size += entry.stat().st_size
+            elif entry.is_dir():
+                size += get_folder_size(entry.path)
+    return size
+
+
+def format_size(size: int) -> str:
+    """formats the size of bytes into a formatted string representation
+
+    Args:
+        size (int): the byte size
+
+    Returns:
+        str: the formatted string
+    """
+    for unit in ["", "K", "M", "G"]:
+        if size < 1024:
+            return f"{size:.1f} {unit}Bytes"
+        size /= 1024
+    return f"{size:.1f} TBytes"
+
+
 def find_install_dirs(root_dir: str) -> Generator[ApkPath, None, None]:
     """
     Generator function that scans the root_dir looking for APK files and data subfolders.
@@ -120,7 +156,7 @@ def find_install_dirs(root_dir: str) -> Generator[ApkPath, None, None]:
                     # Add the APK file to the set of seen files.
                     apk_files.add(apk_path)
                     # Create an ApkPath object with the APK file path and list of data directory paths.
-                    apk_file = ApkPath(apk_path, data_dirs, file_paths)
+                    apk_file = ApkPath(root, apk_path, data_dirs, file_paths)
                     # Yield the ApkPath object to the caller.
                     yield apk_file
 
