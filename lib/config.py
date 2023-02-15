@@ -18,6 +18,7 @@ from types import TracebackType
 from typing import List
 
 from pathvalidate import sanitize_filename
+from pydantic import BaseModel
 
 from lib.schemas import QuestMagnet
 
@@ -73,6 +74,34 @@ class DebugSettings:
         "com.ubisoft.SplinterCellConviction",
         "com.golfcompany.MiniGolfAwesome",
     ]
+
+
+class Settings(BaseModel):
+    remove_files_after_install: bool = False
+
+    class Config:
+        orm_mode: bool = True
+
+    @staticmethod
+    def load(path: str = APP_SETTINGS_PATH) -> "Settings":
+        try:
+            with open(path, "r") as fp:
+                data = json.load(fp)
+            settings = Settings(**data)
+            return settings
+        except FileNotFoundError:
+            settings = Settings()
+            return settings
+
+    def save(self, path: str = APP_SETTINGS_PATH) -> None:
+        """save the settings to path
+
+        Args:
+            path (str, optional): _description_. Defaults to APP_SETTINGS_PATH.
+        """
+        with open(path, "w") as fp:
+            text = self.json()
+            fp.write(text)
 
 
 def parse_args() -> argparse.Namespace:
