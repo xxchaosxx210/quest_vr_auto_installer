@@ -53,7 +53,7 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.MenuEvent): Not needed
         """
-        dlg = SettingsDialog(self, "Settings", (300, 300))
+        dlg = SettingsDialog(self, "Settings", (500, 600))
         if dlg.ShowModal() == wx.ID_OK:
             dlg.save_from_controls()
         dlg.Destroy()

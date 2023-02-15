@@ -77,13 +77,21 @@ class DebugSettings:
 
 
 class Settings(BaseModel):
+    download_path: str = APP_DOWNLOADS_PATH
     remove_files_after_install: bool = False
-
-    class Config:
-        orm_mode: bool = True
+    close_dialog_after_install: bool = False
+    download_only: bool = False
 
     @staticmethod
     def load(path: str = APP_SETTINGS_PATH) -> "Settings":
+        """load the settings.json and return a class instance of Settings
+
+        Args:
+            path (str, optional): _description_. Defaults to APP_SETTINGS_PATH.
+
+        Returns:
+            Settings:
+        """
         try:
             with open(path, "r") as fp:
                 data = json.load(fp)

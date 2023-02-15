@@ -51,7 +51,6 @@ class Q2GApp(wxasync.WxAsyncApp):
         Returns:
             bool:
         """
-        self.settings = config.Settings.load()
         title = f"{config.APP_NAME} - version {config.APP_VERSION}"
         self.frame: MainFrame = MainFrame(parent=None, id=-1, title=title)
         self.frame.Show()
@@ -99,6 +98,10 @@ class Q2GApp(wxasync.WxAsyncApp):
         if not ok_to_install:
             return "download-error"
 
+        if config.Settings.load().download_only:
+            # skip the installation but leave the files locally
+            return "success"
+
         magnet_data: MagnetData = kwargs["magnet_data"]
         install_success = await self.start_install_process(magnet_data.download_path)
         if not install_success:
@@ -137,13 +140,18 @@ class Q2GApp(wxasync.WxAsyncApp):
             self.on_install_update(f"Error: {err.__str__()}. Installation has quit")
         else:
             result = True
-            # if not config.DebugSettings.enabled:
-            #     quest.cleanup(
-            #         path_to_remove=path, error_callback=self.on_install_update
-            #     )
+            settings = config.Settings.load()
+            if settings.remove_files_after_install:
+                # delete the torrent files on the local path
+                quest.cleanup(
+                    path_to_remove=path, error_callback=self.on_install_update
+                )
             # reload the package list
             await self.install_listpanel.load(device_name)
-            self.on_install_update("Installation has completed. Enjoy!!")
+            if settings.close_dialog_after_install:
+                self.install_dialog.Destroy()
+            else:
+                self.on_install_update("Installation has completed. Enjoy!!")
         finally:
             return result
 
