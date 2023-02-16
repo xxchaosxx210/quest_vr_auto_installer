@@ -215,9 +215,15 @@ class Q2GApp(wxasync.WxAsyncApp):
 
 
 async def main():
+    # parse command line arguments
     args = config.parse_args()
+    # set the debug flag
     config.DebugSettings.enabled = args.debug
-    config.create_data_paths()
+    # load the settings.json
+    settings = config.Settings.load()
+    # create the data and download path
+    config.create_data_paths(download_path=settings.download_path)
+    # create the default logger
     config.initalize_logger()
     try:
         daemon = start_deluge_daemon()

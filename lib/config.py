@@ -82,6 +82,14 @@ class Settings(BaseModel):
     close_dialog_after_install: bool = False
     download_only: bool = False
 
+    def set_download_path(self, path: str) -> None:
+        try:
+            os.makedirs(path)
+        except OSError:
+            pass
+        finally:
+            self.download_path = path
+
     @staticmethod
     def load(path: str = APP_SETTINGS_PATH) -> "Settings":
         """load the settings.json and return a class instance of Settings
@@ -203,9 +211,13 @@ def load_local_quest_magnets(path: str) -> List[QuestMagnet]:
         return list(map(lambda item: QuestMagnet(**item), json.load(fp)))
 
 
-def create_data_paths() -> None:
+def create_data_paths(
+    base_path: str = APP_BASE_PATH,
+    download_path: str = APP_DOWNLOADS_PATH,
+    data_path: str = APP_DATA_PATH,
+) -> None:
     """creates the base path for games and app data such as log.txt and settings"""
-    for path in (APP_BASE_PATH, APP_DOWNLOADS_PATH, APP_DATA_PATH):
+    for path in (base_path, download_path, data_path):
         create_path(path)
 
 
@@ -233,7 +245,7 @@ def create_game_directory(path: str) -> None:
         return
 
 
-def create_path_from_name(name: str) -> str:
+def create_path_from_name(download_path: str, name: str) -> str:
     """creates a full path to the game directory to be created and downloaded to
     also sanatizes the name
 
@@ -245,5 +257,5 @@ def create_path_from_name(name: str) -> str:
     """
     name = sanitize_filename(name)
     name = name.replace(" ", "_")
-    pathname = os.path.join(APP_DOWNLOADS_PATH, name)
+    pathname = os.path.join(download_path, name)
     return pathname

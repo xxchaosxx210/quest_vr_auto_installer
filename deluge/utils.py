@@ -34,6 +34,17 @@ class MetaData(BaseModel):
     piece_length: int
     torrent_id: str
 
+    def __str__(self) -> str:
+        paths = ["\n".join(file.path) for file in self.files]
+        paths = "\n".join(paths)
+        return f"Name: {self.name}\nPaths: {paths}\nLength: {self.piece_length}\nTorrent ID: {self.torrent_id}"
+
+    def get_paths(self) -> List[str]:
+        if not self.files:
+            return []
+        paths = [path for file in self.files for path in file.path]
+        return paths
+
 
 class DelugeAccount(BaseModel):
     name: str
@@ -157,7 +168,8 @@ async def get_magnet_info(uri: str, timeout: int = 10) -> MetaData:
             torrent_id, b64_str = deluge_client.call(
                 "core.prefetch_magnet_metadata", uri, timeout
             )
-
+            if not b64_str:
+                raise ValueError("b64_str was empty. Proberbly lack of seeders")
             bmeta_base64 = str_to_be(b64_str)
             bin_meta = base64.b64decode(bmeta_base64)
             bin_meta = bendecode(bin_meta)

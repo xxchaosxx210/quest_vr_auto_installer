@@ -14,6 +14,8 @@ import lib.config as config
 from lib.utils import apk_exists
 from lib.schemas import QuestMagnet
 
+from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
+
 
 _Log = logging.getLogger()
 
@@ -53,10 +55,13 @@ class MagnetsListPanel(ListPanel):
             await self.load_magnets(magnets)
 
     async def load_magnets(self, magnets: List[QuestMagnet]) -> None:
+        settings = config.Settings.load()
         self.listctrl.DeleteAllItems()
         self.magnet_data_list.clear()
         for index, magnet in enumerate(magnets):
-            savepath = config.create_path_from_name(magnet.display_name)
+            savepath = config.create_path_from_name(
+                settings.download_path, magnet.display_name
+            )
             magnet_data = MagnetData(
                 uri=magnet.uri,
                 download_path=savepath,
@@ -112,7 +117,13 @@ class MagnetsListPanel(ListPanel):
         magnet_data = self.get_selected_torrent_item()
         if not magnet_data:
             return
+
         menu = wx.Menu()
+
+        extra_info_item = menu.Append(wx.ID_ANY, "Game Info")
+        self.Bind(wx.EVT_MENU, self._on_extra_info_item, extra_info_item)
+        menu.AppendSeparator()
+
         dld_install_item = menu.Append(wx.ID_ANY, "Download and Install")
         self.Bind(wx.EVT_MENU, self.on_dld_and_install_item, dld_install_item)
         menu.AppendSeparator()
@@ -138,6 +149,37 @@ class MagnetsListPanel(ListPanel):
         menu.AppendSubMenu(debug_menu, "Debug")
 
         self.listctrl.PopupMenu(menu)
+
+    def _on_extra_info_item(self, evt: wx.MenuEvent) -> None:
+        """get extra information on the torrent meta data. Show a dialog box with the meta data
+
+        Args:
+            evt (wx.MenuEvent): Not used
+        """
+        app = wx.GetApp()
+
+        async def _get_extra_meta_data(uri: str) -> None:
+            meta_data = await deluge_utils.get_magnet_info(uri)
+            if not meta_data:
+                app.exception_handler(
+                    Exception("Could not get extra information. Read logs for errors")
+                )
+                return
+            load_info_dialog(meta_data)
+
+        def load_info_dialog(metadata: deluge_utils.MetaData) -> None:
+            dlg = ExtraGameInfoDialog(app.frame, size=(640, 480))
+            dlg.set_name(metadata.name)
+            dlg.set_paths(metadata.get_paths())
+            dlg.ShowModal()
+            dlg.Destroy()
+
+        magnet_data = self.get_selected_torrent_item()
+        if not magnet_data:
+            return
+
+        loop = asyncio.get_event_loop()
+        loop.create_task(_get_extra_meta_data(magnet_data.uri))
 
     def on_install_apk(self, evt: wx.MenuEvent):
         """debug menu item: skips download process and starts the install from local apk
