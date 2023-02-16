@@ -55,16 +55,12 @@ class MagnetsListPanel(ListPanel):
             await self.load_magnets(magnets)
 
     async def load_magnets(self, magnets: List[QuestMagnet]) -> None:
-        settings = config.Settings.load()
         self.listctrl.DeleteAllItems()
         self.magnet_data_list.clear()
         for index, magnet in enumerate(magnets):
-            savepath = config.create_path_from_name(
-                settings.download_path, magnet.display_name
-            )
             magnet_data = MagnetData(
                 uri=magnet.uri,
-                download_path=savepath,
+                download_path="",
                 index=index,
                 queue=asyncio.Queue(),
                 timeout=1.0,
@@ -282,7 +278,12 @@ class MagnetsListPanel(ListPanel):
         index: int = self.listctrl.GetFirstSelected()
         if index == -1:
             return
+        # create a new download path name using the display_name as a prefix
+        display_name = self.listctrl.GetItem(index, 0).GetText()
         magnet_data = self.magnet_data_list[index]
+        magnet_data.download_path = config.create_path_from_name(
+            config.Settings.load().download_path, display_name
+        )
         # CHECK IF TASK IS RUNNING HERE
         app = wx.GetApp()
         loop = asyncio.get_event_loop()
