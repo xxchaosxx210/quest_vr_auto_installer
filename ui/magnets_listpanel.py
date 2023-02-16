@@ -13,6 +13,7 @@ import lib.api as api
 import lib.config as config
 from lib.utils import apk_exists
 from lib.schemas import QuestMagnet
+from lib.settings import Settings
 
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
 
@@ -278,7 +279,7 @@ class MagnetsListPanel(ListPanel):
         display_name = self.listctrl.GetItem(index, 0).GetText()
         magnet_data = self.magnet_data_list[index]
         magnet_data.download_path = config.create_path_from_name(
-            config.Settings.load().download_path, display_name
+            Settings.load().download_path, display_name
         )
         # CHECK IF TASK IS RUNNING HERE
         app = wx.GetApp()

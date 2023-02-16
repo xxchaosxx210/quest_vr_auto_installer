@@ -18,7 +18,6 @@ from types import TracebackType
 from typing import List
 
 from pathvalidate import sanitize_filename
-from pydantic import BaseModel
 
 from lib.schemas import QuestMagnet
 
@@ -76,51 +75,12 @@ class DebugSettings:
     ]
 
 
-class Settings(BaseModel):
-    download_path: str = APP_DOWNLOADS_PATH
-    remove_files_after_install: bool = False
-    close_dialog_after_install: bool = False
-    download_only: bool = False
-
-    def set_download_path(self, path: str) -> None:
-        try:
-            os.makedirs(path)
-        except OSError:
-            pass
-        finally:
-            self.download_path = path
-
-    @staticmethod
-    def load(path: str = APP_SETTINGS_PATH) -> "Settings":
-        """load the settings.json and return a class instance of Settings
-
-        Args:
-            path (str, optional): _description_. Defaults to APP_SETTINGS_PATH.
-
-        Returns:
-            Settings:
-        """
-        try:
-            with open(path, "r") as fp:
-                data = json.load(fp)
-            settings = Settings(**data)
-            return settings
-        except FileNotFoundError:
-            settings = Settings()
-            return settings
-
-    def save(self, path: str = APP_SETTINGS_PATH) -> None:
-        """save the settings to path
-
-        Args:
-            path (str, optional): _description_. Defaults to APP_SETTINGS_PATH.
-        """
-        with open(path, "w") as fp:
-            text = self.json()
-            fp.write(text)
-
-
 def parse_args() -> argparse.Namespace:
+    """parse the arguments from the terminal
+
+    Returns:
+        argparse.Namespace:
+    """
     parser = argparse.ArgumentParser(description="QuestVRAutoInstaller Parser")
     parser.add_argument("-d", "--debug", action="store_true", help="Debug mode")
     args = parser.parse_args()
@@ -218,31 +178,10 @@ def create_data_paths(
 ) -> None:
     """creates the base path for games and app data such as log.txt and settings"""
     for path in (base_path, download_path, data_path):
-        create_path(path)
-
-
-def create_path(path: str):
-    try:
-        os.makedirs(path)
-    except OSError:
-        _Log.info(f"{path} already exists")
-
-
-def create_game_directory(path: str) -> None:
-    """
-
-    Args:
-        path (str): the name of the torrent
-
-    Returns:
-        str: the pathname created will be None if error
-    """
-    try:
-        os.makedirs(path)
-    except OSError as error:
-        _Log.error(f"Could not create path {path}. Reason: {error.__str__()}")
-    finally:
-        return
+        try:
+            os.makedirs(path)
+        except OSError:
+            _Log.info(f"{path} already exists")
 
 
 def create_path_from_name(download_path: str, name: str) -> str:

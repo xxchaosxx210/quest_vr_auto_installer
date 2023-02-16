@@ -2,7 +2,7 @@ from typing import Tuple
 
 import wx
 
-from lib.config import Settings
+from lib.settings import Settings
 
 
 class DownloadPathPanel(wx.Panel):

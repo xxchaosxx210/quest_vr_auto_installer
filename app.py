@@ -26,6 +26,7 @@ import lib.config as config
 import lib.api
 import lib.utils
 import lib.quest as quest
+from lib.settings import Settings
 
 
 class Q2GApp(wxasync.WxAsyncApp):
@@ -35,7 +36,7 @@ class Q2GApp(wxasync.WxAsyncApp):
     install_listpanel: InstalledListPanel = None
     install_dialog: InstallProgressDialog = None
 
-    settings: config.Settings = None
+    settings: Settings = None
 
     def set_status_text(self, text: str) -> None:
         """sets the text on the main frame statusbar
@@ -98,7 +99,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         if not ok_to_install:
             return "download-error"
 
-        if config.Settings.load().download_only:
+        if Settings.load().download_only:
             # skip the installation but leave the files locally
             return "success"
 
@@ -140,7 +141,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             self.on_install_update(f"Error: {err.__str__()}. Installation has quit")
         else:
             result = True
-            settings = config.Settings.load()
+            settings = Settings.load()
             if settings.remove_files_after_install:
                 # delete the torrent files on the local path
                 quest.cleanup(
@@ -220,7 +221,7 @@ async def main():
     # set the debug flag
     config.DebugSettings.enabled = args.debug
     # load the settings.json
-    settings = config.Settings.load()
+    settings = Settings.load()
     # create the data and download path
     config.create_data_paths(download_path=settings.download_path)
     # create the default logger
