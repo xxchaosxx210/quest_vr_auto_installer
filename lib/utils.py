@@ -3,7 +3,7 @@ import socket
 import ctypes
 import logging
 import platform
-from typing import Tuple, List, Generator
+from typing import List, Generator
 from dataclasses import dataclass
 
 from deluge.handler import MagnetData
