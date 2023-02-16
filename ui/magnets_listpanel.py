@@ -138,8 +138,6 @@ class MagnetsListPanel(ListPanel):
         menu.AppendSeparator()
 
         debug_menu = wx.Menu()
-        find_apk_item = debug_menu.Append(wx.ID_ANY, "Find APK Path")
-        self.Bind(wx.EVT_MENU, self.on_find_apk_item, find_apk_item)
         install_apk = debug_menu.Append(wx.ID_ANY, "Install APK")
         self.Bind(wx.EVT_MENU, self.on_install_apk, install_apk)
         menu.AppendSubMenu(debug_menu, "Debug")
@@ -155,6 +153,11 @@ class MagnetsListPanel(ListPanel):
         app = wx.GetApp()
 
         async def _get_extra_meta_data(uri: str) -> None:
+            """retrieve the meta data from the deluge daemon
+
+            Args:
+                uri (str): the magnet uri to get meta data from
+            """
             meta_data = await deluge_utils.get_magnet_info(uri)
             if not meta_data:
                 app.exception_handler(
@@ -164,6 +167,11 @@ class MagnetsListPanel(ListPanel):
             load_info_dialog(meta_data)
 
         def load_info_dialog(metadata: deluge_utils.MetaData) -> None:
+            """displays the meta data about the requested magnet in the magnets listctrl
+
+            Args:
+                metadata (deluge_utils.MetaData): the meta data to display in the dialog box
+            """
             dlg = ExtraGameInfoDialog(app.frame, size=(640, 480))
             dlg.set_name(metadata.name)
             dlg.set_paths(metadata.get_paths())
@@ -174,6 +182,7 @@ class MagnetsListPanel(ListPanel):
         if not magnet_data:
             return
 
+        # create the coroutine for retrieving the meta data on the selected magnet link in the list
         loop = asyncio.get_event_loop()
         loop.create_task(_get_extra_meta_data(magnet_data.uri))
 
@@ -187,6 +196,11 @@ class MagnetsListPanel(ListPanel):
         """
 
         async def mimick_install(path: str):
+            """start the install process. check the app class in app.py
+
+            Args:
+                path (str): the game base path to install from
+            """
             app = wx.GetApp()
             await app.start_install_process(path)
 
@@ -194,24 +208,6 @@ class MagnetsListPanel(ListPanel):
         if not magnet_data:
             return
         asyncio.get_event_loop().create_task(mimick_install(magnet_data.download_path))
-
-    def on_find_apk_item(self, evt: wx.MenuEvent):
-        """debug item: finds the apk package and its data folder on local disk
-
-        Args:
-            evt (wx.MenuEvent): _description_
-        """
-
-        async def find_apk(magnet_data: MagnetData) -> None:
-            root_dir = magnet_data.download_path
-            apk_path, apk_dirs, apk_file = await magnet_data.find_apk_directory_async(
-                root_dir
-            )
-            _Log.info(f"APK Path: {apk_path}, APK Filename: {apk_file}")
-
-        loop = asyncio.get_event_loop()
-        selected_item = self.get_selected_torrent_item()
-        loop.create_task(find_apk(selected_item))
 
     def on_pause_item_selected(self, evt: wx.MenuEvent):
         """puts a pause flag on the selected items queue
