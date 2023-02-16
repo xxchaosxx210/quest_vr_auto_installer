@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from uuid import UUID
 
 
 class QuestMagnet(BaseModel):
@@ -13,3 +14,10 @@ class QuestMagnet(BaseModel):
     @property
     def uri(self) -> str:
         return self.magnet
+
+
+class LogErrorRequest(BaseModel):
+    type: str
+    uuid: UUID
+    exception: str
+    traceback: str

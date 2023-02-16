@@ -1,5 +1,6 @@
 import wx
 import asyncio
+import random
 
 from ui.devices_listpanel import DevicesListPanel
 from ui.magnets_listpanel import MagnetsListPanel
@@ -38,6 +39,10 @@ class MainFrame(wx.Frame):
         debug_menu = wx.Menu()
         mi_show_install_dialog = debug_menu.Append(wx.ID_ANY, "Show Install Dialog")
         self.Bind(wx.EVT_MENU, self._on_show_install_dialog, mi_show_install_dialog)
+        mi_raise_exception = debug_menu.Append(
+            wx.ID_ANY, "Raise an Unhandled Exception"
+        )
+        self.Bind(wx.EVT_MENU, self._on_raise_exception, mi_raise_exception)
         menubar.Append(debug_menu, "Debug")
 
         help_menu = wx.Menu()
@@ -46,6 +51,18 @@ class MainFrame(wx.Frame):
         menubar.Append(help_menu, "Help")
 
         self.SetMenuBar(menubar)
+
+    def _on_raise_exception(self, evt: wx.MenuEvent) -> None:
+        """simulate an unhandled exception. This is to test the exception handler
+
+        Args:
+            evt (wx.MenuEvent):
+        """
+
+        exceptions = [KeyError, ValueError, ConnectionError, FileNotFoundError]
+        exc = random.choice(exceptions)
+        message = "This is to test the unhandled exceptions handler"
+        raise exc(message)
 
     def _on_settings_menu(self, evt: wx.MenuEvent) -> None:
         """load the settings dialog

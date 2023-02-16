@@ -5,15 +5,13 @@ import logging
 from typing import List
 import base64
 import functools
+
 import aiohttp
 
-from lib.schemas import QuestMagnet
+from lib.schemas import QuestMagnet, LogErrorRequest
 
-from lib.config import (
-    QUEST_MAGNETS_PATH,
-    save_local_quest_magnets,
-    load_local_quest_magnets,
-)
+
+import lib.config
 
 _Log = logging.getLogger(__name__)
 
@@ -43,12 +41,12 @@ def catch_connection_error(func):
         try:
             result = await func(*args, **kwargs)
             _Log.info("Online: Saving Magnets to Local Database")
-            save_local_quest_magnets(QUEST_MAGNETS_PATH, result)
+            lib.config.save_local_quest_magnets(lib.config.QUEST_MAGNETS_PATH, result)
             return result
         except aiohttp.ClientConnectionError as err:
             _Log.error(err.__str__())
             _Log.warning("Offline: Loading Magnets from Local Database")
-            return load_local_quest_magnets(QUEST_MAGNETS_PATH)
+            return lib.config.load_local_quest_magnets(lib.config.QUEST_MAGNETS_PATH)
 
     return wrapper
 
@@ -102,3 +100,24 @@ async def get_game_magnets(url: str = MAGNET_ENDPOINT) -> List[QuestMagnet]:
 
             magnets = list(map(process_magnet_dict, games))
     return magnets
+
+
+async def post_error(error_request: LogErrorRequest) -> bool:
+    """post an error log to the database
+
+    Args:
+        url (str): the logs endpoint
+        error_request (LogErrorRequest):
+
+    Raises:
+        ApiError: if status is not 200
+
+    Returns:
+        bool: True if entry added
+    """
+    with aiohttp.ClientSession() as session:
+        with session.post(LOGS_ENDPOINT, data=error_request.dict()) as response:
+            if response.status != 200:
+                error_response = await response.content.read()
+                raise ApiError(error_response)
+            return True

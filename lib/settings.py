@@ -1,9 +1,14 @@
 import os
 import json
+import logging
+from uuid import uuid4, UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from config import APP_DOWNLOADS_PATH, APP_SETTINGS_PATH
+from lib.config import APP_SETTINGS_PATH, APP_DOWNLOADS_PATH
+
+
+_Log = logging.getLogger(__name__)
 
 
 class Settings(BaseModel):
@@ -11,6 +16,7 @@ class Settings(BaseModel):
     remove_files_after_install: bool = False
     close_dialog_after_install: bool = False
     download_only: bool = False
+    uuid: UUID = Field(default_factory=uuid4)
 
     def set_download_path(self, path: str) -> None:
         """create the download path directory
@@ -26,30 +32,34 @@ class Settings(BaseModel):
             self.download_path = path
 
     @staticmethod
-    def load(path: str = APP_SETTINGS_PATH) -> "Settings":
+    def load() -> "Settings":
         """load the settings.json and return a class instance of Settings
 
         Args:
-            path (str, optional): _description_. Defaults to APP_SETTINGS_PATH.
+            path (str, optional): _description_. Defaults to lib.config.APP_SETTINGS_PATH.
 
         Returns:
             Settings:
         """
+
         try:
-            with open(path, "r") as fp:
+            with open(APP_SETTINGS_PATH, "r") as fp:
                 data = json.load(fp)
             settings = Settings(**data)
-            return settings
         except FileNotFoundError:
             settings = Settings()
+        finally:
+            _Log.info(f"Loaded UUID {settings.uuid}")
             return settings
 
-    def save(self, path: str = APP_SETTINGS_PATH) -> None:
+    def save(self) -> None:
         """save the settings to path
 
         Args:
-            path (str, optional): _description_. Defaults to APP_SETTINGS_PATH.
+            path (str, optional): _description_. Defaults to lib.config.APP_SETTINGS_PATH.
         """
-        with open(path, "w") as fp:
+
+        with open(APP_SETTINGS_PATH, "w") as fp:
             text = self.json()
             fp.write(text)
+            _Log.info(f"Saved UUID {self.uuid} to file")

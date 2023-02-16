@@ -19,7 +19,8 @@ from typing import List
 
 from pathvalidate import sanitize_filename
 
-from lib.schemas import QuestMagnet
+from lib.schemas import QuestMagnet, LogErrorRequest
+from lib.api import post_error
 
 
 # App Meta data
@@ -59,6 +60,9 @@ QUEST_OBB_DIRECTORY = f"{QUEST_ROOT}/Android/obb"
 
 # where the apk will temp be pushed to and installed from
 QUEST_APK_TEMP_DIRECTORY = QUEST_ROOT + "/Download"
+
+# avoid the circular import
+from lib.settings import Settings
 
 
 _Log = logging.getLogger(__name__)
@@ -119,6 +123,15 @@ def log_handler(
     formatted_trunc_frames = traceback.format_list(trunc_frames)
     formatted_error = "".join(formatted_trunc_frames)
     _Log.error(formatted_error)
+    # post the unhandled exception to the database
+    settings = Settings.load()
+    error_request = LogErrorRequest(
+        type=exc_type.__str__(),
+        uuid=settings.uuid,
+        exception=exc_value.__str__(),
+        traceback=formatted_error,
+    )
+    asyncio.get_event_loop().create_task(post_error(error_request=error_request))
 
 
 def async_log_handler(loop: asyncio.ProactorEventLoop, context: dict) -> None:
