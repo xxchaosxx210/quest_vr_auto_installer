@@ -1,6 +1,7 @@
 """connecting to the magnet database API
 """
 
+import json
 import logging
 from typing import List
 import base64
@@ -115,8 +116,12 @@ async def post_error(error_request: LogErrorRequest) -> bool:
     Returns:
         bool: True if entry added
     """
-    with aiohttp.ClientSession() as session:
-        with session.post(LOGS_ENDPOINT, data=error_request.dict()) as response:
+    async with aiohttp.ClientSession() as session:
+        async with session.post(
+            LOGS_ENDPOINT,
+            data=error_request.json(),
+            headers={"Content-Type": "application/json"},
+        ) as response:
             if response.status != 200:
                 error_response = await response.content.read()
                 raise ApiError(error_response)

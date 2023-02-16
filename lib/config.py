@@ -126,9 +126,9 @@ def log_handler(
     # post the unhandled exception to the database
     settings = Settings.load()
     error_request = LogErrorRequest(
-        type=exc_type.__str__(),
+        type=str(exc_type),
         uuid=settings.uuid,
-        exception=exc_value.__str__(),
+        exception="".join(exc_value.args),
         traceback=formatted_error,
     )
     asyncio.get_event_loop().create_task(post_error(error_request=error_request))
