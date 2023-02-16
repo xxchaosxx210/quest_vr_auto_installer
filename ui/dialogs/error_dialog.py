@@ -1,9 +1,4 @@
 import wx
-import asyncio
-
-from lib.schemas import LogErrorRequest
-from lib.api import post_error
-from lib.settings import Settings
 
 
 class ErrorDialog(wx.Dialog):
@@ -28,8 +23,8 @@ class ErrorDialog(wx.Dialog):
         text = wx.TextCtrl(self, value=message, style=wx.TE_MULTILINE | wx.TE_READONLY)
 
         # Two buttons
-        send_error_button = wx.Button(self, label="Send Error")
-        self.Bind(wx.EVT_BUTTON, self._on_send_error_button, send_error_button)
+        send_error_button = wx.Button(self, id=wx.ID_OK, label="Send Error")
+        # self.Bind(wx.EVT_BUTTON, lambda *args: self.EndModal(wx.OK), send_error_button)
         send_error_button.Enable(not disable_send)
         close_button = wx.Button(self, id=wx.ID_CLOSE, label="Close")
         close_button.Bind(wx.EVT_BUTTON, lambda evt: self.EndModal(wx.CLOSE))
@@ -48,19 +43,3 @@ class ErrorDialog(wx.Dialog):
         self.SetSizer(main_sizer)
 
         self.CenterOnParent()
-
-    def _on_send_error_button(self, evt: wx.CommandEvent) -> None:
-        async def send_error(_error_request: LogErrorRequest) -> None:
-            try:
-                await post_error(_error_request)
-            except Exception as err:
-                wx.MessageBox(f"Unable to send. Reason: {str(err)}", "Error!")
-            else:
-                self.Destroy()
-
-        exc = self._exception
-        uuid = Settings.load().uuid
-        error_request = LogErrorRequest(
-            type=str(exc), uuid=uuid, exception="".join(exc.args), traceback=""
-        )
-        asyncio.get_event_loop().create_task(send_error(error_request))

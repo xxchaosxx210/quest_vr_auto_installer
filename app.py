@@ -25,6 +25,7 @@ from adblib.errors import RemoteDeviceError
 import lib.config as config
 import lib.api
 import lib.utils
+from lib.schemas import LogErrorRequest
 import lib.quest as quest
 from lib.settings import Settings
 
@@ -74,8 +75,29 @@ class Q2GApp(wxasync.WxAsyncApp):
             err=err,
             disable_send=False,
         )
-        dialog.ShowModal()
-        dialog.Destroy()
+        if dialog.ShowModal() != wx.ID_OK:
+            dialog.Destroy()
+            return
+
+        # User clicked the send error button. Send exception to the database
+
+        async def send_error(_error_request: LogErrorRequest) -> None:
+            try:
+                await lib.api.post_error(_error_request)
+            except Exception as _err:
+                wx.MessageBox(f"Unable to send. Reason: {str(_err)}", "Error!")
+
+        uuid = Settings.load().uuid
+        if hasattr(err, "args"):
+            exception = "".join(err.args)
+        elif hasattr(err, "message"):
+            exception = err.message
+        else:
+            exception = str(err)
+        error_request = LogErrorRequest(
+            type=str(err), uuid=uuid, exception=exception, traceback=""
+        )
+        asyncio.get_event_loop().create_task(send_error(error_request))
 
     async def start_download_process(self, **kwargs) -> str:
         """download using the deluge torrent client
