@@ -39,10 +39,21 @@ class MainFrame(wx.Frame):
         debug_menu = wx.Menu()
         mi_show_install_dialog = debug_menu.Append(wx.ID_ANY, "Show Install Dialog")
         self.Bind(wx.EVT_MENU, self._on_show_install_dialog, mi_show_install_dialog)
-        mi_raise_exception = debug_menu.Append(
+        debug_menu.AppendSeparator()
+        mi_raise_caught_exception = debug_menu.Append(
+            wx.ID_ANY, "Raise Caught Exception"
+        )
+        self.Bind(
+            wx.EVT_MENU,
+            lambda *args: wx.GetApp().exception_handler(
+                ValueError("This is a test from handled caught exception")
+            ),
+            mi_raise_caught_exception,
+        )
+        mi_raise_unhandled_exception = debug_menu.Append(
             wx.ID_ANY, "Raise an Unhandled Exception"
         )
-        self.Bind(wx.EVT_MENU, self._on_raise_exception, mi_raise_exception)
+        self.Bind(wx.EVT_MENU, self._on_raise_unhandled, mi_raise_unhandled_exception)
         menubar.Append(debug_menu, "Debug")
 
         help_menu = wx.Menu()
@@ -52,7 +63,7 @@ class MainFrame(wx.Frame):
 
         self.SetMenuBar(menubar)
 
-    def _on_raise_exception(self, evt: wx.MenuEvent) -> None:
+    def _on_raise_unhandled(self, evt: wx.MenuEvent) -> None:
         """simulate an unhandled exception. This is to test the exception handler
 
         Args:

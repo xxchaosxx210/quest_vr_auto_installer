@@ -67,7 +67,13 @@ class Q2GApp(wxasync.WxAsyncApp):
             error_message = f"{err.message}\n\nCode: {err.status_code}"
         else:
             error_message = err.__str__()
-        dialog = ErrorDialog(self.frame, "There was an error!!", error_message)
+        dialog = ErrorDialog(
+            self.frame,
+            "There was an error!!",
+            error_message,
+            err=err,
+            disable_send=False,
+        )
         dialog.ShowModal()
         dialog.Destroy()
 
