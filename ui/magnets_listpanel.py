@@ -21,18 +21,27 @@ from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
 _Log = logging.getLogger()
 
 
+COLUMN_NAME = 0
+COLUMN_DATE_ADDED = 1
+COLUMN_SIZE = 2
+COLUMN_PROGRESS = 3
+COLUMN_STATUS = 4
+COLUMN_SPEED = 5
+COLUMN_ETA = 6
+
+
 class MagnetsListPanel(ListPanel):
     def __init__(self, *args, **kw):
         # store the magnet items state
         self.magnet_data_list: List[MagnetData] = []
         columns = [
-            {"col": 0, "heading": "Name", "width": 150},
-            {"col": 1, "heading": "Date Added", "width": 70},
-            {"col": 2, "heading": "Size (MB)", "width": 50},
-            {"col": 3, "heading": "Progress", "width": 40},
-            {"col": 4, "heading": "Status", "width": 80},
-            {"col": 5, "heading": "Speed", "width": 50},
-            {"col": 6, "heading": "ETA", "width": 70},
+            {"col": COLUMN_NAME, "heading": "Name", "width": 150},
+            {"col": COLUMN_DATE_ADDED, "heading": "Date Added", "width": 70},
+            {"col": COLUMN_SIZE, "heading": "Size (MB)", "width": 50},
+            {"col": COLUMN_PROGRESS, "heading": "Progress", "width": 40},
+            {"col": COLUMN_STATUS, "heading": "Status", "width": 80},
+            {"col": COLUMN_SPEED, "heading": "Speed", "width": 50},
+            {"col": COLUMN_ETA, "heading": "ETA", "width": 70},
         ]
         super().__init__(title="Games Availible", columns=columns, *args, **kw)
 
@@ -40,6 +49,100 @@ class MagnetsListPanel(ListPanel):
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
         column = evt.GetColumn()
+        items = self._get_list_items()
+        if not self.sort_items_from_column(column, items):
+            return
+        # rebuild the listctrl and magnet data list
+        self.clear_list()
+        self._rebuild_list(items)
+
+    def _get_list_items(self) -> List[dict]:
+        """gets each item row from the listctrl and the magnet data associated with it
+        adds them to a dict
+
+        Returns:
+            List[dict]: list of items returned
+        """
+        items = []
+        for index in range(self.listctrl.GetItemCount()):
+            # get the values from each row in the lisctrl
+            name = self.listctrl.GetItem(index, COLUMN_NAME).GetText()
+            date = self.listctrl.GetItem(index, COLUMN_DATE_ADDED).GetText()
+            size = self.listctrl.GetItem(index, COLUMN_SIZE).GetText()
+            progress = self.listctrl.GetItem(index, COLUMN_PROGRESS).GetText()
+            status = self.listctrl.GetItem(index, COLUMN_STATUS).GetText()
+            speed = self.listctrl.GetItem(index, COLUMN_SPEED).GetText()
+            eta = self.listctrl.GetItem(index, COLUMN_ETA).GetText()
+            # create a new instance of magnet data but keep the original properties
+            magnet_data = MagnetData(**self.magnet_data_list[index].__dict__)
+            # temporary store the data into a dict called item
+            items.append(
+                {
+                    "name": name,
+                    "date_added": date,
+                    "size": size,
+                    "progress": progress,
+                    "status": status,
+                    "speed": speed,
+                    "eta": eta,
+                    "magnet_data": magnet_data,
+                }
+            )
+        return items
+
+    def sort_items_from_column(self, column: int, items: dict) -> bool:
+        """sorts the list items based on column
+
+        Args:
+            column (int): the index of the column to sort
+            items (dict): the items to sort
+        Returns:
+            bool: True if items were sorted. False if no column match found
+        """
+        if column == COLUMN_NAME:
+            items.sort(key=lambda x: x["name"])
+        elif column == COLUMN_DATE_ADDED:
+            items.sort(key=lambda x: x["date_added"], reverse=True)
+        elif column == COLUMN_SIZE:
+            items.sort(key=lambda x: x["size"])
+        else:
+            return False
+        return True
+
+    def _rebuild_list(self, items: dict) -> None:
+        """change the magnet data index to the new index in the rebuilt listctrl
+        creates a new row entry in the listctrl
+
+        Args:
+            items (dict):
+        """
+        for index, item in enumerate(items):
+            # change the magnet data index to the new item index
+            # this is important as when downloading it knows which
+            # item in the listctrl to update to
+            item["magnet_data"].index = index
+            self.magnet_data_list.append(item["magnet_data"])
+            self.set_all_items(index, item)
+
+    def clear_list(self) -> None:
+        """deletes all items in the listctrl and clears the magnet_data list associated with list items"""
+        self.listctrl.DeleteAllItems()
+        self.magnet_data_list.clear()
+
+    def set_all_items(self, row_index: int, item: dict) -> None:
+        """Inserts and Sets each column from listctrl row from item
+
+        Args:
+            row_index (int): the index of the row to add the item data to
+            item (dict): item data returned from get_list_items
+        """
+        self.listctrl.InsertItem(row_index, item["name"])
+        self.listctrl.SetItem(row_index, COLUMN_DATE_ADDED, item["date_added"])
+        self.listctrl.SetItem(row_index, COLUMN_SIZE, item["size"])
+        self.listctrl.SetItem(row_index, COLUMN_PROGRESS, item["progress"])
+        self.listctrl.SetItem(row_index, COLUMN_STATUS, item["status"])
+        self.listctrl.SetItem(row_index, COLUMN_SPEED, item["speed"])
+        self.listctrl.SetItem(row_index, COLUMN_ETA, item["eta"])
 
     async def load_magnets_from_api(self):
         """makes a request to the Magnet API server and loads the response if successful
@@ -59,8 +162,7 @@ class MagnetsListPanel(ListPanel):
             await self.load_magnets(magnets)
 
     async def load_magnets(self, magnets: List[QuestMagnet]) -> None:
-        self.listctrl.DeleteAllItems()
-        self.magnet_data_list.clear()
+        self.clear_list()
         for index, magnet in enumerate(magnets):
             magnet_data = MagnetData(
                 uri=magnet.uri,
@@ -84,8 +186,8 @@ class MagnetsListPanel(ListPanel):
         """
         formatted_date_added = lib.utils.format_timestamp(magnet.date_added)
         self.listctrl.InsertItem(index, magnet.display_name)
-        self.listctrl.SetItem(index, 1, formatted_date_added)
-        self.listctrl.SetItem(index, 2, str(magnet.filesize))
+        self.listctrl.SetItem(index, COLUMN_DATE_ADDED, formatted_date_added)
+        self.listctrl.SetItem(index, COLUMN_SIZE, str(magnet.filesize))
 
     # def on_listitem_selected(self, evt: wx.ListEvent) -> None:
     #     """get the magnet meta data information from the magnet

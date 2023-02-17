@@ -118,18 +118,17 @@ def log_handler(
         exc_value (Exception): the exception instance
         exc_traceback (traceback): the traceback
     """
-    tb_frames = traceback.extract_tb(exc_traceback)
-    trunc_frames = tb_frames[-2:]
-    formatted_trunc_frames = traceback.format_list(trunc_frames)
-    formatted_error = "".join(formatted_trunc_frames)
-    _Log.error(formatted_error)
+    traceback_string = "".join(
+        traceback.format_exception(exc_type, exc_value, exc_traceback)
+    )
+    _Log.error(traceback_string)
     # post the unhandled exception to the database
     settings = Settings.load()
     error_request = LogErrorRequest(
         type=str(exc_type),
         uuid=settings.uuid,
         exception="".join(exc_value.args),
-        traceback=formatted_error,
+        traceback=traceback_string,
     )
     asyncio.get_event_loop().create_task(post_error(error_request=error_request))
 
