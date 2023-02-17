@@ -21,6 +21,7 @@ from pathvalidate import sanitize_filename
 
 from lib.schemas import QuestMagnet, LogErrorRequest
 from lib.api import post_error
+import lib.tasks
 
 
 # App Meta data
@@ -130,7 +131,10 @@ def log_handler(
         exception="".join(exc_value.args),
         traceback=traceback_string,
     )
-    asyncio.get_event_loop().create_task(post_error(error_request=error_request))
+    try:
+        lib.tasks.create_log_error_task(post_error, error_request=error_request)
+    except lib.tasks.TaskIsRunning:
+        pass
 
 
 def async_log_handler(loop: asyncio.ProactorEventLoop, context: dict) -> None:

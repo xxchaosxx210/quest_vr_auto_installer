@@ -1,4 +1,3 @@
-import asyncio
 import logging
 from typing import List
 
@@ -8,6 +7,7 @@ import lib.config as config
 import adblib.errors
 from adblib import adb_interface
 from ui.listpanel import ListPanel
+import lib.tasks
 
 import lib.quest as quest
 
@@ -76,9 +76,17 @@ class DevicesListPanel(ListPanel):
                 return
 
         app = wx.GetApp()
-        loop = asyncio.get_event_loop()
-        loop.create_task(create_obb_dir())
-        loop.create_task(app.install_listpanel.load(device_name))
+        try:
+            lib.tasks.create_obb_dir_task(create_obb_dir)
+        except lib.tasks.TaskIsRunning:
+            pass
+        # Load the installed apps into the install listctrl
+        try:
+            lib.tasks.load_installed_task(
+                app.install_listpanel.load, device_name=device_name
+            )
+        except lib.tasks.TaskIsRunning:
+            pass
 
     def get_selected_device_name(self) -> str:
         """gets the selected device name

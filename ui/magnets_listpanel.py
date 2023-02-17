@@ -12,6 +12,7 @@ from ui.listpanel import ListPanel
 import lib.api as api
 import lib.config as config
 import lib.utils
+import lib.tasks
 from lib.schemas import QuestMagnet
 from lib.settings import Settings
 
@@ -302,19 +303,15 @@ class MagnetsListPanel(ListPanel):
             evt (wx.MenuEvent):
         """
 
-        async def mimick_install(path: str):
-            """start the install process. check the app class in app.py
-
-            Args:
-                path (str): the game base path to install from
-            """
-            app = wx.GetApp()
-            await app.start_install_process(path)
-
         magnet_data = self.get_selected_torrent_item()
         if not magnet_data:
             return
-        asyncio.get_event_loop().create_task(mimick_install(magnet_data.download_path))
+        try:
+            lib.tasks.create_install_task(
+                wx.GetApp().start_install_process, path=magnet_data.download_path
+            )
+        except lib.tasks.TaskIsRunning as err:
+            wx.MessageBox(err.__str__(), "Cannot install")
 
     def on_pause_item_selected(self, evt: wx.MenuEvent):
         """puts a pause flag on the selected items queue
@@ -378,25 +375,19 @@ class MagnetsListPanel(ListPanel):
         Args:
             evt (wx.MenuEvent):
         """
+        # get the app instance and check if there is already an installation task running in the background
+        app = wx.GetApp()
         index: int = self.listctrl.GetFirstSelected()
         if index == -1:
             return
         # create a new download path name using the display_name as a prefix
         display_name = self.listctrl.GetItem(index, 0).GetText()
         magnet_data = self.magnet_data_list[index]
+        # create a pathname for the torrent files to be downloaded to
         magnet_data.download_path = config.create_path_from_name(
             Settings.load().download_path, display_name
         )
-        # CHECK IF TASK IS RUNNING HERE
-        app = wx.GetApp()
-        loop = asyncio.get_event_loop()
-        loop.create_task(
-            app.start_download_process(
-                callback=app.on_torrent_update,
-                error_callback=app.exception_handler,
-                magnet_data=magnet_data,
-            )
-        )
+        app.create_download_task(magnet_data)
 
     def on_install_only_item(self, evt: wx.MenuEvent) -> None:
         """starts the install process and skips downloading

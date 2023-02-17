@@ -1,5 +1,4 @@
 import logging
-import asyncio
 
 import wx
 
@@ -8,6 +7,7 @@ from ui.listpanel import ListPanel
 from adblib import adb_interface
 
 import lib.config
+import lib.tasks
 
 
 _Log = logging.getLogger(__name__)
@@ -45,7 +45,10 @@ class InstalledListPanel(ListPanel):
         except IndexError:
             return
         app = wx.GetApp()
-        asyncio.get_event_loop().create_task(app.remove_package(package_name))
+        try:
+            lib.tasks.remove_package_task(app.remove_package, package_name=package_name)
+        except lib.tasks.TaskIsRunning as err:
+            wx.MessageBox(err.__str__(), "Uninstall issue")
 
     def get_package_name(self) -> str:
         """gets the package name from the selected item in the listctrl

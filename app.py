@@ -25,6 +25,7 @@ from adblib.errors import RemoteDeviceError
 import lib.config as config
 import lib.api
 import lib.utils
+import lib.tasks
 from lib.schemas import LogErrorRequest
 import lib.quest as quest
 from lib.settings import Settings
@@ -38,6 +39,22 @@ class Q2GApp(wxasync.WxAsyncApp):
     install_dialog: InstallProgressDialog = None
 
     settings: Settings = None
+
+    def create_download_task(self, magnet_data: MagnetData) -> None:
+        """create the download task and store it in the global install
+
+        Args:
+            magnet_data (MagnetData):
+        """
+        try:
+            lib.tasks.create_install_task(
+                self.start_download_process,
+                callback=self.on_torrent_update,
+                error_callback=self.exception_handler,
+                magnet_data=magnet_data,
+            )
+        except lib.tasks.TaskIsRunning as err:
+            wx.MessageBox(err.__str__(), "Game already installing")
 
     def set_status_text(self, text: str) -> None:
         """sets the text on the main frame statusbar
@@ -97,9 +114,12 @@ class Q2GApp(wxasync.WxAsyncApp):
         error_request = LogErrorRequest(
             type=str(err), uuid=uuid, exception=exception, traceback=""
         )
-        asyncio.get_event_loop().create_task(send_error(error_request))
+        try:
+            lib.tasks.create_log_error_task(send_error, _error_request=error_request)
+        except lib.tasks.TaskIsRunning as err:
+            wx.MessageBox(err.__str__(), "Cannot Send Error")
 
-    async def start_download_process(self, **kwargs) -> str:
+    async def start_download_process(self, **kwargs) -> None:
         """download using the deluge torrent client
 
         Args:
@@ -124,18 +144,17 @@ class Q2GApp(wxasync.WxAsyncApp):
             return
 
         ok_to_install = await download(**kwargs)
-        if not ok_to_install:
-            return "download-error"
 
-        if Settings.load().download_only:
-            # skip the installation but leave the files locally
-            return "success"
+        settings = Settings.load()
 
-        magnet_data: MagnetData = kwargs["magnet_data"]
-        install_success = await self.start_install_process(magnet_data.download_path)
-        if not install_success:
-            return "install-error"
-        return "success"
+        if not settings.download_only and ok_to_install:
+            # start the install process
+            magnet_data: MagnetData = kwargs["magnet_data"]
+            install_success = await self.start_install_process(
+                magnet_data.download_path
+            )
+            if not install_success:
+                raise ValueError("Installation was unsuccessful")
 
     async def start_install_process(self, path: str) -> bool:
         """starts the install process communicates with ADB and pushes any data paths onto

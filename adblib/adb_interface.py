@@ -40,6 +40,7 @@ def close_adb() -> str:
         str: stdout from the process
     """
     stdout = execute([ADB_PATH_DEFAULT, "kill-server"])
+    return stdout
 
 
 async def get_device_names() -> List[str]:
