@@ -3,15 +3,14 @@ from typing import List
 
 
 class ListPanel(wx.Panel):
-
     def __init__(self, title: str, columns=List[dict], *args, **kw):
         super().__init__(*args, **kw)
 
         self.listctrl = wx.ListCtrl(self, -1, style=wx.LC_REPORT)
-        self.listctrl.Bind(wx.EVT_LIST_ITEM_SELECTED,
-                           self.on_listitem_selected)
+        self.listctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_listitem_selected)
         self.listctrl.Bind(wx.EVT_SIZE, self.on_size)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click)
+        self.listctrl.Bind(wx.EVT_LIST_COL_CLICK, self.on_col_left_click)
 
         self.columns = columns
 
@@ -20,10 +19,14 @@ class ListPanel(wx.Panel):
 
         for column in columns:
             self.listctrl.InsertColumn(
-                col=column["col"], heading=column["heading"], width=column["width"])
+                col=column["col"], heading=column["heading"], width=column["width"]
+            )
 
         sizer.Add(self.listctrl, proportion=1, flag=wx.EXPAND)
         self.SetSizer(sizer=sizer)
+
+    def on_col_left_click(self, evt: wx.ListEvent) -> None:
+        pass
 
     def on_right_click(self, evt: wx.ListEvent):
         pass
@@ -40,5 +43,6 @@ class ListPanel(wx.Panel):
 
         # Set the width of each column based on the ratio of width to total width
         for column in self.columns:
-            self.listctrl.SetColumnWidth(column["col"], int(
-                width * column["width"] / total_width))
+            self.listctrl.SetColumnWidth(
+                column["col"], int(width * column["width"] / total_width)
+            )

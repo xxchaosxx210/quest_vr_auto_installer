@@ -3,6 +3,7 @@ import socket
 import ctypes
 import logging
 import platform
+import datetime
 from typing import List, Generator
 from dataclasses import dataclass
 
@@ -159,3 +160,16 @@ def find_install_dirs(root_dir: str) -> Generator[ApkPath, None, None]:
                     apk_file = ApkPath(root, apk_path, data_dirs, file_paths)
                     # Yield the ApkPath object to the caller.
                     yield apk_file
+
+
+def format_timestamp(timestamp: int) -> str:
+    """formats the timestamp into a readabele string
+
+    Args:
+        timestamp (int): the datetime timestamp
+
+    Returns:
+        str: DD:MM:YYYY HH:MM
+    """
+    dt = datetime.datetime.fromtimestamp(timestamp)
+    return dt.strftime("%d-%m-%Y")

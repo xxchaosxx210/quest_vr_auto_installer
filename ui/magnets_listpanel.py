@@ -11,7 +11,7 @@ from deluge.handler import MagnetData, QueueRequest
 from ui.listpanel import ListPanel
 import lib.api as api
 import lib.config as config
-from lib.utils import apk_exists
+import lib.utils
 from lib.schemas import QuestMagnet
 from lib.settings import Settings
 
@@ -26,17 +26,20 @@ class MagnetsListPanel(ListPanel):
         # store the magnet items state
         self.magnet_data_list: List[MagnetData] = []
         columns = [
-            {"col": 0, "heading": "Name", "width": 120},
-            {"col": 1, "heading": "Version", "width": 40},
+            {"col": 0, "heading": "Name", "width": 150},
+            {"col": 1, "heading": "Date Added", "width": 70},
             {"col": 2, "heading": "Size (MB)", "width": 50},
             {"col": 3, "heading": "Progress", "width": 40},
-            {"col": 4, "heading": "Status", "width": 150},
+            {"col": 4, "heading": "Status", "width": 80},
             {"col": 5, "heading": "Speed", "width": 50},
-            {"col": 6, "heading": "ETA", "width": 60},
+            {"col": 6, "heading": "ETA", "width": 70},
         ]
         super().__init__(title="Games Availible", columns=columns, *args, **kw)
 
         wx.GetApp().magnets_listpanel = self
+
+    def on_col_left_click(self, evt: wx.ListEvent) -> None:
+        column = evt.GetColumn()
 
     async def load_magnets_from_api(self):
         """makes a request to the Magnet API server and loads the response if successful
@@ -79,8 +82,9 @@ class MagnetsListPanel(ListPanel):
             index (int): the offset of the ListCtrl row
             magnet (QuestMagnet): see QuestMagnet class for properties
         """
+        formatted_date_added = lib.utils.format_timestamp(magnet.date_added)
         self.listctrl.InsertItem(index, magnet.display_name)
-        self.listctrl.SetItem(index, 1, str(magnet.version))
+        self.listctrl.SetItem(index, 1, formatted_date_added)
         self.listctrl.SetItem(index, 2, str(magnet.filesize))
 
     # def on_listitem_selected(self, evt: wx.ListEvent) -> None:
@@ -124,7 +128,7 @@ class MagnetsListPanel(ListPanel):
         dld_install_item = menu.Append(wx.ID_ANY, "Download and Install")
         self.Bind(wx.EVT_MENU, self.on_dld_and_install_item, dld_install_item)
         menu.AppendSeparator()
-        if apk_exists(magnet_data):
+        if lib.utils.apk_exists(magnet_data):
             install_only_item = menu.Append(wx.ID_ANY, "Install")
             self.Bind(wx.EVT_MENU, self.on_install_only_item, install_only_item)
             menu.AppendSeparator()

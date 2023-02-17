@@ -1,11 +1,10 @@
 """connecting to the magnet database API
 """
 
-import json
 import logging
-from typing import List
 import base64
 import functools
+from typing import List
 
 import aiohttp
 
@@ -30,8 +29,8 @@ class ApiError(Exception):
         super().__init__(*args)
 
 
-# MAGNET_ENDPOINT = "http://localhost:8000/games"
-MAGNET_ENDPOINT = "https://6vppvi.deta.dev/games"
+MAGNET_ENDPOINT = "http://localhost:8000/games"
+# MAGNET_ENDPOINT = "https://6vppvi.deta.dev/games"
 # LOGS_ENDPOINT = "http://localhost:8000/logs"
 LOGS_ENDPOINT = "https://6vppvi.deta.dev/logs"
 
