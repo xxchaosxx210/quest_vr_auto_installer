@@ -48,6 +48,25 @@ class MagnetsListPanel(ListPanel):
         wx.GetApp().magnets_listpanel = self
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
+        """sort the magnets by alphabetical order.
+
+        Note: in this current version the sort wont work if install task is running
+        this is because the install task holds the row index of the listitem that is being
+        installed and updating. If the magnet list changes then the wrong listitem will be updated.
+        I am going to change this by putting the new index on the listitems async Queue.
+        For the time being just check if task is running if so then do not continue
+
+        Args:
+            evt (wx.ListEvent): contains the column index
+
+        Returns:
+            None: the return value from the super method
+        """
+        # check if install is running. I will change this later and send
+        # a message to the install queue with the new index to update to
+        if lib.tasks.is_running(lib.tasks.Tasks.install):
+            _Log.info("ListCtrl sort has been disabled while install is in progress")
+            return
         column = evt.GetColumn()
         items = self._get_list_items()
         if not self.sort_items_from_column(column, items):
