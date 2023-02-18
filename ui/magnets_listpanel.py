@@ -190,28 +190,6 @@ class MagnetsListPanel(ListPanel):
         self.listctrl.SetItem(index, COLUMN_DATE_ADDED, formatted_date_added)
         self.listctrl.SetItem(index, COLUMN_SIZE, str(magnet.filesize))
 
-    # def on_listitem_selected(self, evt: wx.ListEvent) -> None:
-    #     """get the magnet meta data information from the magnet
-
-    #     Args:
-    #         evt (wx.ListEvent):
-    #     """
-
-    #     async def get_meta_data() -> None:
-    #         try:
-    #             magnet.meta_data = await deluge_utils.get_magnet_info(magnet.uri)
-    #         except Exception as err:
-    #             raise err
-
-    #     # get the selected magnet from the list
-    #     magnet: MagnetData = self.magnet_data_list[evt.GetIndex()]
-    #     # if magnet already has meta data then ignore
-    #     if magnet.meta_data:
-    #         return
-    #     # get the extra information from deluge
-    #     loop = asyncio.get_event_loop()
-    #     loop.create_task(get_meta_data())
-
     def on_right_click(self, evt: wx.ListEvent) -> None:
         """creates a popup menu when user right clicks on item in listctrl
 
