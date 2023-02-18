@@ -1,12 +1,47 @@
-import wx
 from typing import List
+
+import wx
+
+
+class CustomListCtrl(wx.ListCtrl):
+    def __init__(self, *args, **kw):
+        super().__init__(*args, **kw)
+        self._cols_toggle_state = []
+
+    def InsertColumn(self, *args, **kw):
+        """keep track of toggle press events by appending new column to the toggle state array
+
+        Returns:
+            method back to super class
+        """
+        self._cols_toggle_state.append(True)
+        return super().InsertColumn(*args, **kw)
+
+    def get_toggle_state(self, column_index: int) -> bool:
+        """
+
+        Args:
+            column_index (int): the column index of the toggle state to get
+        Returns:
+            bool: returns the toggle state of the column header
+        """
+        return self._cols_toggle_state[column_index]
+
+    def set_toggle_state(self, column_index: int, state: bool) -> None:
+        """sets the toggle state of the column
+
+        Args:
+            column_index (int): the index of the column to set the state to
+            state (bool):
+        """
+        self._cols_toggle_state[column_index] = state
 
 
 class ListPanel(wx.Panel):
     def __init__(self, title: str, columns=List[dict], *args, **kw):
         super().__init__(*args, **kw)
 
-        self.listctrl = wx.ListCtrl(self, -1, style=wx.LC_REPORT)
+        self.listctrl = CustomListCtrl(self, -1, style=wx.LC_REPORT)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_listitem_selected)
         self.listctrl.Bind(wx.EVT_SIZE, self.on_size)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click)
@@ -26,7 +61,15 @@ class ListPanel(wx.Panel):
         self.SetSizer(sizer=sizer)
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
-        pass
+        """flip the toggle state of the column when the column header has been pressed by the user
+
+        Args:
+            evt (wx.ListEvent):
+        """
+        col_index = evt.GetColumn()
+        toggle_state = self.listctrl.get_toggle_state(col_index)
+        toggle_state = not toggle_state
+        self.listctrl.set_toggle_state(col_index, toggle_state)
 
     def on_right_click(self, evt: wx.ListEvent):
         pass

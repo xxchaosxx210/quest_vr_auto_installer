@@ -56,6 +56,7 @@ class MagnetsListPanel(ListPanel):
         # rebuild the listctrl and magnet data list
         self.clear_list()
         self._rebuild_list(items)
+        return super().on_col_left_click(evt)
 
     def _get_list_items(self) -> List[dict]:
         """gets each item row from the listctrl and the magnet data associated with it
@@ -100,12 +101,13 @@ class MagnetsListPanel(ListPanel):
         Returns:
             bool: True if items were sorted. False if no column match found
         """
+        reverse = self.listctrl.get_toggle_state(column_index=column)
         if column == COLUMN_NAME:
-            items.sort(key=lambda x: x["name"])
+            items.sort(key=lambda x: x["name"], reverse=reverse)
         elif column == COLUMN_DATE_ADDED:
-            items.sort(key=lambda x: x["date_added"], reverse=True)
+            items.sort(key=lambda x: x["date_added"], reverse=reverse)
         elif column == COLUMN_SIZE:
-            items.sort(key=lambda x: x["size"])
+            items.sort(key=lambda x: x["size"], reverse=reverse)
         else:
             return False
         return True
