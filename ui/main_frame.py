@@ -118,7 +118,7 @@ class MainFrame(wx.Frame):
         """when the window is shown load the listctrls
 
         Args:
-            evt (wx.CommandEvent): _description_
+            evt (wx.CommandEvent):
         """
         loop = asyncio.get_event_loop()
         loop.create_task(self.load_lists(loop))
