@@ -4,17 +4,24 @@ import wx
 
 
 class CustomListCtrl(wx.ListCtrl):
+    _COLUMN_ASCENDING_DEFAULT_TOGGLE_STATE = True
+
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self._cols_toggle_state = []
 
-    def InsertColumn(self, *args, **kw):
+    def reset_ascending_toggle_states(self) -> None:
+        """reset the cols toggle list back to default"""
+        for index in range(len(self._cols_toggle_state)):
+            self._cols_toggle_state[index] = self._COLUMN_ASCENDING_DEFAULT_TOGGLE_STATE
+
+    def InsertColumn(self, *args, **kw) -> int:
         """keep track of toggle press events by appending new column to the toggle state array
 
         Returns:
-            method back to super class
+            int: the long integer from the super method
         """
-        self._cols_toggle_state.append(True)
+        self._cols_toggle_state.append(self._COLUMN_ASCENDING_DEFAULT_TOGGLE_STATE)
         return super().InsertColumn(*args, **kw)
 
     def get_toggle_state(self, column_index: int) -> bool:
@@ -89,3 +96,6 @@ class ListPanel(wx.Panel):
             self.listctrl.SetColumnWidth(
                 column["col"], int(width * column["width"] / total_width)
             )
+
+    def reset(self) -> None:
+        self.listctrl.reset_ascending_toggle_states()

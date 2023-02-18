@@ -45,7 +45,6 @@ class MagnetsListPanel(ListPanel):
             {"col": COLUMN_ETA, "heading": "ETA", "width": 70},
         ]
         super().__init__(title="Games Availible", columns=columns, *args, **kw)
-
         wx.GetApp().magnets_listpanel = self
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
