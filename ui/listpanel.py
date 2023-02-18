@@ -99,3 +99,21 @@ class ListPanel(wx.Panel):
 
     def reset(self) -> None:
         self.listctrl.reset_ascending_toggle_states()
+
+    def find_item(self, column: int, pattern: str) -> int:
+        """looks for a pattern in each wx.ListItem
+
+        Args:
+            column (int): the column index to search for
+            pattern (str): the pattern to match with
+
+        Returns:
+            int: returns the first match found, -1 if no match found
+        """
+        found_index = -1
+        for index in range(self.listctrl.GetItemCount()):
+            value = self.listctrl.GetItem(index, column).GetText()
+            if pattern.lower() in value.lower():
+                found_index = index
+                break
+        return found_index

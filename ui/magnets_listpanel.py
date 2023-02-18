@@ -415,3 +415,19 @@ class MagnetsListPanel(ListPanel):
         self.listctrl.SetItem(index, 5, formatted_speed)
         formatted_eta = deluge_utils.format_eta(torrent_status.get("eta"))
         self.listctrl.SetItem(index, 6, formatted_eta)
+
+    def search_game(self, text: str) -> None:
+        item_index = self.find_item(COLUMN_NAME, text)
+        if item_index == -1:
+            return
+        # deselect any items
+        for i in range(self.listctrl.GetItemCount()):
+            if (
+                self.listctrl.GetItemState(i, wx.LIST_STATE_SELECTED)
+                == wx.LIST_STATE_SELECTED
+            ):
+                self.listctrl.SetItemState(i, 0, wx.LIST_STATE_SELECTED)
+        self.listctrl.SetItemState(
+            item_index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED
+        )
+        self.listctrl.EnsureVisible(item_index)

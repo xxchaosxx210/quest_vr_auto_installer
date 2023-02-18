@@ -7,6 +7,7 @@ from ui.magnets_listpanel import MagnetsListPanel
 from ui.installed_listpanel import InstalledListPanel
 from ui.dialogs.install_progress_dialog import InstallProgressDialog
 from ui.dialogs.settings_dialog import SettingsDialog
+from ui.dialogs.find_text_dialog import FindTextDialog
 
 import lib.image_manager as img_mgr
 
@@ -36,6 +37,11 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self._on_settings_menu, mi_settings)
         menubar.Append(install_menu, "Install")
 
+        view_menu = wx.Menu()
+        mi_find_magnet = view_menu.Append(wx.ID_ANY, "Game")
+        self.Bind(wx.EVT_MENU, self._on_find_magnet, mi_find_magnet)
+        menubar.Append(view_menu, "Search")
+
         debug_menu = wx.Menu()
         mi_show_install_dialog = debug_menu.Append(wx.ID_ANY, "Show Install Dialog")
         self.Bind(wx.EVT_MENU, self._on_show_install_dialog, mi_show_install_dialog)
@@ -62,6 +68,19 @@ class MainFrame(wx.Frame):
         menubar.Append(help_menu, "Help")
 
         self.SetMenuBar(menubar)
+
+    def _on_find_magnet(self, evt: wx.MenuEvent) -> None:
+        dlg = FindTextDialog(
+            parent=self,
+            label="Enter name of Game",
+            title="",
+            size=(300, -1),
+        )
+        if dlg.ShowModal() == wx.ID_OK:
+            text = dlg.GetText()
+        dlg.Destroy()
+        if "text" in locals():
+            wx.GetApp().magnets_listpanel.search_game(text)
 
     def _on_raise_unhandled(self, evt: wx.MenuEvent) -> None:
         """simulate an unhandled exception. This is to test the exception handler
