@@ -8,6 +8,7 @@ from ui.installed_listpanel import InstalledListPanel
 from ui.dialogs.install_progress_dialog import InstallProgressDialog
 from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.find_text_dialog import FindTextDialog
+from ui.dialogs.login_dialog import LoginDialog
 
 import lib.image_manager as img_mgr
 
@@ -36,6 +37,11 @@ class MainFrame(wx.Frame):
         mi_settings = install_menu.Append(wx.ID_ANY, "Settings")
         self.Bind(wx.EVT_MENU, self._on_settings_menu, mi_settings)
         menubar.Append(install_menu, "Install")
+
+        user_menu = wx.Menu()
+        mi_login = user_menu.Append(wx.ID_ANY, "Login")
+        self.Bind(wx.EVT_MENU, self._on_user_login, mi_login)
+        menubar.Append(user_menu, "User")
 
         view_menu = wx.Menu()
         mi_find_magnet = view_menu.Append(wx.ID_ANY, "Game")
@@ -69,7 +75,26 @@ class MainFrame(wx.Frame):
 
         self.SetMenuBar(menubar)
 
+    def _on_user_login(self, evt: wx.MenuEvent) -> None:
+        """loads the login dialog box and authenticates user
+        saving the token to settings directory
+
+        Args:
+            evt (wx.MenuEvent): Not used
+        """
+        dlg = LoginDialog(self, title="Login", size=(300, -1))
+        if dlg.ShowModal() != wx.ID_CANCEL:
+            # save the token to file
+            pass
+        dlg.Destroy()
+
     def _on_find_magnet(self, evt: wx.MenuEvent) -> None:
+        """laods the find dialog box and searches for the magnet in the games list
+        highlights first match in the listctrl
+
+        Args:
+            evt (wx.MenuEvent): Not used
+        """
         dlg = FindTextDialog(
             parent=self,
             label="Enter name of Game",
