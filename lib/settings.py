@@ -17,6 +17,7 @@ class Settings(BaseModel):
     close_dialog_after_install: bool = False
     download_only: bool = False
     uuid: UUID = Field(default_factory=uuid4)
+    token: str = ""
 
     def set_download_path(self, path: str) -> None:
         """create the download path directory

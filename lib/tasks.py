@@ -5,6 +5,7 @@ handles running tasks within the app
 """
 
 import asyncio
+import threading
 
 
 class TaskIsRunning(BaseException):
@@ -21,6 +22,8 @@ class Tasks:
     obb_create: asyncio.Task = None
     load_installed: asyncio.Task = None
     remove_package: asyncio.Task = None
+    login_submit: threading.Thread = None
+    user_info: asyncio.Task = None
 
 
 def create_install_task(func: callable, **kwargs):
@@ -65,6 +68,30 @@ def remove_package_task(func: callable, **kwargs):
     if is_running(Tasks.remove_package):
         raise TaskIsRunning("Cannot Uninstall as already Removing another App")
     Tasks.remove_package = _create_task(func, **kwargs)
+
+
+def get_user_info(func: callable, **kwargs):
+    if is_running(Tasks.user_info):
+        raise TaskIsRunning("Already waiting for User Information")
+    Tasks.user_info = _create_task(func, **kwargs)
+
+
+def login_submit_thread(func: callable, **kwargs):
+    """creates a new login submit thread
+
+    this function is blocking and wont exit until whatever running tasks are complete
+
+    Args:
+        func (callable): the function to run the login task
+
+    Raises:
+        TaskIsRunning: raises if the thread is still alive
+    """
+    if Tasks.login_submit is not None and Tasks.login_submit.is_alive():
+        raise TaskIsRunning("Please wait for the last login request to be submitted")
+    Tasks.login_submit = threading.Thread(target=func, kwargs=kwargs)
+    Tasks.login_submit.start()
+    Tasks.login_submit.join()
 
 
 def _create_task(func: callable, **kwargs) -> asyncio.Task:

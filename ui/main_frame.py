@@ -9,8 +9,13 @@ from ui.dialogs.install_progress_dialog import InstallProgressDialog
 from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.find_text_dialog import FindTextDialog
 from ui.dialogs.login_dialog import LoginDialog
+from ui.dialogs.user_info_dialog import UserInfoDialog
 
 import lib.image_manager as img_mgr
+
+from lib.settings import Settings
+import lib.api as api
+import lib.tasks as tasks
 
 
 class MainFrame(wx.Frame):
@@ -41,7 +46,10 @@ class MainFrame(wx.Frame):
         user_menu = wx.Menu()
         mi_login = user_menu.Append(wx.ID_ANY, "Login")
         self.Bind(wx.EVT_MENU, self._on_user_login, mi_login)
-        menubar.Append(user_menu, "User")
+        user_menu.AppendSeparator()
+        mi_user_info = user_menu.Append(wx.ID_ANY, "Details")
+        self.Bind(wx.EVT_MENU, self._on_user_info, mi_user_info)
+        menubar.Append(user_menu, "Account")
 
         view_menu = wx.Menu()
         mi_find_magnet = view_menu.Append(wx.ID_ANY, "Game")
@@ -75,6 +83,30 @@ class MainFrame(wx.Frame):
 
         self.SetMenuBar(menubar)
 
+    def _on_user_info(self, evt: wx.MenuEvent) -> None:
+        settings = Settings.load()
+        if not settings.token:
+            return
+
+        async def _get_user_info(token: str) -> None:
+            try:
+                user = await api.get_user_info(token)
+            except api.ApiError as err:
+                wx.MessageBox(
+                    err.message, f"Status: {err.status_code}", wx.OK | wx.ICON_ERROR
+                )
+            else:
+                dlg = UserInfoDialog(parent=self, size=(500, -1), user=user)
+                dlg.ShowModal()
+                dlg.Destroy()
+            finally:
+                return
+
+        try:
+            tasks.get_user_info(_get_user_info, token=Settings.load().token)
+        except tasks.TaskIsRunning as err:
+            wx.MessageBox(err.__str__(), "", wx.OK)
+
     def _on_user_login(self, evt: wx.MenuEvent) -> None:
         """loads the login dialog box and authenticates user
         saving the token to settings directory
@@ -82,10 +114,19 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.MenuEvent): Not used
         """
-        dlg = LoginDialog(self, title="Login", size=(300, -1))
-        if dlg.ShowModal() != wx.ID_CANCEL:
-            # save the token to file
-            pass
+
+        dlg = LoginDialog(
+            parent=self,
+            title="Login",
+            size=(300, -1),
+        )
+        return_code = dlg.ShowModal()
+        if return_code == wx.OK:
+            token = dlg.get_token()
+            if token:
+                settings = Settings.load()
+                settings.token = token
+                settings.save()
         dlg.Destroy()
 
     def _on_find_magnet(self, evt: wx.MenuEvent) -> None:

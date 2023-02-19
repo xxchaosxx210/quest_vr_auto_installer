@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 from uuid import UUID
 
 
@@ -21,3 +21,11 @@ class LogErrorRequest(BaseModel):
     uuid: UUID
     exception: str
     traceback: str
+
+
+class User(BaseModel):
+    email: str
+    date_created: float | None = None
+    is_admin: bool = False
+    is_user: bool = True
+    disabled: bool | None = None

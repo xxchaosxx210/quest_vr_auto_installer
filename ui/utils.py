@@ -13,3 +13,6 @@ class TextCtrlStaticBox(wx.StaticBox):
 
         self.sizer = wx.StaticBoxSizer(self, wx.VERTICAL)
         self.sizer.Add(self.textctrl, flag=wx.EXPAND | wx.ALL, border=0)
+
+    def get_text(self) -> str:
+        return self.textctrl.GetValue()

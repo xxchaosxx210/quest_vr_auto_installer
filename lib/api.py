@@ -5,10 +5,11 @@ import logging
 import base64
 import functools
 from typing import List
+from urllib.parse import urljoin
 
 import aiohttp
 
-from lib.schemas import QuestMagnet, LogErrorRequest
+from lib.schemas import QuestMagnet, LogErrorRequest, User
 
 
 import lib.config
@@ -29,10 +30,33 @@ class ApiError(Exception):
         super().__init__(*args)
 
 
-MAGNET_ENDPOINT = "http://localhost:8000/games"
-# MAGNET_ENDPOINT = "https://6vppvi.deta.dev/games"
-# LOGS_ENDPOINT = "http://localhost:8000/logs"
-LOGS_ENDPOINT = "https://6vppvi.deta.dev/logs"
+URI_LOCAL_HOST = f"http://127.0.0.1:8000"
+URI_DETA_MICRO = "https://6vppvi.deta.dev"
+
+# change this to one of the above hosts
+URI_HOST = URI_LOCAL_HOST
+
+URI_GAMES = urljoin(URI_HOST, "/games")
+URI_USERS = urljoin(URI_HOST, "/users")
+URI_LOGS = urljoin(URI_HOST, "/logs")
+URI_USERS_LOGIN = URI_USERS + "/token"
+URI_USER_INFO = URI_USERS + "/info"
+
+
+def get_account_type(user: User) -> str:
+    """determines the account type as a string
+
+    Args:
+        user (User):
+
+    Returns:
+        str:
+    """
+    if user.is_admin:
+        t = "Administrator"
+    if not user.is_admin and user.is_user:
+        t = "User"
+    return t
 
 
 def catch_connection_error(func):
@@ -51,8 +75,20 @@ def catch_connection_error(func):
     return wrapper
 
 
+def create_auth_token_header(token: str) -> dict:
+    """
+
+    Args:
+        token (str): the authenticating token to add
+
+    Returns:
+        dict: returns the constructed Authorization header dict
+    """
+    return {"Authorization": f"Bearer {token}"}
+
+
 @catch_connection_error
-async def get_game_magnets(url: str = MAGNET_ENDPOINT) -> List[QuestMagnet]:
+async def get_game_magnets(url: str = URI_GAMES) -> List[QuestMagnet]:
     """gets the Quest 2 magnet links from the q2g server
 
     Args:
@@ -117,7 +153,7 @@ async def post_error(error_request: LogErrorRequest) -> bool:
     """
     async with aiohttp.ClientSession() as session:
         async with session.post(
-            LOGS_ENDPOINT,
+            URI_LOGS,
             data=error_request.json(),
             headers={"Content-Type": "application/json"},
         ) as response:
@@ -125,3 +161,44 @@ async def post_error(error_request: LogErrorRequest) -> bool:
                 error_response = await response.content.read()
                 raise ApiError(error_response)
             return True
+
+
+async def login(email: str, password: str) -> str:
+    """login into the API
+
+    Args:
+        email (str): User email address
+        password (str): User password
+
+    Raises:
+        ApiError: if status not 200
+
+    Returns:
+        str: the access token to be used
+    """
+    async with aiohttp.ClientSession() as session:
+        frm_data = aiohttp.FormData()
+        frm_data.add_field("username", email)
+        frm_data.add_field("password", password)
+        async with session.post(URI_USERS_LOGIN, data=frm_data) as response:
+            if response.status != 200:
+                err_message = await response.json()["detail"]
+                raise ApiError(status_code=response.status, message=err_message)
+            resp_json = await response.json()
+            token = resp_json["access_token"]
+            return token
+
+
+async def get_user_info(token: str) -> User:
+    headers = create_auth_token_header(token)
+    headers["Content-Type"] = "application/json"
+    async with aiohttp.ClientSession() as session:
+        async with session.get(URI_USER_INFO, headers=headers) as response:
+            if response.status != 200:
+                error_data = await response.json()
+                raise ApiError(
+                    status_code=response.status, message=error_data["detail"]
+                )
+            data = await response.json()
+            user = User(**data)
+            return user
