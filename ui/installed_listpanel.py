@@ -6,7 +6,6 @@ import lib.config
 import lib.tasks
 from ui.listpanel import ListPanel
 from adblib import adb_interface
-from q2gapp import Q2GApp
 
 
 _Log = logging.getLogger(__name__)
@@ -14,6 +13,8 @@ _Log = logging.getLogger(__name__)
 
 class InstalledListPanel(ListPanel):
     def __init__(self, *args, **kw):
+        from q2gapp import Q2GApp
+
         self.app: Q2GApp = wx.GetApp()
         columns = [{"col": 0, "heading": "Name", "width": 100}]
         super().__init__(title="Installed Games", columns=columns, *args, **kw)

@@ -9,13 +9,15 @@ import lib.tasks
 import lib.quest as quest
 from adblib import adb_interface
 from ui.listpanel import ListPanel
-from q2gapp import Q2GApp
+
 
 _Log = logging.getLogger()
 
 
 class DevicesListPanel(ListPanel):
     def __init__(self, *args, **kwargs):
+        from q2gapp import Q2GApp
+
         self.app: Q2GApp = wx.GetApp()
         # the device that is currently selected in the listctrl
         self.selected_device: str = None

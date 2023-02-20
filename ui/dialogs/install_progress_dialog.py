@@ -1,11 +1,10 @@
 import wx
 
 
-from q2gapp import Q2GApp
-
-
 class InstallProgressDialog(wx.Dialog):
     def __init__(self, parent: wx.Frame):
+        from q2gapp import Q2GApp
+
         self.app: Q2GApp = wx.GetApp()
         super().__init__(
             parent,

@@ -12,16 +12,17 @@ from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.find_text_dialog import FindTextDialog
 from ui.dialogs.login_dialog import LoginDialog
 from ui.dialogs.user_info_dialog import UserInfoDialog
+from lib.settings import Settings
 
 import lib.image_manager as img_mgr
 import qvrapi.api as api
 import lib.tasks as tasks
-from lib.settings import Settings
-from q2gapp import Q2GApp
 
 
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kw):
+        from q2gapp import Q2GApp
+
         super().__init__(*args, **kw)
         self.app: Q2GApp = wx.GetApp()
         self._init_ui()

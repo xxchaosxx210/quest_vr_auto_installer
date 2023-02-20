@@ -9,4 +9,4 @@ pyinstaller --clean ^
 --add-data "images\*;images" ^
 --add-data "deluge\bin\version-211\win64\;deluge\bin\version-211\win64" ^
 --icon .\images\icon.ico ^
-app.py
+main.py

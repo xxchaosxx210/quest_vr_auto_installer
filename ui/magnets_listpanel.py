@@ -15,7 +15,6 @@ from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
 from ui.listpanel import ListPanel
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
-from q2gapp import Q2GApp
 
 
 _Log = logging.getLogger()
@@ -32,6 +31,8 @@ COLUMN_ETA = 6
 
 class MagnetsListPanel(ListPanel):
     def __init__(self, *args, **kw):
+        from q2gapp import Q2GApp
+
         self.app: Q2GApp = wx.GetApp()
         # store the magnet items state
         self.magnet_data_list: List[MagnetData] = []
