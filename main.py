@@ -5,12 +5,12 @@ main.py the main module for QuestVRAutoInstaller
 import asyncio
 import multiprocessing
 
-from q2gapp import Q2GApp
 
 import lib.config as config
 from deluge.utils import start_deluge_daemon
 from adblib import adb_interface
 from lib.settings import Settings
+from q2gapp import Q2GApp
 
 
 async def _main():

@@ -30,8 +30,10 @@ class Q2GApp(wxasync.WxAsyncApp):
     install_listpanel: InstalledListPanel = None
     install_dialog: InstallProgressDialog = None
 
+    # store the global settings
     settings: Settings = None
 
+    # online mode flag
     online_mode: bool = False
 
     def set_mode(self, mode: bool) -> None:
