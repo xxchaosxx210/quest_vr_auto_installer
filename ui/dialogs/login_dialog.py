@@ -13,13 +13,16 @@ _Log = logging.getLogger(__name__)
 
 
 class LoginDialog(wx.Dialog):
-    def __init__(self, *args, **kw):
+    def __init__(self, email_field: str, *args, **kw):
         super().__init__(*args, **kw)
 
-        self._token: str = None
+        self._login_data: dict = None
 
         self.username_sbox = TextCtrlStaticBox(
-            self, "", wx.TE_PROCESS_TAB, label="Email"
+            self,
+            email_field,
+            wx.TE_NO_VSCROLL,
+            label="Email",
         )
         self.password_sbox = TextCtrlStaticBox(
             self, "", wx.TE_PASSWORD, label="Password"
@@ -59,7 +62,7 @@ class LoginDialog(wx.Dialog):
 
         async def authenticate() -> None:
             try:
-                self._token = await login(email=username, password=password)
+                self._login_data = await login(email=username, password=password)
             except ApiError as err:
                 wx.CallAfter(
                     wx.MessageBox,
@@ -73,7 +76,7 @@ class LoginDialog(wx.Dialog):
         def running_thread() -> None:
             asyncio.run(authenticate())
             wx.CallAfter(self.submit_button.Enable, enable=True)
-            if self._token is not None:
+            if self._login_data is not None:
                 wx.CallAfter(self.EndModal, retCode=wx.OK)
 
         username = self.username_sbox.get_text()
@@ -94,10 +97,10 @@ class LoginDialog(wx.Dialog):
             )
             self.submit_button.Enable(True)
 
-    def get_token(self) -> str | None:
+    def get_data(self) -> str | None:
         """gets the token if been authenticated
 
         Returns:
             str | None: token string or none if not authenticated
         """
-        return self._token
+        return self._login_data

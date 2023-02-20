@@ -13,10 +13,10 @@ from ui.dialogs.find_text_dialog import FindTextDialog
 from ui.dialogs.login_dialog import LoginDialog
 from ui.dialogs.user_info_dialog import UserInfoDialog
 from lib.settings import Settings
-
 import lib.image_manager as img_mgr
 import qvrapi.api as api
 import lib.tasks as tasks
+import ui.utils
 
 
 class MainFrame(wx.Frame):
@@ -40,6 +40,8 @@ class MainFrame(wx.Frame):
         self.SetIcon(wx.Icon(img_mgr.ICON_PATH))
 
     def _create_menubar(self) -> None:
+        settings = Settings.load()
+
         menubar = wx.MenuBar()
 
         install_menu = wx.Menu()
@@ -53,6 +55,15 @@ class MainFrame(wx.Frame):
         user_menu.AppendSeparator()
         mi_user_info = user_menu.Append(wx.ID_ANY, "Details")
         self.Bind(wx.EVT_MENU, self._on_user_info, mi_user_info)
+        user_menu.AppendSeparator()
+        mi_remove_auth = user_menu.Append(wx.ID_ANY, "Logout")
+        self.Bind(wx.EVT_MENU, self._on_logout_user, mi_remove_auth)
+        # Create an Admin submenu
+        user_menu.AppendSeparator()
+        self.mi_admin_menu = wx.Menu()
+        mi_admin_logs = self.mi_admin_menu.Append(wx.ID_ANY, "Logs")
+        ui.utils.enable_menu_items(self.mi_admin_menu, settings.is_user_admin())
+        user_menu.AppendSubMenu(self.mi_admin_menu, "Admin", "Admin tools and testing")
         menubar.Append(user_menu, "Account")
 
         view_menu = wx.Menu()
@@ -85,7 +96,19 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, lambda *args: args, mi_about)
         menubar.Append(help_menu, "Help")
 
+        self.Bind(wx.EVT_MENU_OPEN, self._on_menu_open, menubar)
         self.SetMenuBar(menubar)
+
+    def _on_logout_user(self, evt: wx.MenuEvent) -> None:
+        settings = Settings.load()
+        settings.remove_auth()
+        ui.utils.enable_menu_items(self.mi_admin_menu, False)
+
+    def _on_menu_open(self, evt: wx.MenuEvent) -> None:
+        menu: wx.Menu = evt.GetMenu()
+        if menu.GetTitle() != "Account":
+            pass
+        evt.Skip()
 
     def _on_user_info(self, evt: wx.MenuEvent) -> None:
         settings = Settings.load()
@@ -109,7 +132,7 @@ class MainFrame(wx.Frame):
                 return
 
         try:
-            tasks.get_user_info(_get_user_info, token=Settings.load().token)
+            tasks.get_user_info(_get_user_info, token=settings.token)
         except tasks.TaskIsRunning as err:
             wx.MessageBox(err.__str__(), "", wx.OK)
 
@@ -120,20 +143,23 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.MenuEvent): Not used
         """
-
+        settings = Settings.load()
         dlg = LoginDialog(
             parent=self,
             title="Login",
+            email_field=settings.get_user_email(),
             size=(300, -1),
         )
         return_code = dlg.ShowModal()
         if return_code == wx.OK:
-            token = dlg.get_token()
-            if token:
-                settings = Settings.load()
-                settings.token = token
+            data = dlg.get_data()
+            if data:
+                settings.set_auth(data)
                 settings.save()
         dlg.Destroy()
+        ui.utils.enable_menu_items(
+            menu=self.mi_admin_menu, enable=settings.is_user_admin()
+        )
 
     def _on_find_magnet(self, evt: wx.MenuEvent) -> None:
         """laods the find dialog box and searches for the magnet in the games list

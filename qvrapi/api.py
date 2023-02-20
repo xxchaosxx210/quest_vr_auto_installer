@@ -143,7 +143,7 @@ async def post_error(error_request: LogErrorRequest) -> bool:
             return True
 
 
-async def login(email: str, password: str) -> str:
+async def login(email: str, password: str) -> dict:
     """login into the API
 
     Args:
@@ -154,7 +154,7 @@ async def login(email: str, password: str) -> str:
         ApiError: if status not 200
 
     Returns:
-        str: the access token to be used
+        dict: keys contain the access_token: str, token_type: str, and the user: User
     """
     async with aiohttp.ClientSession() as session:
         frm_data = aiohttp.FormData()
@@ -165,8 +165,7 @@ async def login(email: str, password: str) -> str:
                 err_message = await response.json()["detail"]
                 raise ApiError(status_code=response.status, message=err_message)
             resp_json = await response.json()
-            token = resp_json["access_token"]
-            return token
+            return resp_json
 
 
 async def get_user_info(token: str) -> User:
