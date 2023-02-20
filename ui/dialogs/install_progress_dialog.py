@@ -1,8 +1,12 @@
 import wx
 
 
+from q2gapp import Q2GApp
+
+
 class InstallProgressDialog(wx.Dialog):
     def __init__(self, parent: wx.Frame):
+        self.app: Q2GApp = wx.GetApp()
         super().__init__(
             parent,
             title="Installing",
@@ -38,4 +42,4 @@ class InstallProgressDialog(wx.Dialog):
             self.EndModal(wx.CANCEL)
         else:
             self.Destroy()
-        wx.GetApp().install_dialog = None
+        self.app.install_dialog = None

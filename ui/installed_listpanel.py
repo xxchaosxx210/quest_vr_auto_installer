@@ -2,12 +2,11 @@ import logging
 
 import wx
 
-from ui.listpanel import ListPanel
-
-from adblib import adb_interface
-
 import lib.config
 import lib.tasks
+from ui.listpanel import ListPanel
+from adblib import adb_interface
+from q2gapp import Q2GApp
 
 
 _Log = logging.getLogger(__name__)
@@ -15,10 +14,11 @@ _Log = logging.getLogger(__name__)
 
 class InstalledListPanel(ListPanel):
     def __init__(self, *args, **kw):
+        self.app: Q2GApp = wx.GetApp()
         columns = [{"col": 0, "heading": "Name", "width": 100}]
         super().__init__(title="Installed Games", columns=columns, *args, **kw)
 
-        wx.GetApp().install_listpanel = self
+        self.app.install_listpanel = self
 
     async def load(self, device_name: str):
         if lib.config.DebugSettings.enabled:
@@ -44,9 +44,10 @@ class InstalledListPanel(ListPanel):
             package_name = self.get_package_name()
         except IndexError:
             return
-        app = wx.GetApp()
         try:
-            lib.tasks.remove_package_task(app.remove_package, package_name=package_name)
+            lib.tasks.remove_package_task(
+                self.app.remove_package, package_name=package_name
+            )
         except lib.tasks.TaskIsRunning as err:
             wx.MessageBox(err.__str__(), "Uninstall issue")
 

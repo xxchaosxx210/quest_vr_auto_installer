@@ -14,16 +14,16 @@ from ui.dialogs.login_dialog import LoginDialog
 from ui.dialogs.user_info_dialog import UserInfoDialog
 
 import lib.image_manager as img_mgr
-
-from lib.settings import Settings
 import qvrapi.api as api
 import lib.tasks as tasks
+from lib.settings import Settings
+from q2gapp import Q2GApp
 
 
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-        self.app = wx.GetApp()
+        self.app: Q2GApp = wx.GetApp()
         self._init_ui()
         self.main_panel = MainPanel(parent=self)
         gs = wx.GridSizer(1)
@@ -99,7 +99,7 @@ class MainFrame(wx.Frame):
                     err.message, f"Status: {err.status_code}", wx.OK | wx.ICON_ERROR
                 )
             except ClientConnectionError as err:
-                wx.GetApp().exception_handler(err)
+                self.app.exception_handler(err)
             else:
                 dlg = UserInfoDialog(parent=self, size=(500, -1), user=user)
                 dlg.ShowModal()
@@ -149,9 +149,11 @@ class MainFrame(wx.Frame):
         )
         if dlg.ShowModal() == wx.ID_OK:
             text = dlg.GetText()
+        else:
+            text = None
         dlg.Destroy()
-        if "text" in locals():
-            wx.GetApp().magnets_listpanel.search_game(text)
+        if isinstance(text, str) and len(text) > 0:
+            self.app.magnets_listpanel.search_game(text)
 
     def _on_raise_unhandled(self, evt: wx.MenuEvent) -> None:
         """simulate an unhandled exception. This is to test the exception handler
@@ -201,11 +203,10 @@ class MainFrame(wx.Frame):
         Args:
             loop (asyncio.AbstractEventLoop): the event loop to create the tasks
         """
-        app = wx.GetApp()
         wx.CallAfter(self.statusbar.SetStatusText, text="Scanning for Quest devices...")
         await asyncio.sleep(0.1)
-        task1 = loop.create_task(app.devices_listpanel.load())
-        task2 = loop.create_task(app.magnets_listpanel.load_magnets_from_api())
+        task1 = loop.create_task(self.app.devices_listpanel.load())
+        task2 = loop.create_task(self.app.magnets_listpanel.load_magnets_from_api())
         while not task1.done() and not task2.done():
             await asyncio.sleep(0.1)
         wx.CallAfter(self.statusbar.SetStatusText, text="All Complete")

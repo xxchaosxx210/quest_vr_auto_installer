@@ -5,22 +5,23 @@ import wx
 
 import lib.config as config
 import adblib.errors
+import lib.tasks
+import lib.quest as quest
 from adblib import adb_interface
 from ui.listpanel import ListPanel
-import lib.tasks
-
-import lib.quest as quest
+from q2gapp import Q2GApp
 
 _Log = logging.getLogger()
 
 
 class DevicesListPanel(ListPanel):
     def __init__(self, *args, **kwargs):
+        self.app: Q2GApp = wx.GetApp()
         # the device that is currently selected in the listctrl
         self.selected_device: str = None
         columns = [{"col": 0, "heading": "Name", "width": 200}]
         super().__init__(title="Devices", columns=columns, *args, **kwargs)
-        wx.GetApp().devices_listpanel = self
+        self.app.devices_listpanel = self
 
     async def _get_device_names(self) -> List[str]:
         """loads device names either from debug settings or ADB
@@ -41,7 +42,7 @@ class DevicesListPanel(ListPanel):
         try:
             device_names = await self._get_device_names()
         except adblib.errors.RemoteDeviceError as err:
-            wx.CallAfter(wx.GetApp().exception_handler, err=err)
+            wx.CallAfter(self.app.exception_handler, err=err)
         else:
             for index, device in enumerate(device_names):
                 wx.CallAfter(self.listctrl.InsertItem, index=index, label=device)
@@ -69,13 +70,12 @@ class DevicesListPanel(ListPanel):
             try:
                 quest.create_obb_path(device_name, config.QUEST_OBB_DIRECTORY)
             except adblib.errors.RemoteDeviceError as err:
-                wx.CallAfter(wx.GetApp().exception_handler, err=err)
+                wx.CallAfter(self.app.exception_handler, err=err)
             except Exception as err:
                 raise err
             finally:
                 return
 
-        app = wx.GetApp()
         try:
             lib.tasks.create_obb_dir_task(create_obb_dir)
         except lib.tasks.TaskIsRunning:
@@ -83,7 +83,7 @@ class DevicesListPanel(ListPanel):
         # Load the installed apps into the install listctrl
         try:
             lib.tasks.load_installed_task(
-                app.install_listpanel.load, device_name=device_name
+                self.app.install_listpanel.load, device_name=device_name
             )
         except lib.tasks.TaskIsRunning:
             pass

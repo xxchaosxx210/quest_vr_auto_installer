@@ -1,22 +1,21 @@
-from typing import List
 import logging
 import asyncio
+from typing import List
 
 import wx
 import aiohttp
 
 import deluge.utils as deluge_utils
-from deluge.handler import MagnetData, QueueRequest
-
-from ui.listpanel import ListPanel
 import qvrapi.api as api
 import lib.config as config
 import lib.utils
 import lib.tasks
+from deluge.handler import MagnetData, QueueRequest
+from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
+from ui.listpanel import ListPanel
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
-
-from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
+from q2gapp import Q2GApp
 
 
 _Log = logging.getLogger()
@@ -33,6 +32,7 @@ COLUMN_ETA = 6
 
 class MagnetsListPanel(ListPanel):
     def __init__(self, *args, **kw):
+        self.app: Q2GApp = wx.GetApp()
         # store the magnet items state
         self.magnet_data_list: List[MagnetData] = []
         columns = [
@@ -45,7 +45,7 @@ class MagnetsListPanel(ListPanel):
             {"col": COLUMN_ETA, "heading": "ETA", "width": 70},
         ]
         super().__init__(title="Games Availible", columns=columns, *args, **kw)
-        wx.GetApp().magnets_listpanel = self
+        self.app.magnets_listpanel = self
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
         """sort the magnets by alphabetical order.
@@ -170,20 +170,19 @@ class MagnetsListPanel(ListPanel):
         retrieves the game links from the api. If connection issue then loads locally.
         If successful then stores those links to a local json file
         """
-        app = wx.GetApp()
         try:
             magnets: List[QuestMagnet] = await api.get_game_magnets()
             # everything went ok save locallly
             config.save_local_quest_magnets(config.QUEST_MAGNETS_PATH, magnets)
             # enable Online mode
-            app.set_mode(True)
+            self.app.set_mode(True)
         except aiohttp.ClientConnectionError:
             # Connection issue, try and load from local json file
             magnets = config.load_local_quest_magnets(lib.config.QUEST_MAGNETS_PATH)
-            app.set_mode(False)
+            self.app.set_mode(False)
         except Exception as err:
             # something else went wrong notify the user and return. Skip loading
-            app.exception_handler(err)
+            self.app.exception_handler(err)
             magnets = None
         finally:
             if not isinstance(magnets, list):
@@ -266,7 +265,6 @@ class MagnetsListPanel(ListPanel):
         Args:
             evt (wx.MenuEvent): Not used
         """
-        app = wx.GetApp()
 
         async def _get_extra_meta_data(uri: str) -> None:
             """retrieve the meta data from the deluge daemon
@@ -276,7 +274,7 @@ class MagnetsListPanel(ListPanel):
             """
             meta_data = await deluge_utils.get_magnet_info(uri)
             if not meta_data:
-                app.exception_handler(
+                self.app.exception_handler(
                     Exception("Could not get extra information. Read logs for errors")
                 )
                 return
@@ -288,7 +286,7 @@ class MagnetsListPanel(ListPanel):
             Args:
                 metadata (deluge_utils.MetaData): the meta data to display in the dialog box
             """
-            dlg = ExtraGameInfoDialog(app.frame, size=(640, 480))
+            dlg = ExtraGameInfoDialog(self.app.frame, size=(640, 480))
             dlg.set_name(metadata.name)
             dlg.set_paths(metadata.get_paths())
             dlg.ShowModal()
@@ -316,7 +314,7 @@ class MagnetsListPanel(ListPanel):
             return
         try:
             lib.tasks.create_install_task(
-                wx.GetApp().start_install_process, path=magnet_data.download_path
+                self.app.start_install_process, path=magnet_data.download_path
             )
         except lib.tasks.TaskIsRunning as err:
             wx.MessageBox(err.__str__(), "Cannot install")
@@ -384,7 +382,6 @@ class MagnetsListPanel(ListPanel):
             evt (wx.MenuEvent):
         """
         # get the app instance and check if there is already an installation task running in the background
-        app = wx.GetApp()
         index: int = self.listctrl.GetFirstSelected()
         if index == -1:
             return
@@ -395,7 +392,7 @@ class MagnetsListPanel(ListPanel):
         magnet_data.download_path = config.create_path_from_name(
             Settings.load().download_path, display_name
         )
-        app.create_download_task(magnet_data)
+        self.app.create_download_task(magnet_data)
 
     def on_install_only_item(self, evt: wx.MenuEvent) -> None:
         """starts the install process and skips downloading
