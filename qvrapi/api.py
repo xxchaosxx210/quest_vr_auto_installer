@@ -3,16 +3,13 @@
 
 import logging
 import base64
-import functools
 from typing import List
 from urllib.parse import urljoin
 
 import aiohttp
 
-from lib.schemas import QuestMagnet, LogErrorRequest, User
+from qvrapi.schemas import QuestMagnet, LogErrorRequest, User
 
-
-import lib.config
 
 _Log = logging.getLogger(__name__)
 
@@ -30,7 +27,7 @@ class ApiError(Exception):
         super().__init__(*args)
 
 
-URI_LOCAL_HOST = f"http://127.0.0.1:8000"
+URI_LOCAL_HOST = "http://127.0.0.1:8000"
 URI_DETA_MICRO = "https://6vppvi.deta.dev"
 
 # change this to one of the above hosts
@@ -59,22 +56,6 @@ def get_account_type(user: User) -> str:
     return t
 
 
-def catch_connection_error(func):
-    @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
-        try:
-            result = await func(*args, **kwargs)
-            _Log.info("Online: Saving Magnets to Local Database")
-            lib.config.save_local_quest_magnets(lib.config.QUEST_MAGNETS_PATH, result)
-            return result
-        except aiohttp.ClientConnectionError as err:
-            _Log.error(err.__str__())
-            _Log.warning("Offline: Loading Magnets from Local Database")
-            return lib.config.load_local_quest_magnets(lib.config.QUEST_MAGNETS_PATH)
-
-    return wrapper
-
-
 def create_auth_token_header(token: str) -> dict:
     """
 
@@ -87,7 +68,6 @@ def create_auth_token_header(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-@catch_connection_error
 async def get_game_magnets(url: str = URI_GAMES) -> List[QuestMagnet]:
     """gets the Quest 2 magnet links from the q2g server
 

@@ -2,6 +2,8 @@ import wx
 import asyncio
 import random
 
+from aiohttp import ClientConnectionError
+
 from ui.devices_listpanel import DevicesListPanel
 from ui.magnets_listpanel import MagnetsListPanel
 from ui.installed_listpanel import InstalledListPanel
@@ -14,13 +16,14 @@ from ui.dialogs.user_info_dialog import UserInfoDialog
 import lib.image_manager as img_mgr
 
 from lib.settings import Settings
-import lib.api as api
+import qvrapi.api as api
 import lib.tasks as tasks
 
 
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
+        self.app = wx.GetApp()
         self._init_ui()
         self.main_panel = MainPanel(parent=self)
         gs = wx.GridSizer(1)
@@ -65,7 +68,7 @@ class MainFrame(wx.Frame):
         )
         self.Bind(
             wx.EVT_MENU,
-            lambda *args: wx.GetApp().exception_handler(
+            lambda *args: self.app.exception_handler(
                 ValueError("This is a test from handled caught exception")
             ),
             mi_raise_caught_exception,
@@ -95,6 +98,8 @@ class MainFrame(wx.Frame):
                 wx.MessageBox(
                     err.message, f"Status: {err.status_code}", wx.OK | wx.ICON_ERROR
                 )
+            except ClientConnectionError as err:
+                wx.GetApp().exception_handler(err)
             else:
                 dlg = UserInfoDialog(parent=self, size=(500, -1), user=user)
                 dlg.ShowModal()

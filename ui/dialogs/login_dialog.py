@@ -5,7 +5,7 @@ import wx
 
 import lib.tasks as tasks
 
-from lib.api import login, ApiError
+from qvrapi.api import login, ApiError
 
 from ui.utils import TextCtrlStaticBox
 

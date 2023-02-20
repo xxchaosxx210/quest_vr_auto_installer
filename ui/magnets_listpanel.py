@@ -3,17 +3,17 @@ import logging
 import asyncio
 
 import wx
-from aiohttp import ClientConnectionError
+import aiohttp
 
 import deluge.utils as deluge_utils
 from deluge.handler import MagnetData, QueueRequest
 
 from ui.listpanel import ListPanel
-import lib.api as api
+import qvrapi.api as api
 import lib.config as config
 import lib.utils
 import lib.tasks
-from lib.schemas import QuestMagnet
+from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
 
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
@@ -165,20 +165,30 @@ class MagnetsListPanel(ListPanel):
         self.listctrl.SetItem(row_index, COLUMN_SPEED, item["speed"])
         self.listctrl.SetItem(row_index, COLUMN_ETA, item["eta"])
 
-    async def load_magnets_from_api(self):
-        """makes a request to the Magnet API server and loads the response if successful
-        into the listctrl
+    async def load_magnets_from_api(self) -> None:
+        """
+        retrieves the game links from the api. If connection issue then loads locally.
+        If successful then stores those links to a local json file
         """
         app = wx.GetApp()
         try:
             magnets: List[QuestMagnet] = await api.get_game_magnets()
-        except ClientConnectionError:
-            # try and load the list locally and go into offline mode
-            return
+            # everything went ok save locallly
+            config.save_local_quest_magnets(config.QUEST_MAGNETS_PATH, magnets)
+            # enable Online mode
+            app.set_mode(True)
+        except aiohttp.ClientConnectionError:
+            # Connection issue, try and load from local json file
+            magnets = config.load_local_quest_magnets(lib.config.QUEST_MAGNETS_PATH)
+            app.set_mode(False)
         except Exception as err:
+            # something else went wrong notify the user and return. Skip loading
             app.exception_handler(err)
-            return
-        else:
+            magnets = None
+        finally:
+            if not isinstance(magnets, list):
+                return
+            # sort the magnets in alphaebetical order and load into listctrl
             magnets = sorted(magnets, key=lambda item: item.display_name.lower())
             await self.load_magnets(magnets)
 
