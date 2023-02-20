@@ -3,12 +3,6 @@ import asyncio
 import wx
 import wxasync
 
-from ui.main_frame import MainFrame
-from ui.devices_listpanel import DevicesListPanel
-from ui.installed_listpanel import InstalledListPanel
-from ui.magnets_listpanel import MagnetsListPanel
-from ui.dialogs.error_dialog import ErrorDialog
-from ui.dialogs.install_progress_dialog import InstallProgressDialog
 
 import qvrapi.api
 import lib.utils
@@ -20,6 +14,13 @@ from deluge.handler import download, MagnetData
 from adblib.errors import RemoteDeviceError
 from qvrapi.schemas import LogErrorRequest
 from lib.settings import Settings
+
+from ui.main_frame import MainFrame
+from ui.devices_listpanel import DevicesListPanel
+from ui.installed_listpanel import InstalledListPanel
+from ui.magnets_listpanel import MagnetsListPanel
+from ui.dialogs.error_dialog import ErrorDialog
+from ui.dialogs.install_progress_dialog import InstallProgressDialog
 
 
 class Q2GApp(wxasync.WxAsyncApp):
