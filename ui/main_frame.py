@@ -10,6 +10,7 @@ from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.find_text_dialog import FindTextDialog
 from ui.dialogs.login_dialog import LoginDialog
 from ui.dialogs.user_info_dialog import UserInfoDialog
+from ui.dialogs.logs_dialog import LogsDialog
 from lib.settings import Settings
 import lib.image_manager as img_mgr
 import qvrapi.api as api
@@ -90,21 +91,26 @@ class MainFrame(wx.Frame):
     def _create_user_menu(self) -> wx.Menu:
         settings = Settings.load()
         menu = wx.Menu()
-        mi_login = menu.Append(wx.ID_ANY, "Login")
-        self.Bind(wx.EVT_MENU, self._on_user_login, mi_login)
+        login_m_item = menu.Append(wx.ID_ANY, "Login")
+        self.Bind(wx.EVT_MENU, self._on_user_login, login_m_item)
         menu.AppendSeparator()
-        mi_user_info = menu.Append(wx.ID_ANY, "Details")
-        self.Bind(wx.EVT_MENU, self._on_user_info, mi_user_info)
+        user_info_m_item = menu.Append(wx.ID_ANY, "Details")
+        self.Bind(wx.EVT_MENU, self._on_user_info, user_info_m_item)
         menu.AppendSeparator()
-        mi_remove_auth = menu.Append(wx.ID_ANY, "Logout")
-        self.Bind(wx.EVT_MENU, self._on_logout_user, mi_remove_auth)
+        remove_auth_m_item = menu.Append(wx.ID_ANY, "Logout")
+        self.Bind(wx.EVT_MENU, self._on_logout_user, remove_auth_m_item)
         # Create an Admin submenu
         menu.AppendSeparator()
         self.admin_submenu = wx.Menu()
-        mi_admin_logs = self.admin_submenu.Append(wx.ID_ANY, "Logs")
+        admin_logs_m_item = self.admin_submenu.Append(wx.ID_ANY, "Logs")
+        self.Bind(wx.EVT_MENU, self._on_logs_dialog, admin_logs_m_item)
         ui.utils.enable_menu_items(self.admin_submenu, settings.is_user_admin())
         menu.AppendSubMenu(self.admin_submenu, "Admin", "Admin tools and testing")
         return menu
+
+    def _on_logs_dialog(self, evt: wx.MenuEvent) -> None:
+        dlg = LogsDialog(self, size=(500, 500))
+        dlg.Show()
 
     def _on_logout_user(self, evt: wx.MenuEvent) -> None:
         """remove the authentication token and user information on json file and
