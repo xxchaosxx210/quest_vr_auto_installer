@@ -115,6 +115,16 @@ class ListCtrlPanel(wx.Panel):
         self.SetSizer(sizer)
 
 
+def show_error_message(message: str, caption: str = "Error") -> None:
+    """show a messagebox with an error icon and error caption
+
+    Args:
+        message (str):
+        caption (str, optional): _description_. Defaults to "Error".
+    """
+    wx.MessageBox(message=message, caption="Error", style=wx.OK | wx.ICON_ERROR)
+
+
 def enable_menu_items(menu: wx.Menu, enable: bool = True) -> int:
     """enables or disables all of the menuitems within a menu
 

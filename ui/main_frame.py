@@ -10,7 +10,7 @@ from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.find_text_dialog import FindTextDialog
 from ui.dialogs.login_dialog import LoginDialog
 from ui.dialogs.user_info_dialog import UserInfoDialog
-from ui.dialogs.logs_dialog import LogsDialog
+from ui.logs_frame import LogsFrame
 from lib.settings import Settings
 import lib.image_manager as img_mgr
 import qvrapi.api as api
@@ -103,13 +103,13 @@ class MainFrame(wx.Frame):
         menu.AppendSeparator()
         self.admin_submenu = wx.Menu()
         admin_logs_m_item = self.admin_submenu.Append(wx.ID_ANY, "Logs")
-        self.Bind(wx.EVT_MENU, self._on_logs_dialog, admin_logs_m_item)
+        self.Bind(wx.EVT_MENU, self._on_logs_frame, admin_logs_m_item)
         ui.utils.enable_menu_items(self.admin_submenu, settings.is_user_admin())
         menu.AppendSubMenu(self.admin_submenu, "Admin", "Admin tools and testing")
         return menu
 
-    def _on_logs_dialog(self, evt: wx.MenuEvent) -> None:
-        dlg = LogsDialog(self, size=(500, 500))
+    def _on_logs_frame(self, evt: wx.MenuEvent) -> None:
+        dlg = LogsFrame(self, size=(500, 500))
         dlg.Show()
 
     def _on_logout_user(self, evt: wx.MenuEvent) -> None:

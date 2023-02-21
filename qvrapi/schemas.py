@@ -1,3 +1,5 @@
+from typing import List
+
 from pydantic import BaseModel
 from uuid import UUID
 
@@ -29,3 +31,12 @@ class User(BaseModel):
     is_admin: bool = False
     is_user: bool = True
     disabled: bool | None = None
+
+
+class ErrorLog(BaseModel):
+    key: str
+    type: str
+    uuid: UUID
+    exception: str
+    traceback: str
+    date_added: float

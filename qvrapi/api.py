@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 
 import aiohttp
 
-from qvrapi.schemas import QuestMagnet, LogErrorRequest, User
+from qvrapi.schemas import QuestMagnet, LogErrorRequest, User, ErrorLog
 
 
 _Log = logging.getLogger(__name__)
@@ -81,41 +81,30 @@ async def get_game_magnets(url: str = URI_GAMES) -> List[QuestMagnet]:
         List[QuestAppMagnet]: list of magnet objects
     """
     magnets: List[QuestMagnet] = []
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            if response.content_type != "application/json":
-                text_response = await response.read()
-                raise ApiError(response.status, text_response.decode("utf-8"))
-            data_response = await response.json()
-            if not isinstance(data_response, dict):
-                error_message = "JSON Response from API was of not type dict"
-                _Log.error(error_message)
-                raise TypeError(error_message)
-            if response.status != 200:
-                raise ApiError(
-                    status_code=response.status,
-                    message=str(data_response.get("detail", "")),
-                )
-            games = data_response.get("games", [])
-            if list(games) == 0:
-                raise ValueError("No games exist")
 
-            def process_magnet_dict(magnet_dict: dict) -> QuestMagnet:
-                """valid response json and decode base64 magnet link and return
+    def process_magnet_dict(magnet_dict: dict) -> QuestMagnet:
+        """valid response json and decode base64 magnet link and return
 
-                Args:
-                    magnet_dict (dict): response json
+        Args:
+            magnet_dict (dict): response json
 
-                Returns:
-                    QuestMagnet: _description_
-                """
-                magnet = QuestMagnet(**magnet_dict)
-                bstring = base64.b64decode(magnet.uri)
-                magnet.magnet = bstring.decode("utf-8")
-                return magnet
+        Returns:
+            QuestMagnet: _description_
+        """
+        magnet = QuestMagnet(**magnet_dict)
+        bstring = base64.b64decode(magnet.uri)
+        magnet.magnet = bstring.decode("utf-8")
+        return magnet
 
-            magnets = list(map(process_magnet_dict, games))
-    return magnets
+    try:
+        data = await get_json_response(URI_GAMES)
+        games = data.get("games", [])
+        if not games:
+            raise ValueError("No games exist")
+        magnets = list(map(process_magnet_dict, games))
+        return magnets
+    except Exception as err:
+        raise err
 
 
 async def post_error(error_request: LogErrorRequest) -> bool:
@@ -169,15 +158,68 @@ async def login(email: str, password: str) -> dict:
 
 
 async def get_user_info(token: str) -> User:
-    headers = create_auth_token_header(token)
+    """get the user information using the token
+
+    Args:
+        token (str):
+
+    Raises:
+        err: Exception
+
+    Returns:
+        User: the user information
+    """
+    try:
+        data = await get_json_response(URI_USER_INFO, token=token, params={})
+        user = User(**data)
+        return user
+    except Exception as err:
+        raise err
+
+
+async def get_logs(token: str, params: dict = None) -> List[ErrorLog]:
+    """gets the error logs from the api server
+
+    Args:
+        token (str): must be admin
+        params (dict, optional): params can contain
+            sort_by: str = "date_added",
+            order_by: str = "asc" | "desc",
+            limit: int = 1000
+
+    Returns:
+        List: returns a list of ErrorLog
+    """
+
+    def log_handler(_log: dict):
+        _error_log = ErrorLog(**_log)
+        return _error_log
+
+    try:
+        data = await get_json_response(URI_LOGS, token=token, params=params)
+        err_logs = list(map(log_handler, data["logs"]))
+        return err_logs
+    except Exception as err:
+        raise err
+
+
+async def get_json_response(uri: str, token: str = None, params: dict = {}) -> dict:
+    if not token:
+        headers = {}
+    else:
+        headers = create_auth_token_header(token=token)
     headers["Content-Type"] = "application/json"
     async with aiohttp.ClientSession() as session:
-        async with session.get(URI_USER_INFO, headers=headers) as response:
-            if response.status != 200:
-                error_data = await response.json()
+        async with session.get(uri, params=params, headers=headers) as response:
+            if response.content_type != "application/json":
+                data = await response.content.read()
                 raise ApiError(
-                    status_code=response.status, message=error_data["detail"]
+                    status_code=response.status, message=data.decode("utf-8")
+                )
+            if response.status != 200:
+                error_message = await response.json()
+                raise ApiError(
+                    status_code=response.status, message=error_message["detail"]
                 )
             data = await response.json()
-            user = User(**data)
-            return user
+            return data
