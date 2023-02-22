@@ -1,5 +1,3 @@
-from typing import List
-
 from pydantic import BaseModel
 from uuid import UUID
 
@@ -16,6 +14,10 @@ class QuestMagnet(BaseModel):
     @property
     def uri(self) -> str:
         return self.magnet
+
+
+class QuestMagnetWithKey(QuestMagnet):
+    key: str
 
 
 class LogErrorRequest(BaseModel):

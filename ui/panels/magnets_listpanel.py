@@ -13,6 +13,7 @@ import lib.tasks
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
 from ui.panels.listpanel import ListPanel
+from ui.frames.magnet_update_frame import MagnetUpdateFrame
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
 
@@ -47,6 +48,23 @@ class MagnetsListPanel(ListPanel):
         ]
         super().__init__(title="Games Availible", columns=columns, *args, **kw)
         self.app.magnets_listpanel = self
+
+    def on_item_double_click(self, evt: wx.ListEvent) -> None:
+        settings = Settings.load()
+        magnet_data = self.get_selected_torrent_item()
+        if not settings.is_user_admin() or not magnet_data:
+            return super().on_item_double_click(evt)
+
+        async def get_games(token: str, params: dict):
+            magnets = await api.search_for_games(
+                settings.token, params={"id": magnet_data.torrent_id}
+            )
+            pass
+
+        asyncio.get_event_loop().create_task(
+            get_games(settings.token, {"id": magnet_data.torrent_id})
+        )
+        return super().on_item_double_click(evt)
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
         """sort the magnets by alphabetical order.
@@ -364,7 +382,7 @@ class MagnetsListPanel(ListPanel):
             return
         item.queue.put_nowait({"request": QueueRequest.CANCEL})
 
-    def get_selected_torrent_item(self) -> MagnetData:
+    def get_selected_torrent_item(self) -> MagnetData | None:
         """gets the magnet data connected to the selected item in the listctrl
 
         Returns:

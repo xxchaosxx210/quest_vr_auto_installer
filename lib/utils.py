@@ -3,6 +3,7 @@ import socket
 import ctypes
 import logging
 import platform
+import base64
 import datetime
 from typing import List, Generator
 from dataclasses import dataclass
@@ -57,6 +58,20 @@ def _unix_is_connected_to_internet() -> bool:
         if "sock" in locals():
             sock.close()
         return connected
+
+
+def decode_Base64(b64string: str) -> str:
+    """decodes a bas64 string to UTF-8
+
+    Args:
+        b64string (str):
+
+    Returns:
+        str: decoded string
+    """
+    decoded_str = base64.b64decode(b64string)
+    decoded_str = decoded_str.decode("utf-8")
+    return decoded_str
 
 
 def apk_exists(magnetdata: MagnetData) -> str:

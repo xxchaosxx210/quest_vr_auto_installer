@@ -8,7 +8,7 @@ from urllib.parse import urljoin
 
 import aiohttp
 
-from qvrapi.schemas import QuestMagnet, LogErrorRequest, User, ErrorLog
+import qvrapi.schemas as schemas
 
 
 _Log = logging.getLogger(__name__)
@@ -34,13 +34,14 @@ URI_DETA_MICRO = "https://6vppvi.deta.dev"
 URI_HOST = URI_LOCAL_HOST
 
 URI_GAMES = urljoin(URI_HOST, "/games")
+URI_SEARCH_GAME = URI_GAMES + "/search"
 URI_USERS = urljoin(URI_HOST, "/users")
 URI_LOGS = urljoin(URI_HOST, "/logs")
 URI_USERS_LOGIN = URI_USERS + "/token"
 URI_USER_INFO = URI_USERS + "/info"
 
 
-def get_account_type(user: User) -> str:
+def get_account_type(user: schemas.User) -> str:
     """determines the account type as a string
 
     Args:
@@ -68,7 +69,7 @@ def create_auth_token_header(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def get_game_magnets(url: str = URI_GAMES) -> List[QuestMagnet]:
+async def get_game_magnets(url: str = URI_GAMES) -> List[schemas.QuestMagnet]:
     """gets the Quest 2 magnet links from the q2g server
 
     Args:
@@ -80,9 +81,9 @@ async def get_game_magnets(url: str = URI_GAMES) -> List[QuestMagnet]:
     Returns:
         List[QuestAppMagnet]: list of magnet objects
     """
-    magnets: List[QuestMagnet] = []
+    magnets: List[schemas.QuestMagnet] = []
 
-    def process_magnet_dict(magnet_dict: dict) -> QuestMagnet:
+    def process_magnet_dict(magnet_dict: dict) -> schemas.QuestMagnet:
         """valid response json and decode base64 magnet link and return
 
         Args:
@@ -91,7 +92,7 @@ async def get_game_magnets(url: str = URI_GAMES) -> List[QuestMagnet]:
         Returns:
             QuestMagnet: _description_
         """
-        magnet = QuestMagnet(**magnet_dict)
+        magnet = schemas.QuestMagnet(**magnet_dict)
         bstring = base64.b64decode(magnet.uri)
         magnet.magnet = bstring.decode("utf-8")
         return magnet
@@ -107,7 +108,32 @@ async def get_game_magnets(url: str = URI_GAMES) -> List[QuestMagnet]:
         raise err
 
 
-async def post_error(error_request: LogErrorRequest) -> bool:
+async def search_for_games(
+    token: str, params: dict
+) -> List[schemas.QuestMagnetWithKey]:
+    """get the game including the key this is for admin use updating and deleting etc.
+
+    Args:
+        token (str): admin token
+        params (dict): look at QuestMagnet class in qvrapi.schemas for query names to add in search
+
+    Raises:
+        err: Exception
+
+    Returns:
+        list: [schemas.QuestMagnetWithKey]
+    """
+    try:
+        data = await get_json_response(uri=URI_SEARCH_GAME, token=token, _json=params)
+        if not isinstance(data, list):
+            raise TypeError("data returned from game search is not a list")
+        games = list(map(lambda game: schemas.QuestMagnetWithKey(**game), data))
+        return games
+    except Exception as err:
+        raise err
+
+
+async def post_error(error_request: schemas.LogErrorRequest) -> bool:
     """post an error log to the database
 
     Args:
@@ -157,7 +183,7 @@ async def login(email: str, password: str) -> dict:
             return resp_json
 
 
-async def get_user_info(token: str) -> User:
+async def get_user_info(token: str) -> schemas.User:
     """get the user information using the token
 
     Args:
@@ -171,13 +197,13 @@ async def get_user_info(token: str) -> User:
     """
     try:
         data = await get_json_response(URI_USER_INFO, token=token, params={})
-        user = User(**data)
+        user = schemas.User(**data)
         return user
     except Exception as err:
         raise err
 
 
-async def get_logs(token: str, params: dict = None) -> List[ErrorLog]:
+async def get_logs(token: str, params: dict = None) -> List[schemas.ErrorLog]:
     """gets the error logs from the api server
 
     Args:
@@ -192,7 +218,7 @@ async def get_logs(token: str, params: dict = None) -> List[ErrorLog]:
     """
 
     def log_handler(_log: dict):
-        _error_log = ErrorLog(**_log)
+        _error_log = schemas.ErrorLog(**_log)
         return _error_log
 
     try:
@@ -203,7 +229,7 @@ async def get_logs(token: str, params: dict = None) -> List[ErrorLog]:
         raise err
 
 
-async def delete_logs(token: str, key: str) -> List[ErrorLog]:
+async def delete_logs(token: str, key: str) -> List[schemas.ErrorLog]:
     headers = create_auth_token_header(token=token)
     headers["Content-Type"] = "application/json"
     params = {"key": key}
@@ -219,19 +245,23 @@ async def delete_logs(token: str, key: str) -> List[ErrorLog]:
                 raise ApiError(status_code=response.status, message=data["detail"])
             data = await response.json()
             error_logs = list(
-                map(lambda _log_dict: ErrorLog(**_log_dict), data["logs"])
+                map(lambda _log_dict: schemas.ErrorLog(**_log_dict), data["logs"])
             )
             return error_logs
 
 
-async def get_json_response(uri: str, token: str = None, params: dict = {}) -> dict:
+async def get_json_response(
+    uri: str, token: str = None, params: dict = {}, _json: dict = {}
+) -> dict:
     if not token:
         headers = {}
     else:
         headers = create_auth_token_header(token=token)
     headers["Content-Type"] = "application/json"
     async with aiohttp.ClientSession() as session:
-        async with session.get(uri, params=params, headers=headers) as response:
+        async with session.get(
+            url=uri, params=params, headers=headers, json=_json
+        ) as response:
             if response.content_type != "application/json":
                 data = await response.content.read()
                 raise ApiError(

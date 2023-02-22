@@ -53,6 +53,7 @@ class ListPanel(wx.Panel):
         self.listctrl.Bind(wx.EVT_SIZE, self.on_size)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click)
         self.listctrl.Bind(wx.EVT_LIST_COL_CLICK, self.on_col_left_click)
+        self.listctrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_double_click)
 
         self.columns = columns
 
@@ -77,6 +78,9 @@ class ListPanel(wx.Panel):
         toggle_state = self.listctrl.get_toggle_state(col_index)
         toggle_state = not toggle_state
         self.listctrl.set_toggle_state(col_index, toggle_state)
+
+    def on_item_double_click(self, evt: wx.ListEvent) -> None:
+        pass
 
     def on_right_click(self, evt: wx.ListEvent):
         pass
