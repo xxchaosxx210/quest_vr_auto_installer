@@ -162,7 +162,7 @@ def find_install_dirs(root_dir: str) -> Generator[ApkPath, None, None]:
                     yield apk_file
 
 
-def format_timestamp(timestamp: float, include_hms: bool = False) -> str:
+def format_timestamp_to_str(timestamp: float, include_hms: bool = False) -> str:
     """formats the timestamp into a readabele string
 
     Args:
@@ -177,3 +177,13 @@ def format_timestamp(timestamp: float, include_hms: bool = False) -> str:
     else:
         fmt_time = dt.strftime("%d-%m-%Y %H:%M")
     return fmt_time
+
+
+def format_str_to_timestamp(tstamp_str: str, include_hms: bool = False):
+    if include_hms:
+        format = "%d-%m-%Y %H:%M"
+    else:
+        format = "%d-%m-%Y"
+    dt = datetime.datetime.strptime(tstamp_str, format)
+    timestamp = dt.timestamp()
+    return timestamp

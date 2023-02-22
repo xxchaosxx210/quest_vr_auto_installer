@@ -248,7 +248,7 @@ class MagnetsListPanel(ListPanel):
             index (int): the offset of the ListCtrl row
             magnet (QuestMagnet): see QuestMagnet class for properties
         """
-        formatted_date_added = lib.utils.format_timestamp(magnet.date_added)
+        formatted_date_added = lib.utils.format_timestamp_to_str(magnet.date_added)
         self.listctrl.InsertItem(index, magnet.display_name)
         self.listctrl.SetItem(index, COLUMN_DATE_ADDED, formatted_date_added)
         self.listctrl.SetItem(index, COLUMN_SIZE, str(magnet.filesize))

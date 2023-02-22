@@ -1,7 +1,7 @@
 import wx
 
 from qvrapi.schemas import User
-from lib.utils import format_timestamp
+from lib.utils import format_timestamp_to_str
 from qvrapi.api import get_account_type
 
 
@@ -14,7 +14,7 @@ class UserInfoDialog(wx.Dialog):
 
         date_created_label = wx.StaticText(self, -1, "Date Registered: ")
         date_created_value = wx.StaticText(
-            self, -1, format_timestamp(user.date_created, include_hms=True)
+            self, -1, format_timestamp_to_str(user.date_created, include_hms=True)
         )
 
         account_type_label = wx.StaticText(self, -1, "Account Type: ")

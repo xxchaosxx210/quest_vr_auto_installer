@@ -4,6 +4,7 @@
 import logging
 from typing import List
 from urllib.parse import urljoin
+from enum import Enum, auto as auto_enum
 
 import aiohttp
 
@@ -11,6 +12,13 @@ import qvrapi.schemas as schemas
 
 
 _Log = logging.getLogger(__name__)
+
+
+class RequestType(Enum):
+    GET = auto_enum()
+    POST = auto_enum()
+    DELETE = auto_enum()
+    PUT = auto_enum()
 
 
 class ApiError(Exception):
@@ -34,6 +42,7 @@ URI_HOST = URI_LOCAL_HOST
 
 URI_GAMES = urljoin(URI_HOST, "/games")
 URI_SEARCH_GAME = URI_GAMES + "/search"
+URI_UPDATE_GAME = URI_GAMES + "/update"
 URI_USERS = urljoin(URI_HOST, "/users")
 URI_LOGS = urljoin(URI_HOST, "/logs")
 URI_USERS_LOGIN = URI_USERS + "/token"
@@ -80,7 +89,7 @@ async def get_game_magnets() -> List[schemas.QuestMagnet]:
         List[QuestMagnet]: list of magnet objects
     """
     try:
-        response_data = await get_json_response(URI_GAMES)
+        response_data = await send_json_request(URI_GAMES)
         if not isinstance(response_data, list):
             raise TypeError("Returned value was of not type List")
         magnets = list(
@@ -107,11 +116,19 @@ async def search_for_games(
         list: [schemas.QuestMagnetWithKey]
     """
     try:
-        data = await get_json_response(uri=URI_SEARCH_GAME, token=token, _json=params)
+        data = await send_json_request(uri=URI_SEARCH_GAME, token=token, _json=params)
         if not isinstance(data, list):
             raise TypeError("data returned from game search is not a list")
         games = list(map(lambda game: schemas.QuestMagnetWithKey(**game), data))
         return games
+    except Exception as err:
+        raise err
+
+
+async def update_game_magnet(token: str, key: str, params: dict) -> None:
+    try:
+        uri = URI_UPDATE_GAME + f"/{key}"
+        await send_json_request(uri, token, _json=params, request_type=RequestType.PUT)
     except Exception as err:
         raise err
 
@@ -179,7 +196,7 @@ async def get_user_info(token: str) -> schemas.User:
         User: the user information
     """
     try:
-        data = await get_json_response(URI_USER_INFO, token=token, params={})
+        data = await send_json_request(URI_USER_INFO, token=token, params={})
         user = schemas.User(**data)
         return user
     except Exception as err:
@@ -205,7 +222,7 @@ async def get_logs(token: str, params: dict = None) -> List[schemas.ErrorLog]:
         return _error_log
 
     try:
-        data = await get_json_response(URI_LOGS, token=token, params=params)
+        data = await send_json_request(URI_LOGS, token=token, params=params)
         err_logs = list(map(log_handler, data["logs"]))
         return err_logs
     except Exception as err:
@@ -233,8 +250,12 @@ async def delete_logs(token: str, key: str) -> List[schemas.ErrorLog]:
             return error_logs
 
 
-async def get_json_response(
-    uri: str, token: str = None, params: dict = {}, _json: dict = {}
+async def send_json_request(
+    uri: str,
+    token: str = None,
+    params: dict = {},
+    _json: dict = {},
+    request_type: RequestType = RequestType.GET,
 ) -> dict:
     if not token:
         headers = {}
@@ -242,7 +263,19 @@ async def get_json_response(
         headers = create_auth_token_header(token=token)
     headers["Content-Type"] = "application/json"
     async with aiohttp.ClientSession() as session:
-        async with session.get(
+        # find out what request is being sent
+        if request_type == RequestType.GET:
+            request_ctxmgr = session.get
+        elif request_type == RequestType.POST:
+            request_ctxmgr = session.post
+        elif request_type == RequestType.DELETE:
+            request_ctxmgr = session.delete
+        elif request_type == RequestType.PUT:
+            request_ctxmgr = session.put
+        else:
+            raise TypeError("RequestType is unknown")
+
+        async with request_ctxmgr(
             url=uri, params=params, headers=headers, json=_json
         ) as response:
             if response.content_type != "application/json":

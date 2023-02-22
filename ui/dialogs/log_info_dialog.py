@@ -2,7 +2,7 @@ from typing import Tuple
 import wx
 
 from qvrapi.schemas import ErrorLog
-from lib.utils import format_timestamp
+from lib.utils import format_timestamp_to_str
 from ui.utils import TextCtrlStaticBox
 
 
@@ -23,7 +23,10 @@ class LogInfoDialog(wx.Dialog):
             self, log.traceback, wx.TE_MULTILINE, "Traceback"
         )
         date_added_sbox = TextCtrlStaticBox(
-            self, format_timestamp(log.date_added), wx.TE_NO_VSCROLL, "Date Created"
+            self,
+            format_timestamp_to_str(log.date_added),
+            wx.TE_NO_VSCROLL,
+            "Date Created",
         )
 
         close_btn = wx.Button(self, wx.ID_CLOSE, "Close")

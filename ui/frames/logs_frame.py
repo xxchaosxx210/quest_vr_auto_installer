@@ -9,7 +9,7 @@ from qvrapi.schemas import ErrorLog
 from lib.settings import Settings
 from ui.utils import ListCtrlPanel, show_error_message
 from ui.dialogs.log_info_dialog import LogInfoDialog
-from lib.utils import format_timestamp
+from lib.utils import format_timestamp_to_str
 
 KEY_COLUMN = 0
 TYPE_COLUMN = 1
@@ -56,7 +56,7 @@ class LogsListCtrlPanel(ListCtrlPanel):
         self.listctrl.SetItem(index, UUID_COLUMN, str(log.uuid))
         self.listctrl.SetItem(index, TRACEBACK_COLUMN, log.traceback)
         self.listctrl.SetItem(index, EXCEPTION_COLUMN, log.exception)
-        fmt_dt = format_timestamp(log.date_added)
+        fmt_dt = format_timestamp_to_str(log.date_added)
         self.listctrl.SetItem(index, DATE_ADDED_COLUMN, fmt_dt)
 
     def _on_list_item_activated(self, evt: wx.ListEvent) -> None:
