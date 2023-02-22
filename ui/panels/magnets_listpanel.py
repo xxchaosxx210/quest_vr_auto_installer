@@ -14,6 +14,7 @@ from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
 from ui.panels.listpanel import ListPanel
 from ui.frames.magnet_update_frame import MagnetUpdateFrame
+from ui.utils import show_error_message
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
 
@@ -56,10 +57,24 @@ class MagnetsListPanel(ListPanel):
             return super().on_item_double_click(evt)
 
         async def get_games(token: str, params: dict):
-            magnets = await api.search_for_games(
-                settings.token, params={"id": magnet_data.torrent_id}
-            )
-            pass
+            try:
+                magnets = await api.search_for_games(
+                    settings.token, params={"id": magnet_data.torrent_id}
+                )
+            except api.ApiError as err:
+                show_error_message(err.message, f"Code: {err.status_code}")
+                return
+            except aiohttp.ClientConnectionError as err:
+                show_error_message("".join(err.args))
+                return
+            if isinstance(magnets, list) and len(magnets) > 0:
+                frame = MagnetUpdateFrame(
+                    self.app.frame,
+                    "Edit Magnet",
+                    self.app.frame.GetSize(),
+                    magnets[0],
+                )
+                frame.Show()
 
         asyncio.get_event_loop().create_task(
             get_games(settings.token, {"id": magnet_data.torrent_id})
@@ -214,7 +229,7 @@ class MagnetsListPanel(ListPanel):
         self.clear_list()
         for index, magnet in enumerate(magnets):
             magnet_data = MagnetData(
-                uri=magnet.uri,
+                uri=magnet.decoded_uri,
                 download_path="",
                 index=index,
                 queue=asyncio.Queue(),

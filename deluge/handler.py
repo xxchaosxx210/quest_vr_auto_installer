@@ -82,7 +82,7 @@ class State:
 @dataclass
 class MagnetData:
     """
-    uri: str                - the magnet uri
+    uri: str                - the magnet uri decoded to UTF-8
     download_path: str      - the folder the torrent will be saved to
     timeout: float          - the wait in seconds for the next iteration
     """

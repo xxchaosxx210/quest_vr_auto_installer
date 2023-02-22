@@ -2,7 +2,6 @@
 """
 
 import logging
-import base64
 from typing import List
 from urllib.parse import urljoin
 
@@ -69,40 +68,24 @@ def create_auth_token_header(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def get_game_magnets(url: str = URI_GAMES) -> List[schemas.QuestMagnet]:
+async def get_game_magnets() -> List[schemas.QuestMagnet]:
     """gets the Quest 2 magnet links from the q2g server
-
-    Args:
-        url (str, optional): change the endpoint when migrating online. Defaults to MAGNET_ENDPOINT.
 
     Raises:
         ApiError:
+        aiohttp.ClientConnectionError:
+        TypeError:
 
     Returns:
-        List[QuestAppMagnet]: list of magnet objects
+        List[QuestMagnet]: list of magnet objects
     """
-    magnets: List[schemas.QuestMagnet] = []
-
-    def process_magnet_dict(magnet_dict: dict) -> schemas.QuestMagnet:
-        """valid response json and decode base64 magnet link and return
-
-        Args:
-            magnet_dict (dict): response json
-
-        Returns:
-            QuestMagnet: _description_
-        """
-        magnet = schemas.QuestMagnet(**magnet_dict)
-        bstring = base64.b64decode(magnet.uri)
-        magnet.magnet = bstring.decode("utf-8")
-        return magnet
-
     try:
-        data = await get_json_response(URI_GAMES)
-        games = data.get("games", [])
-        if not games:
-            raise ValueError("No games exist")
-        magnets = list(map(process_magnet_dict, games))
+        response_data = await get_json_response(URI_GAMES)
+        if not isinstance(response_data, list):
+            raise TypeError("Returned value was of not type List")
+        magnets = list(
+            map(lambda magnet_dict: schemas.QuestMagnet(**magnet_dict), response_data)
+        )
         return magnets
     except Exception as err:
         raise err

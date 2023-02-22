@@ -1,3 +1,5 @@
+import base64
+
 from pydantic import BaseModel
 from uuid import UUID
 
@@ -14,6 +16,24 @@ class QuestMagnet(BaseModel):
     @property
     def uri(self) -> str:
         return self.magnet
+
+    @property
+    def decoded_uri(self) -> str:
+        try:
+            uri = base64.b64decode(self.magnet).decode("utf-8")
+        except TypeError:
+            uri = self.magnet
+        finally:
+            return uri
+
+    @property
+    def encoded_uri(self) -> bytes:
+        try:
+            uri = base64.b64encode(self.magnet)
+        except TypeError:
+            uri = self.magnet
+        finally:
+            return uri
 
 
 class QuestMagnetWithKey(QuestMagnet):
