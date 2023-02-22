@@ -1,4 +1,5 @@
 from typing import Tuple
+from collections import OrderedDict
 import wx
 
 
@@ -16,20 +17,6 @@ class MagnetUpdateFrame(wx.Frame):
         magnet: QuestMagnetWithKey,
     ):
         super().__init__(parent=parent, title=title, size=size)
-        """
-        class QuestMagnet(BaseModel):
-        name: str
-        display_name: str
-        magnet: str
-        version: float
-        filesize: int
-        date_added: float
-        id: str
-
-        @property
-        def uri(self) -> str:
-            return self.magnet
-        """
 
         panel = wx.Panel(self, -1)
 
@@ -62,32 +49,34 @@ class MagnetUpdateFrame(wx.Frame):
 
     def _create_static_text_ctrls(
         self, parent: wx.Panel, magnet: QuestMagnetWithKey
-    ) -> dict:
-        ctrls = {
-            "key": TextCtrlStaticBox(
-                parent, magnet.key, wx.TE_READONLY | wx.TE_NO_VSCROLL, "Key"
-            ),
-            "name": TextCtrlStaticBox(parent, magnet.name, wx.TE_NO_VSCROLL, "Name"),
-            "display_name": TextCtrlStaticBox(
-                parent, magnet.display_name, wx.TE_NO_VSCROLL, "Display Name"
-            ),
-            "magnet": TextCtrlStaticBox(
-                parent, magnet.decoded_uri, wx.TE_MULTILINE, "Magnet Link"
-            ),
-            "version": TextCtrlStaticBox(
-                parent, str(magnet.version), wx.TE_NO_VSCROLL, "Version"
-            ),
-            "filesize": TextCtrlStaticBox(
-                parent, f"{magnet.filesize / 1000}", wx.TE_NO_VSCROLL, "FileSize (MB)"
-            ),
-            "date_added": TextCtrlStaticBox(
-                parent,
-                format_timestamp(magnet.date_added, True),
-                wx.TE_NO_VSCROLL,
-                "Date Added",
-            ),
-            "id": TextCtrlStaticBox(parent, magnet.id, wx.TE_NO_VSCROLL, "Torrent ID"),
-        }
+    ) -> OrderedDict:
+        ctrls = OrderedDict()
+        ctrls["key"] = TextCtrlStaticBox(
+            parent, magnet.key, wx.TE_READONLY | wx.TE_NO_VSCROLL, "Key"
+        )
+        ctrls["name"] = TextCtrlStaticBox(parent, magnet.name, wx.TE_NO_VSCROLL, "Name")
+        ctrls["display_name"] = TextCtrlStaticBox(
+            parent, magnet.display_name, wx.TE_NO_VSCROLL, "Display Name"
+        )
+        ctrls["magnet"] = TextCtrlStaticBox(
+            parent, magnet.decoded_uri, wx.TE_MULTILINE, "Magnet Link"
+        )
+        ctrls["version"] = TextCtrlStaticBox(
+            parent, str(magnet.version), wx.TE_NO_VSCROLL, "Version"
+        )
+        ctrls["filesize"] = TextCtrlStaticBox(
+            parent, f"{magnet.filesize / 1000}", wx.TE_NO_VSCROLL, "FileSize (MB)"
+        )
+        ctrls["date_added"] = TextCtrlStaticBox(
+            parent,
+            format_timestamp(magnet.date_added, True),
+            wx.TE_NO_VSCROLL,
+            "Date Added",
+        )
+        ctrls["id"] = TextCtrlStaticBox(
+            parent, magnet.id, wx.TE_NO_VSCROLL, "Torrent ID"
+        )
+
         return ctrls
 
     def _on_update_button(self, evt: wx.CommandEvent) -> None:
