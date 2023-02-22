@@ -65,7 +65,9 @@ class MagnetUpdateFrame(wx.Frame):
         btn_hbox.Add(delete_btn, 0, wx.EXPAND, 0)
         btn_hbox.Add(close_btn, 0, wx.EXPAND, 0)
 
+        panel_vbox.AddStretchSpacer(1)
         panel_vbox.Add(btn_hbox, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        panel_vbox.AddSpacer(10)
         panel.SetSizerAndFit(panel_vbox)
 
         gs = wx.GridSizer(cols=1)
@@ -76,6 +78,15 @@ class MagnetUpdateFrame(wx.Frame):
     def _create_static_text_ctrls(
         self, parent: wx.Panel, magnet: QuestMagnetWithKey
     ) -> dict:
+        """create the static text controls in a dict for iterating and sorting
+
+        Args:
+            parent (wx.Panel): should be a panel
+            magnet (QuestMagnetWithKey): the magnet to extra information from and add to the textctrls
+
+        Returns:
+            dict: returns the textctrlstatoxs stored within dict
+        """
         ctrls = {}
         ctrls["key"] = TextCtrlStaticBox(
             parent, magnet.key, wx.TE_READONLY | wx.TE_NO_VSCROLL, "Key"
@@ -140,14 +151,29 @@ class MagnetUpdateFrame(wx.Frame):
         }
 
     def _on_update_button(self, evt: wx.CommandEvent) -> None:
+        """update button pressed check if any data has been changed in the textctrls
+        update if change has been made and send to api
+
+        Args:
+            evt (wx.CommandEvent): button event not used
+        """
+        # get the string values from the textctrls and convert back to a dict
         data = self._get_values_from_controls()
+        # get the original magnet object and convert into a dict exclude the date_added and key fields
         original_data = self.original_magnet_data.dict(exclude={"date_added", "key"})
+        # now compare the original saved magnet with the data extracted from the controls
         data_update = get_changed_properties(original_data, data)
         if not data_update:
             return
+        # there have been changes update the fields only that have changed
         asyncio.get_event_loop().create_task(self.update_magnet(data_update))
 
     async def update_magnet(self, data_to_update: dict) -> None:
+        """update the magnet data to the API
+
+        Args:
+            data_to_update (dict):
+        """
         settings = Settings.load()
         try:
             await update_game_magnet(
@@ -159,6 +185,8 @@ class MagnetUpdateFrame(wx.Frame):
             show_error_message("".join(err.args))
         else:
             wx.MessageBox("Game has been updated", "", wx.OK | wx.ICON_EXCLAMATION)
+            # get the game from the database and update the game in the magnet_listpanel
+            # Ill do this tomorrow!!
         finally:
             return
 
