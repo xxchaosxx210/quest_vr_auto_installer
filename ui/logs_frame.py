@@ -4,7 +4,7 @@ from typing import Tuple, List
 import aiohttp
 import wx
 
-from qvrapi.api import get_logs, ApiError
+from qvrapi.api import get_logs, ApiError, delete_logs
 from qvrapi.schemas import ErrorLog
 from lib.settings import Settings
 from ui.utils import ListCtrlPanel, show_error_message
@@ -43,9 +43,11 @@ class LogsListCtrlPanel(ListCtrlPanel):
         self.Bind(
             wx.EVT_LIST_ITEM_ACTIVATED, self._on_list_item_activated, self.listctrl
         )
+        self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click, self.listctrl)
 
     def clear_logs(self) -> None:
         self._logs.clear()
+        self.listctrl.DeleteAllItems()
 
     def set_item(self, index: int, log: ErrorLog) -> None:
         self._logs.append(log)
@@ -69,6 +71,43 @@ class LogsListCtrlPanel(ListCtrlPanel):
         )
         dlg.ShowModal()
         dlg.Destroy()
+
+    def on_right_click(self, evt: wx.ListEvent) -> None:
+        index = evt.GetIndex()
+        if index == -1:
+            return
+        self.listctrl.PopupMenu(self._create_popup_menu())
+
+    def _create_popup_menu(self) -> wx.Menu:
+        popup_menu = wx.Menu()
+        delete_m_item = popup_menu.Append(wx.ID_ANY, "Delete")
+        self.Bind(wx.EVT_MENU, self._on_delete_log, delete_m_item)
+        return popup_menu
+
+    def _on_delete_log(self, evt: wx.MenuEvent) -> None:
+        index = self.listctrl.GetFirstSelected()
+        if index == -1:
+            return
+        settings = Settings.load()
+
+        async def delete_log(token: str, key: str) -> None:
+            try:
+                logs = await delete_logs(token=token, key=key)
+            except ApiError as err:
+                show_error_message(err.message, f"Code: {err.status_code}")
+            except aiohttp.ClientConnectionError as err:
+                show_error_message("".join(err.args))
+            else:
+                self.populate_listctrl(logs=logs)
+
+        asyncio.get_event_loop().create_task(
+            delete_log(settings.token, self._logs[index].key)
+        )
+
+    def populate_listctrl(self, logs: List[ErrorLog]) -> None:
+        self.clear_logs()
+        for index, log in enumerate(logs):
+            self.set_item(index=index, log=log)
 
 
 class LogsFrame(wx.Frame):
@@ -116,11 +155,18 @@ class LogsFrame(wx.Frame):
         return menu
 
     def _on_clear_logs(self, evt: wx.MenuEvent) -> None:
-        asyncio.get_event_loop().create_task(self.clear_log_request())
+        asyncio.get_event_loop().create_task(self.clear_logs_request())
 
-    async def clear_log_request(self) -> None:
+    async def clear_logs_request(self) -> None:
         settings = Settings.load()
-        pass
+        try:
+            logs = await delete_logs(settings.token, "all")
+        except ApiError as err:
+            show_error_message(err.message, f"Code: {err.status_code}")
+        except aiohttp.ClientConnectionError as err:
+            show_error_message("Connection Error", "Error")
+        else:
+            self.logslstctrl_panel.populate_listctrl(logs=logs)
 
     async def load_list(self) -> None:
         settings = Settings.load()
@@ -130,7 +176,6 @@ class LogsFrame(wx.Frame):
             params={"sort_by": "date_added", "order_by": "desc"},
         )
         if not error_logs:
-            self.Destroy()
             return
         for index, log in enumerate(error_logs):
             self.logslstctrl_panel.set_item(index, log)

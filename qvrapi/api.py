@@ -203,6 +203,27 @@ async def get_logs(token: str, params: dict = None) -> List[ErrorLog]:
         raise err
 
 
+async def delete_logs(token: str, key: str) -> List[ErrorLog]:
+    headers = create_auth_token_header(token=token)
+    headers["Content-Type"] = "application/json"
+    params = {"key": key}
+    async with aiohttp.ClientSession() as session:
+        async with session.delete(URI_LOGS, params=params, headers=headers) as response:
+            if response.content_type == "text/plain":
+                data = await response.content.read()
+                raise ApiError(
+                    status_code=response.status, message=data.decode("utf-8")
+                )
+            if response.status != 200:
+                data = await response.json()
+                raise ApiError(status_code=response.status, message=data["detail"])
+            data = await response.json()
+            error_logs = list(
+                map(lambda _log_dict: ErrorLog(**_log_dict), data["logs"])
+            )
+            return error_logs
+
+
 async def get_json_response(uri: str, token: str = None, params: dict = {}) -> dict:
     if not token:
         headers = {}
