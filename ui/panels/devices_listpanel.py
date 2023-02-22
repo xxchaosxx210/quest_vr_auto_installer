@@ -8,7 +8,7 @@ import adblib.errors
 import lib.tasks
 import lib.quest as quest
 from adblib import adb_interface
-from ui.listpanel import ListPanel
+from ui.panels.listpanel import ListPanel
 
 
 _Log = logging.getLogger()

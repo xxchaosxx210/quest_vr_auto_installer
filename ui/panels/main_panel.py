@@ -1,8 +1,8 @@
 import wx
 
-from ui.devices_listpanel import DevicesListPanel
-from ui.magnets_listpanel import MagnetsListPanel
-from ui.installed_listpanel import InstalledListPanel
+from ui.panels.devices_listpanel import DevicesListPanel
+from ui.panels.magnets_listpanel import MagnetsListPanel
+from ui.panels.installed_listpanel import InstalledListPanel
 
 
 class MainPanel(wx.Panel):

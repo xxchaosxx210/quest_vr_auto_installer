@@ -12,7 +12,7 @@ import lib.utils
 import lib.tasks
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
-from ui.listpanel import ListPanel
+from ui.panels.listpanel import ListPanel
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
 

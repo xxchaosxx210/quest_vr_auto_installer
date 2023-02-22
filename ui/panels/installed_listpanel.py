@@ -4,7 +4,7 @@ import wx
 
 import lib.config
 import lib.tasks
-from ui.listpanel import ListPanel
+from ui.panels.listpanel import ListPanel
 from adblib import adb_interface
 
 

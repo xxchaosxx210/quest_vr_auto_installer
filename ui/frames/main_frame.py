@@ -4,13 +4,13 @@ import random
 
 from aiohttp import ClientConnectionError
 
-from ui.main_panel import MainPanel
+from ui.panels.main_panel import MainPanel
 from ui.dialogs.install_progress_dialog import InstallProgressDialog
 from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.find_text_dialog import FindTextDialog
 from ui.dialogs.login_dialog import LoginDialog
 from ui.dialogs.user_info_dialog import UserInfoDialog
-from ui.logs_frame import LogsFrame
+from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
 import lib.image_manager as img_mgr
 import qvrapi.api as api
