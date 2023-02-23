@@ -99,14 +99,21 @@ class MainFrame(wx.Frame):
         menu.AppendSeparator()
         remove_auth_m_item = menu.Append(wx.ID_ANY, "Logout")
         self.Bind(wx.EVT_MENU, self._on_logout_user, remove_auth_m_item)
+
         # Create an Admin submenu
         menu.AppendSeparator()
         self.admin_submenu = wx.Menu()
+        admin_add_game_m_item = self.admin_submenu.Append(wx.ID_ANY, "Add Game")
+        self.Bind(wx.EVT_MENU, self._on_add_game_dialog, admin_add_game_m_item)
+        self.admin_submenu.AppendSeparator()
         admin_logs_m_item = self.admin_submenu.Append(wx.ID_ANY, "Logs")
         self.Bind(wx.EVT_MENU, self._on_logs_frame, admin_logs_m_item)
         ui.utils.enable_menu_items(self.admin_submenu, settings.is_user_admin())
         menu.AppendSubMenu(self.admin_submenu, "Admin", "Admin tools and testing")
         return menu
+
+    def _on_add_game_dialog(self, evt: wx.MenuEvent) -> None:
+        pass
 
     def _on_logs_frame(self, evt: wx.MenuEvent) -> None:
         dlg = LogsFrame(self, size=(500, 500))
