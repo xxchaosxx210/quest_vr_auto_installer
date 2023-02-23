@@ -9,24 +9,7 @@ from ui.utils import TextCtrlStaticBox, show_error_message
 from lib.settings import Settings
 from qvrapi.schemas import QuestMagnetWithKey
 from qvrapi.api import ApiError, update_game_magnet
-from lib.utils import format_timestamp_to_str
-
-
-def get_changed_properties(original: dict, new: dict) -> dict:
-    """compare the original dict with a new dict and check if any fields have changed
-
-    Args:
-        original (dict): original dict to compare with
-        new (dict): the new dict
-
-    Returns:
-        dict: returns a dict with fields that have changed from the original
-    """
-    changed = {}
-    for key in original:
-        if key in new and original[key] != new[key]:
-            changed[key] = new[key]
-    return changed
+from lib.utils import format_timestamp_to_str, get_changed_properties
 
 
 class MagnetUpdateFrame(wx.Frame):

@@ -187,3 +187,20 @@ def format_str_to_timestamp(tstamp_str: str, include_hms: bool = False):
     dt = datetime.datetime.strptime(tstamp_str, format)
     timestamp = dt.timestamp()
     return timestamp
+
+
+def get_changed_properties(original: dict, new: dict) -> dict:
+    """compare the original dict with a new dict and check if any fields have changed
+
+    Args:
+        original (dict): original dict to compare with
+        new (dict): the new dict
+
+    Returns:
+        dict: returns a dict with fields that have changed from the original
+    """
+    changed = {}
+    for key in original:
+        if key in new and original[key] != new[key]:
+            changed[key] = new[key]
+    return changed
