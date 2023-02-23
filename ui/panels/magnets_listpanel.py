@@ -65,7 +65,7 @@ class MagnetsListPanel(ListPanel):
                 show_error_message(err.message, f"Code: {err.status_code}")
                 return
             except aiohttp.ClientConnectionError as err:
-                show_error_message("".join(err.args))
+                show_error_message(err.__str__())
                 return
             if isinstance(magnets, list) and len(magnets) > 0:
                 frame = MagnetUpdateFrame(
@@ -249,7 +249,10 @@ class MagnetsListPanel(ListPanel):
             magnet (QuestMagnet): see QuestMagnet class for properties
         """
         formatted_date_added = lib.utils.format_timestamp_to_str(magnet.date_added)
-        self.listctrl.InsertItem(index, magnet.display_name)
+        if index == self.listctrl.GetItemCount():
+            self.listctrl.InsertItem(index, magnet.display_name)
+        else:
+            self.listctrl.SetItem(index, COLUMN_NAME, magnet.display_name)
         self.listctrl.SetItem(index, COLUMN_DATE_ADDED, formatted_date_added)
         self.listctrl.SetItem(index, COLUMN_SIZE, str(magnet.filesize))
 
@@ -472,3 +475,40 @@ class MagnetsListPanel(ListPanel):
             item_index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED
         )
         self.listctrl.EnsureVisible(item_index)
+
+    def find_row_by_torrent_id(self, torrent_id: str) -> int:
+        """loops through the magnet_data list and compares for torrent ID
+
+        Args:
+            torrent_id (str): id to look for
+
+        Returns:
+            int: returns the index of the row. -1 if none found
+        """
+        for row_index, magnet_data in enumerate(self.magnet_data_list):
+            magnet_data: MagnetData = magnet_data
+            if magnet_data.torrent_id == torrent_id:
+                return row_index
+        return -1
+
+    def update_row(self, index: int, quest_data: QuestMagnet) -> None:
+        """Updates the row if any changes to the database. This is to prevent from reloading the
+        entire list and listctrl. Called from The Admin Magnet Update Frame
+
+        Args:
+            index (int): row index to update
+            quest_data (QuestMagnet): new data to update
+        """
+        if index > self.listctrl.GetItemCount():
+            show_error_message(
+                "Index is out of range could not Update Magnet ListCtrl Item Column"
+            )
+            return
+        magnet: MagnetData = self.magnet_data_list[index]
+        self.set_items(index, quest_data)
+        if magnet.uri != quest_data.decoded_uri:
+            self.magnet_data_list[index].uri = quest_data.decoded_uri
+        if magnet.name != quest_data.name:
+            self.magnet_data_list[index].name = quest_data.name
+        if magnet.torrent_id != quest_data.id:
+            self.magnet_data_list[index].torrent_id = quest_data.id

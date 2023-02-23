@@ -28,7 +28,7 @@ async def send_request_and_handle_exception(
     except ApiError as err:
         show_error_message(err.message, f"Code: {err.status_code}")
     except aiohttp.ClientConnectionError as err:
-        show_error_message("".join(err.args))
+        show_error_message(err.__str__())
     finally:
         return result
 
@@ -96,7 +96,7 @@ class LogsListCtrlPanel(ListCtrlPanel):
             except ApiError as err:
                 show_error_message(err.message, f"Code: {err.status_code}")
             except aiohttp.ClientConnectionError as err:
-                show_error_message("".join(err.args))
+                show_error_message(err.__str__())
             else:
                 self.populate_listctrl(logs=logs)
 

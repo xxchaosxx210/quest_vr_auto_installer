@@ -125,10 +125,16 @@ async def search_for_games(
         raise err
 
 
-async def update_game_magnet(token: str, key: str, params: dict) -> None:
+async def update_game_magnet(
+    token: str, key: str, params: dict
+) -> schemas.QuestMagnetWithKey:
     try:
         uri = URI_UPDATE_GAME + f"/{key}"
-        await send_json_request(uri, token, _json=params, request_type=RequestType.PUT)
+        data = await send_json_request(
+            uri, token, _json=params, request_type=RequestType.PUT
+        )
+        gamewithkey = schemas.QuestMagnetWithKey(**data)
+        return gamewithkey
     except Exception as err:
         raise err
 

@@ -159,17 +159,28 @@ class MagnetUpdateFrame(wx.Frame):
         """
         settings = Settings.load()
         try:
-            await update_game_magnet(
+            updated_magnet = await update_game_magnet(
                 settings.token, self.original_magnet_data.key, data_to_update
             )
         except ApiError as err:
             show_error_message(err.message, f"Code: {err.status_code}")
         except aiohttp.ClientConnectionError as err:
-            show_error_message("".join(err.args))
+            show_error_message(err.__str__())
         else:
             wx.MessageBox("Game has been updated", "", wx.OK | wx.ICON_EXCLAMATION)
             # get the game from the database and update the game in the magnet_listpanel
             # Ill do this tomorrow!!
+            index = self.app.magnets_listpanel.find_row_by_torrent_id(
+                self.original_magnet_data.id
+            )
+            wx.CallAfter(
+                self.app.magnets_listpanel.update_row,
+                index=index,
+                quest_data=updated_magnet,
+            )
+            # self.original_magnet_data = updated_magnet
+            # Need to update the original_magnet_data here
+            self.original_magnet_data = updated_magnet
         finally:
             return
 
