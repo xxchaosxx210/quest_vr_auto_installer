@@ -24,6 +24,7 @@ class Tasks:
     remove_package: asyncio.Task = None
     login_submit: threading.Thread = None
     user_info: asyncio.Task = None
+    add_game_dlg: threading.Thread = None
 
 
 def create_install_task(func: callable, **kwargs):
@@ -92,6 +93,13 @@ def login_submit_thread(func: callable, **kwargs):
     Tasks.login_submit = threading.Thread(target=func, kwargs=kwargs)
     Tasks.login_submit.start()
     Tasks.login_submit.join()
+
+
+def add_game_dialog_thread(func: callable, **kwargs):
+    if Tasks.add_game_dlg is not None and Tasks.add_game_dlg.is_alive():
+        raise TaskIsRunning("Add Game Dialog has a thread already running")
+    Tasks.add_game_dlg = threading.Thread(target=func, kwargs=kwargs)
+    Tasks.add_game_dlg.start()
 
 
 def _create_task(func: callable, **kwargs) -> asyncio.Task:

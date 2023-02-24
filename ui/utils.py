@@ -150,8 +150,8 @@ class TextCtrlStaticBox(wx.StaticBox):
             self, id=-1, value=texctrl_value, style=textctrl_style
         )
 
-        self.sizer = wx.StaticBoxSizer(self, wx.VERTICAL)
-        self.sizer.Add(self.textctrl, flag=wx.EXPAND | wx.ALL, border=0)
+        self.sizer = wx.StaticBoxSizer(self, wx.HORIZONTAL)
+        self.sizer.Add(self.textctrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=0)
 
     def get_text(self) -> str:
         return self.textctrl.GetValue()

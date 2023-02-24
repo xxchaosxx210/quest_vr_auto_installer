@@ -3,6 +3,7 @@ import asyncio
 import random
 
 from aiohttp import ClientConnectionError
+import wxasync
 
 from ui.panels.main_panel import MainPanel
 from ui.dialogs.install_progress_dialog import InstallProgressDialog
@@ -10,6 +11,7 @@ from ui.dialogs.settings_dialog import SettingsDialog
 from ui.dialogs.find_text_dialog import FindTextDialog
 from ui.dialogs.login_dialog import LoginDialog
 from ui.dialogs.user_info_dialog import UserInfoDialog
+from ui.dialogs.add_game_dialog import AddGameDialog
 from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
 import lib.image_manager as img_mgr
@@ -113,7 +115,21 @@ class MainFrame(wx.Frame):
         return menu
 
     def _on_add_game_dialog(self, evt: wx.MenuEvent) -> None:
-        pass
+        settings = Settings.load()
+        if not settings.is_user_admin():
+            ui.utils.show_error_message(
+                "You do not have permission to access this function"
+            )
+
+        async def open_dialog():
+            dlg = AddGameDialog(self, wx.ID_ANY, "Add Game", (640, 640))
+            result_code = await wxasync.AsyncShowDialog(dlg)
+            if result_code == wx.ID_SAVE:
+                # save game to database
+                pass
+            dlg.Destroy()
+
+        asyncio.get_event_loop().create_task(open_dialog())
 
     def _on_logs_frame(self, evt: wx.MenuEvent) -> None:
         dlg = LogsFrame(self, size=(500, 500))
