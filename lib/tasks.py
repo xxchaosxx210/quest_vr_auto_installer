@@ -1,7 +1,7 @@
 """
 tasks.py version 1.0
 
-handles running tasks within the app
+handles running tasks within the app in a global scope
 """
 
 import asyncio
@@ -22,8 +22,11 @@ class Tasks:
     obb_create: asyncio.Task = None
     load_installed: asyncio.Task = None
     remove_package: asyncio.Task = None
-    login_submit: threading.Thread = None
     user_info: asyncio.Task = None
+
+
+class Threads:
+    login_submit: threading.Thread = None
     add_game_dlg: threading.Thread = None
 
 
@@ -36,7 +39,7 @@ def create_install_task(func: callable, **kwargs):
     Raises:
         TaskIsRunning: _description_
     """
-    if is_running(Tasks.install):
+    if is_task_running(Tasks.install):
         raise TaskIsRunning(
             "You already have a Game being installed. Please cancel current installation or wait for the Game to be installed"
         )
@@ -44,7 +47,7 @@ def create_install_task(func: callable, **kwargs):
 
 
 def create_log_error_task(func: callable, **kwargs):
-    if is_running(Tasks.log_error):
+    if is_task_running(Tasks.log_error):
         raise TaskIsRunning(
             "Cannot create multiple Error logs. Wait for current request to end"
         )
@@ -52,13 +55,13 @@ def create_log_error_task(func: callable, **kwargs):
 
 
 def create_obb_dir_task(func: callable, **kwargs):
-    if is_running(Tasks.obb_create):
+    if is_task_running(Tasks.obb_create):
         raise TaskIsRunning("Cannot create another task for OBB data creation")
     Tasks.obb_create = _create_task(func, **kwargs)
 
 
 def load_installed_task(func: callable, **kwargs):
-    if is_running(Tasks.load_installed):
+    if is_task_running(Tasks.load_installed):
         raise TaskIsRunning(
             "Cannot reload list as another Coroutine is already running"
         )
@@ -66,13 +69,13 @@ def load_installed_task(func: callable, **kwargs):
 
 
 def remove_package_task(func: callable, **kwargs):
-    if is_running(Tasks.remove_package):
+    if is_task_running(Tasks.remove_package):
         raise TaskIsRunning("Cannot Uninstall as already Removing another App")
     Tasks.remove_package = _create_task(func, **kwargs)
 
 
 def get_user_info(func: callable, **kwargs):
-    if is_running(Tasks.user_info):
+    if is_task_running(Tasks.user_info):
         raise TaskIsRunning("Already waiting for User Information")
     Tasks.user_info = _create_task(func, **kwargs)
 
@@ -88,18 +91,18 @@ def login_submit_thread(func: callable, **kwargs):
     Raises:
         TaskIsRunning: raises if the thread is still alive
     """
-    if Tasks.login_submit is not None and Tasks.login_submit.is_alive():
+    if is_thread_running(Threads.login_submit):
         raise TaskIsRunning("Please wait for the last login request to be submitted")
-    Tasks.login_submit = threading.Thread(target=func, kwargs=kwargs)
-    Tasks.login_submit.start()
-    Tasks.login_submit.join()
+    Threads.login_submit = threading.Thread(target=func, kwargs=kwargs)
+    Threads.login_submit.start()
+    Threads.login_submit.join()
 
 
 def add_game_dialog_thread(func: callable, **kwargs):
-    if Tasks.add_game_dlg is not None and Tasks.add_game_dlg.is_alive():
+    if is_thread_running(Threads.add_game_dlg):
         raise TaskIsRunning("Add Game Dialog has a thread already running")
-    Tasks.add_game_dlg = threading.Thread(target=func, kwargs=kwargs)
-    Tasks.add_game_dlg.start()
+    Threads.add_game_dlg = threading.Thread(target=func, kwargs=kwargs)
+    Threads.add_game_dlg.start()
 
 
 def _create_task(func: callable, **kwargs) -> asyncio.Task:
@@ -108,7 +111,7 @@ def _create_task(func: callable, **kwargs) -> asyncio.Task:
     return task
 
 
-def is_running(task: asyncio.Task) -> bool:
+def is_task_running(task: asyncio.Task) -> bool:
     """checks if the Task is active
 
     Args:
@@ -120,3 +123,17 @@ def is_running(task: asyncio.Task) -> bool:
     if not isinstance(task, asyncio.Task):
         return False
     return not (task.done() or task.cancelled())
+
+
+def is_thread_running(thread: threading.Thread) -> bool:
+    """checks if a specified thread is still running
+
+    Args:
+        thread (threading.Thread):
+
+    Returns:
+        bool: True if it is False if no longer running or None
+    """
+    if not isinstance(thread, threading.Thread):
+        return False
+    return thread.is_alive()

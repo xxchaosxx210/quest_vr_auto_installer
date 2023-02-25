@@ -33,6 +33,9 @@ class ApiError(Exception):
         self.message = message
         super().__init__(*args)
 
+    def __str__(self) -> str:
+        return f"{self.message}. Status Code: {self.status_code}"
+
 
 URI_LOCAL_HOST = "http://127.0.0.1:8000"
 URI_DETA_MICRO = "https://6vppvi.deta.dev"

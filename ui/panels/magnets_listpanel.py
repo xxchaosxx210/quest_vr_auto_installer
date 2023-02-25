@@ -11,6 +11,7 @@ import lib.config as config
 import lib.utils
 import lib.tasks
 import ui.utils
+import qvrapi.handler
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
 from ui.panels.listpanel import ListPanel
@@ -32,14 +33,15 @@ COLUMN_ETA = 6
 
 
 class MagnetsListPanel(ListPanel):
-    find_game_and_launch_frame_task: asyncio.Task = None
+    find_game_task: asyncio.Task = None
+
+    magnet_data_list: List[MagnetData] = []
 
     def __init__(self, *args, **kw):
         from q2gapp import Q2GApp
 
         self.app: Q2GApp = wx.GetApp()
         # store the magnet items state
-        self.magnet_data_list: List[MagnetData] = []
         columns = [
             {"col": COLUMN_NAME, "heading": "Name", "width": 150},
             {"col": COLUMN_DATE_ADDED, "heading": "Date Added", "width": 70},
@@ -76,61 +78,37 @@ class MagnetsListPanel(ListPanel):
         _Log.info("Hello from the Magnet ListPanel")
 
     def on_item_double_click(self, evt: wx.ListEvent) -> None:
-        """get the item that was double clicked and find it in the API database
-        if item exists then load the game edit frame for editing.
-        Note that this requires Admin access token only and will not work is normal user or anonymouse
-
-        Args:
-            evt (wx.ListEvent): not used
-
-        Returns:
-            None:
-        """
         settings = Settings.load()
         magnet_data = self.get_selected_torrent_item()
         if not settings.is_user_admin() or not magnet_data:
             return super().on_item_double_click(evt)
 
-        async def _find_game_and_launch_frame(token: str, params: dict) -> None:
-            """sub function that retrieves game information and loads the edit game frame
-
-            Args:
-                token (str): admin JWT token
-                params (dict): torrent_id (will add key in a later version) this is to lookup the specified game
-            """
-            try:
-                magnets = await api.search_for_games(
-                    settings.token, params={"id": magnet_data.torrent_id}
-                )
-            except api.ApiError as err:
-                ui.utils.show_error_message(err.message, f"Code: {err.status_code}")
-                return
-            except aiohttp.ClientConnectionError as err:
-                ui.utils.show_error_message(err.__str__())
-                return
-            # check if the returned magnets is a list instance and contains more than 0
-            # if so launch the frame and add the first magnet in the list to the frame
-            if isinstance(magnets, list) and len(magnets) > 0:
-                frame = MagnetUpdateFrame(
-                    self.app.frame,
-                    "Edit Magnet",
-                    self.app.frame.GetSize(),
-                    magnets[0],
-                )
-                frame.Show()
-
-        if (
-            self.find_game_and_launch_frame_task is None
-            or self.find_game_and_launch_frame_task.done()
-        ):
-            self.find_game_and_launch_frame_task = asyncio.create_task(
-                _find_game_and_launch_frame(
-                    settings.token, {"id": magnet_data.torrent_id}
-                )
+        if not lib.tasks.is_task_running(self.find_game_task):
+            self.find_game_task = asyncio.create_task(
+                self.find_and_launch_magnet_update_frame(settings, magnet_data)
             )
         else:
             ui.utils.show_error_message("Request is already running")
         return super().on_item_double_click(evt)
+
+    async def find_and_launch_magnet_update_frame(
+        self, settings: Settings, magnet_data: MagnetData
+    ) -> None:
+        """async function for launching the update magnet frame with the magnet to update
+
+        Args:
+            settings (Settings): _description_
+            magnet_data (MagnetData): _description_
+        """
+        magnets = await qvrapi.handler.get_magnets_from_torrent_id(
+            settings.token, magnet_data.torrent_id, ui.utils.show_error_message
+        )
+        if magnets is None or len(magnets) < 1:
+            return
+        # load the frame
+        MagnetUpdateFrame(
+            self.app.frame, "Update Magnet", self.app.frame.GetSize(), magnets[0]
+        ).Show()
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
         """sort the magnets by alphabetical order.
@@ -149,7 +127,7 @@ class MagnetsListPanel(ListPanel):
         """
         # check if install is running. I will change this later and send
         # a message to the install queue with the new index to update to
-        if lib.tasks.is_running(lib.tasks.Tasks.install):
+        if lib.tasks.is_task_running(lib.tasks.Tasks.install):
             _Log.info("ListCtrl sort has been disabled while install is in progress")
             return
         column = evt.GetColumn()
