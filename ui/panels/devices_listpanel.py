@@ -6,6 +6,7 @@ import wx
 import lib.config as config
 import adblib.errors
 import lib.tasks
+import ui.utils
 import lib.quest as quest
 from adblib import adb_interface
 from ui.panels.listpanel import ListPanel
@@ -24,6 +25,24 @@ class DevicesListPanel(ListPanel):
         columns = [{"col": 0, "heading": "Name", "width": 200}]
         super().__init__(title="Devices", columns=columns, *args, **kwargs)
         self.app.devices_listpanel = self
+        self.insert_button_panel(self._create_button_panel(), 0, flag=wx.ALIGN_RIGHT)
+
+    def _create_button_panel(self) -> wx.Panel:
+        # create the button panel
+        button_panel = wx.Panel(self, -1)
+
+        # create the buttons and store them into the super classes bitmap_buttons dict
+        self.bitmap_buttons["refresh"] = ui.utils.create_bitmap_button(
+            "refresh.png", "Refresh Games List", button_panel, size=(24, 24)
+        )
+        self.Bind(wx.EVT_BUTTON, self.on_refresh_click, self.bitmap_buttons["refresh"])
+
+        hbox_btns = ListPanel.create_bitmap_button_sizer(self.bitmap_buttons)
+        button_panel.SetSizer(hbox_btns)
+        return button_panel
+
+    def on_refresh_click(self, evt: wx.CommandEvent) -> None:
+        _Log.info("Hello from the Device ListPanel")
 
     async def _get_device_names(self) -> List[str]:
         """loads device names either from debug settings or ADB

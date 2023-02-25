@@ -4,6 +4,7 @@ main.py the main module for QuestVRAutoInstaller
 
 import asyncio
 import multiprocessing
+import sys
 
 
 import lib.config as config
@@ -28,8 +29,7 @@ async def _main():
         daemon = start_deluge_daemon()
     except FileNotFoundError:
         # download and install deluge daemon
-        config._Log.error("Unable to locate the Deluge Daemon. Please reinstall Deluge")
-        return
+        sys.exit("Unable to locate the Deluge Daemon. Please reinstall Deluge Torrent")
     multiprocessing.freeze_support()
     app = Q2GApp()
     # catch any unhandled exceptions in the event loop

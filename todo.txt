@@ -1,0 +1,2 @@
+1: improve the command line arguments
+2. loading magnets needs improving

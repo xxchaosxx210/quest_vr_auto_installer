@@ -105,11 +105,11 @@ def initalize_logger():
     file_handler.setLevel(logging.ERROR)
     formatter = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
     file_handler.setFormatter(formatter)
-    sys.excepthook = log_handler
+    sys.excepthook = unhandled_exception_handler
     _Log.addHandler(file_handler)
 
 
-def log_handler(
+def unhandled_exception_handler(
     exc_type: type, exc_value: Exception, exc_traceback: TracebackType
 ) -> None:
     """file log handler. This only catches exceptions from the same thread

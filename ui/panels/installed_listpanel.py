@@ -4,6 +4,7 @@ import wx
 
 import lib.config
 import lib.tasks
+import ui.utils
 from ui.panels.listpanel import ListPanel
 from adblib import adb_interface
 
@@ -20,6 +21,27 @@ class InstalledListPanel(ListPanel):
         super().__init__(title="Installed Games", columns=columns, *args, **kw)
 
         self.app.install_listpanel = self
+
+        self.insert_button_panel(self._create_button_panel(), 0, flag=wx.ALIGN_RIGHT)
+
+    def _create_button_panel(self) -> wx.Panel:
+        # create the button panel
+        button_panel = wx.Panel(self, -1)
+
+        # create the buttons and store them into the super classes bitmap_buttons dict
+        self.bitmap_buttons["refresh"] = ui.utils.create_bitmap_button(
+            "refresh.png", "Refresh Apps on the device", button_panel
+        )
+        self.bitmap_buttons["uninstall"] = ui.utils.create_bitmap_button(
+            "uninstall.png", "Uninstall App", button_panel
+        )
+        self.Bind(
+            wx.EVT_BUTTON, self.on_uninstall_click, self.bitmap_buttons["uninstall"]
+        )
+
+        hbox_btns = ListPanel.create_bitmap_button_sizer(self.bitmap_buttons)
+        button_panel.SetSizer(hbox_btns)
+        return button_panel
 
     async def load(self, device_name: str):
         if lib.config.DebugSettings.enabled:
@@ -39,7 +61,7 @@ class InstalledListPanel(ListPanel):
         self.Bind(wx.EVT_MENU, self.on_uninstall, uninstall_item)
         self.listctrl.PopupMenu(menu)
 
-    def on_uninstall(self, evt: wx.MenuEvent):
+    def uninstall(self) -> None:
         # handle the uninstall event here
         try:
             package_name = self.get_package_name()
@@ -51,6 +73,12 @@ class InstalledListPanel(ListPanel):
             )
         except lib.tasks.TaskIsRunning as err:
             wx.MessageBox(err.__str__(), "Uninstall issue")
+
+    def on_uninstall(self, evt: wx.MenuEvent):
+        self.uninstall()
+
+    def on_uninstall_click(self, evt: wx.CommandEvent) -> None:
+        self.uninstall()
 
     def get_package_name(self) -> str:
         """gets the package name from the selected item in the listctrl

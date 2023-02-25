@@ -1,6 +1,8 @@
-from typing import List
+from typing import List, Tuple
 
 import wx
+
+import lib.image_manager as img_mgr
 
 
 class CustomListCtrl(wx.ListCtrl):
@@ -113,6 +115,32 @@ class ListCtrlPanel(wx.Panel):
         sizer = wx.StaticBoxSizer(staticbox, wx.VERTICAL)
         sizer.Add(self.listctrl, 1, wx.ALL | wx.EXPAND, 0)
         self.SetSizer(sizer)
+
+
+def create_bitmap_button(
+    filename: str,
+    tooltip: str | None,
+    parent: wx.Window,
+    id: int = wx.ID_ANY,
+    size: Tuple[int, int] = (24, 24),
+) -> wx.BitmapButton:
+    """loads the bitmap from specified file and returns a BitmapButton control
+
+    Args:
+        filename (str): the image file to convert to bitmap
+        tooltip (str | None): sets a tooltip. Set None as it can be annoying
+        parent (wx.Window): the parent window to attach the bitmapbutton to
+        id (int, optional): the ID of the bitmapbutton. Defaults to wx.ID_ANY.
+        size (Tuple[int, int], optional): the size of the bitmap. Defaults to (24, 24).
+
+    Returns:
+        wx.BitmapButton: returns a BitmapButton
+    """
+    bmp = img_mgr.get_image(filename).ConvertToBitmap()
+    bmp_btn = wx.BitmapButton(parent, id, bmp, size=size)
+    if tooltip is not None:
+        bmp_btn.SetToolTip(tooltip)
+    return bmp_btn
 
 
 def show_error_message(message: str, caption: str = "Error") -> None:

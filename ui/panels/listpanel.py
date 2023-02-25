@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 import wx
 
@@ -56,6 +56,7 @@ class ListPanel(wx.Panel):
         self.listctrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_double_click)
 
         self.columns = columns
+        self.bitmap_buttons: Dict[str, wx.BitmapButton] = {}
 
         staticbox = wx.StaticBox(self, label=title)
         sizer = wx.StaticBoxSizer(staticbox, wx.VERTICAL)
@@ -67,6 +68,52 @@ class ListPanel(wx.Panel):
 
         sizer.Add(self.listctrl, proportion=1, flag=wx.EXPAND)
         self.SetSizer(sizer=sizer)
+
+    def insert_button_panel(
+        self,
+        button_panel: wx.Panel,
+        sizer_index: int = 0,
+        proportion: int = 0,
+        flag: int = wx.EXPAND,
+        border: int = 0,
+    ) -> bool:
+        """Inserts a Panel into the StaticBoxSizer of ListPanel
+
+        Args:
+            button_panel (wx.Panel): the panel to insert
+            sizer_index (int, optional): the index at which to insert to. Defaults to 0. can be 1 if after listctrl
+            proportion (int, optional): see wxSizer. Defaults to 0.
+            flag (int, optional): same as proportion wx.Sizer. Defaults to wx.EXPAND.
+            border (int, optional): same as border wx.Sizer. Defaults to 0.
+
+        Returns:
+            bool: Returns True if added. False if no StaticBoxSizer found from the Super class
+        """
+        sizer: wx.Sizer = self.GetSizer()
+        if sizer is None:
+            return False
+        sizer.Insert(sizer_index, button_panel, proportion, flag, border)
+        self.Layout()
+        return True
+
+    @staticmethod
+    def create_bitmap_button_sizer(
+        bitmap_buttons: Dict[str, wx.BitmapButton]
+    ) -> wx.BoxSizer:
+        """creates a Horizontal sizer and adds the bitmap_buttons to it and returns to the calling
+        function
+
+        Args:
+            bitmap_buttons (Dict[str, wx.BitmapButton]): a dict containing key name and value of BitmapButton.
+                                                         Normally from self.bitmap_buttons
+
+        Returns:
+            wx.BoxSizer: the horizontal sizer that holds the layout of the bitmap buttons
+        """
+        hbox_btns = wx.BoxSizer(wx.HORIZONTAL)
+        for button in bitmap_buttons.values():
+            hbox_btns.Add(button, 0, wx.EXPAND, 0)
+        return hbox_btns
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
         """flip the toggle state of the column when the column header has been pressed by the user

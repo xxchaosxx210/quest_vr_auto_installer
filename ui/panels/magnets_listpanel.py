@@ -10,11 +10,11 @@ import qvrapi.api as api
 import lib.config as config
 import lib.utils
 import lib.tasks
+import ui.utils
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
 from ui.panels.listpanel import ListPanel
 from ui.frames.magnet_update_frame import MagnetUpdateFrame
-from ui.utils import show_error_message
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
 
@@ -47,8 +47,31 @@ class MagnetsListPanel(ListPanel):
             {"col": COLUMN_SPEED, "heading": "Speed", "width": 50},
             {"col": COLUMN_ETA, "heading": "ETA", "width": 70},
         ]
-        super().__init__(title="Games Availible", columns=columns, *args, **kw)
+        super().__init__(
+            title="Games Availible",
+            columns=columns,
+            *args,
+            **kw,
+        )
         self.app.magnets_listpanel = self
+        self.insert_button_panel(self._create_button_panel())
+
+    def _create_button_panel(self) -> wx.Panel:
+        # create the button panel
+        button_panel = wx.Panel(self, -1)
+
+        # create the buttons and store them into the super classes bitmap_buttons dict
+        self.bitmap_buttons["refresh"] = ui.utils.create_bitmap_button(
+            "refresh.png", "Refresh Games List", button_panel, size=(24, 24)
+        )
+        self.Bind(wx.EVT_BUTTON, self.on_refresh_click, self.bitmap_buttons["refresh"])
+
+        hbox_btns = ListPanel.create_bitmap_button_sizer(self.bitmap_buttons)
+        button_panel.SetSizer(hbox_btns)
+        return button_panel
+
+    def on_refresh_click(self, evt: wx.CommandEvent) -> None:
+        _Log.info("Hello from the Magnet ListPanel")
 
     def on_item_double_click(self, evt: wx.ListEvent) -> None:
         settings = Settings.load()
@@ -62,10 +85,10 @@ class MagnetsListPanel(ListPanel):
                     settings.token, params={"id": magnet_data.torrent_id}
                 )
             except api.ApiError as err:
-                show_error_message(err.message, f"Code: {err.status_code}")
+                ui.utils.show_error_message(err.message, f"Code: {err.status_code}")
                 return
             except aiohttp.ClientConnectionError as err:
-                show_error_message(err.__str__())
+                ui.utils.show_error_message(err.__str__())
                 return
             if isinstance(magnets, list) and len(magnets) > 0:
                 frame = MagnetUpdateFrame(
