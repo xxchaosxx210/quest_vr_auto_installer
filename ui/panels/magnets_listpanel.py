@@ -32,6 +32,8 @@ COLUMN_ETA = 6
 
 
 class MagnetsListPanel(ListPanel):
+    find_game_and_launch_frame_task: asyncio.Task = None
+
     def __init__(self, *args, **kw):
         from q2gapp import Q2GApp
 
@@ -74,12 +76,28 @@ class MagnetsListPanel(ListPanel):
         _Log.info("Hello from the Magnet ListPanel")
 
     def on_item_double_click(self, evt: wx.ListEvent) -> None:
+        """get the item that was double clicked and find it in the API database
+        if item exists then load the game edit frame for editing.
+        Note that this requires Admin access token only and will not work is normal user or anonymouse
+
+        Args:
+            evt (wx.ListEvent): not used
+
+        Returns:
+            None:
+        """
         settings = Settings.load()
         magnet_data = self.get_selected_torrent_item()
         if not settings.is_user_admin() or not magnet_data:
             return super().on_item_double_click(evt)
 
-        async def get_games(token: str, params: dict):
+        async def _find_game_and_launch_frame(token: str, params: dict) -> None:
+            """sub function that retrieves game information and loads the edit game frame
+
+            Args:
+                token (str): admin JWT token
+                params (dict): torrent_id (will add key in a later version) this is to lookup the specified game
+            """
             try:
                 magnets = await api.search_for_games(
                     settings.token, params={"id": magnet_data.torrent_id}
@@ -90,6 +108,8 @@ class MagnetsListPanel(ListPanel):
             except aiohttp.ClientConnectionError as err:
                 ui.utils.show_error_message(err.__str__())
                 return
+            # check if the returned magnets is a list instance and contains more than 0
+            # if so launch the frame and add the first magnet in the list to the frame
             if isinstance(magnets, list) and len(magnets) > 0:
                 frame = MagnetUpdateFrame(
                     self.app.frame,
@@ -99,9 +119,17 @@ class MagnetsListPanel(ListPanel):
                 )
                 frame.Show()
 
-        asyncio.get_event_loop().create_task(
-            get_games(settings.token, {"id": magnet_data.torrent_id})
-        )
+        if (
+            self.find_game_and_launch_frame_task is None
+            or self.find_game_and_launch_frame_task.done()
+        ):
+            self.find_game_and_launch_frame_task = asyncio.create_task(
+                _find_game_and_launch_frame(
+                    settings.token, {"id": magnet_data.torrent_id}
+                )
+            )
+        else:
+            ui.utils.show_error_message("Request is already running")
         return super().on_item_double_click(evt)
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
