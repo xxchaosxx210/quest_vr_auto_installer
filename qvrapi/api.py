@@ -2,7 +2,7 @@
 """
 
 import logging
-from typing import List
+from typing import Iterator, List
 from urllib.parse import urljoin
 from enum import Enum, auto as auto_enum
 
@@ -162,8 +162,8 @@ async def post_error(error_request: schemas.LogErrorRequest) -> bool:
             headers={"Content-Type": "application/json"},
         ) as response:
             if response.status != 200:
-                error_response = await response.content.read()
-                raise ApiError(error_response)
+                error_response = await response.text()
+                raise ApiError(status_code=response.status, message=error_response)
             return True
 
 
@@ -186,8 +186,10 @@ async def login(email: str, password: str) -> dict:
         frm_data.add_field("password", password)
         async with session.post(URI_USERS_LOGIN, data=frm_data) as response:
             if response.status != 200:
-                err_message = await response.json()["detail"]
-                raise ApiError(status_code=response.status, message=err_message)
+                err_message = await response.json()
+                raise ApiError(
+                    status_code=response.status, message=err_message["detail"]
+                )
             resp_json = await response.json()
             return resp_json
 
@@ -212,7 +214,7 @@ async def get_user_info(token: str) -> schemas.User:
         raise err
 
 
-async def get_logs(token: str, params: dict = None) -> List[schemas.ErrorLog]:
+async def get_logs(token: str, params: dict = None) -> Iterator:
     """gets the error logs from the api server
 
     Args:
@@ -226,15 +228,12 @@ async def get_logs(token: str, params: dict = None) -> List[schemas.ErrorLog]:
         List: returns a list of ErrorLog
     """
 
-    def log_handler(_log: dict):
-        _error_log = schemas.ErrorLog(**_log)
-        return _error_log
-
     try:
         data = await send_json_request(URI_LOGS, token=token, params=params)
-        err_logs = list(map(log_handler, data["logs"]))
+        err_logs = map(lambda _log: schemas.ErrorLog(**_log), data["logs"])
         return err_logs
     except Exception as err:
+        _Log.error(err.__str__())
         raise err
 
 

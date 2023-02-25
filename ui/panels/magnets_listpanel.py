@@ -11,7 +11,7 @@ import lib.config as config
 import lib.utils
 import lib.tasks
 import ui.utils
-import qvrapi.handler
+import lib.api_handler
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
 from ui.panels.listpanel import ListPanel
@@ -100,7 +100,7 @@ class MagnetsListPanel(ListPanel):
             settings (Settings): _description_
             magnet_data (MagnetData): _description_
         """
-        magnets = await qvrapi.handler.get_magnets_from_torrent_id(
+        magnets = await lib.api_handler.get_magnets_from_torrent_id(
             settings.token, magnet_data.torrent_id, ui.utils.show_error_message
         )
         if magnets is None or len(magnets) < 1:
@@ -490,19 +490,28 @@ class MagnetsListPanel(ListPanel):
         self.listctrl.SetItem(index, 6, formatted_eta)
 
     def search_game(self, text: str) -> None:
+        """searches the list for a text match. If index of match returned
+        then set the state of the list item in the listctrl
+
+        Args:
+            text (str): text to find in the listctrl
+        """
+        # basic search in the name column. Match with text value
         item_index = self.find_item(COLUMN_NAME, text)
         if item_index == -1:
             return
-        # deselect any items
+        # item_index found. Loop through each item and set each Item to zero. This deselects
         for i in range(self.listctrl.GetItemCount()):
             if (
                 self.listctrl.GetItemState(i, wx.LIST_STATE_SELECTED)
                 == wx.LIST_STATE_SELECTED
             ):
                 self.listctrl.SetItemState(i, 0, wx.LIST_STATE_SELECTED)
+        # now set the item in the index to a selected state
         self.listctrl.SetItemState(
             item_index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED
         )
+        # scroll the window down to the selected list item
         self.listctrl.EnsureVisible(item_index)
 
     def find_row_by_torrent_id(self, torrent_id: str) -> int:

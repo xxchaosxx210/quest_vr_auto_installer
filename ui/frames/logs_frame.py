@@ -19,21 +19,13 @@ EXCEPTION_COLUMN = 4
 DATE_ADDED_COLUMN = 5
 
 
-async def send_request_and_handle_exception(
-    async_func: callable, *args, **kwargs
-) -> any:
-    try:
-        result = None
-        result = await async_func(*args, **kwargs)
-    except ApiError as err:
-        show_error_message(err.message, f"Code: {err.status_code}")
-    except aiohttp.ClientConnectionError as err:
-        show_error_message(err.__str__())
-    finally:
-        return result
-
-
 class LogsListCtrlPanel(ListCtrlPanel):
+    """main panel for the LogsFrame
+
+    Args:
+        ListCtrlPanel (_type_): inherits from this class
+    """
+
     def __init__(self, parent: wx.Window, title: str, columns: List[dict]):
         super().__init__(parent, title, columns)
 
@@ -46,10 +38,17 @@ class LogsListCtrlPanel(ListCtrlPanel):
         self.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click, self.listctrl)
 
     def clear_logs(self) -> None:
+        """clear the internal logs list and lisctrl items"""
         self._logs.clear()
         self.listctrl.DeleteAllItems()
 
     def set_item(self, index: int, log: ErrorLog) -> None:
+        """set the column entry with the ErrorLog instance
+
+        Args:
+            index (int): index row to add columns to
+            log (ErrorLog): Log object
+        """
         self._logs.append(log)
         self.listctrl.InsertItem(index, log.key)
         self.listctrl.SetItem(index, TYPE_COLUMN, str(log.type))
@@ -60,6 +59,11 @@ class LogsListCtrlPanel(ListCtrlPanel):
         self.listctrl.SetItem(index, DATE_ADDED_COLUMN, fmt_dt)
 
     def _on_list_item_activated(self, evt: wx.ListEvent) -> None:
+        """when the user double clicks then open up the extra Log information Dialog
+
+        Args:
+            evt (wx.ListEvent): ignored
+        """
         index = evt.GetIndex()
         if index == -1:
             return
@@ -73,6 +77,11 @@ class LogsListCtrlPanel(ListCtrlPanel):
         dlg.Destroy()
 
     def on_right_click(self, evt: wx.ListEvent) -> None:
+        """load the popupmenu for extra options for selected log
+
+        Args:
+            evt (wx.ListEvent): gets the index from the selected item
+        """
         index = evt.GetIndex()
         if index == -1:
             return
@@ -85,6 +94,12 @@ class LogsListCtrlPanel(ListCtrlPanel):
         return popup_menu
 
     def _on_delete_log(self, evt: wx.MenuEvent) -> None:
+        """when the user selects the delete log menuitem get the key from the selected row
+        and delete the log from the database
+
+        Args:
+            evt (wx.MenuEvent): _description_
+        """
         index = self.listctrl.GetFirstSelected()
         if index == -1:
             return
@@ -93,16 +108,19 @@ class LogsListCtrlPanel(ListCtrlPanel):
         async def delete_log(token: str, key: str) -> None:
             try:
                 logs = await delete_logs(token=token, key=key)
-            except ApiError as err:
-                show_error_message(err.message, f"Code: {err.status_code}")
-            except aiohttp.ClientConnectionError as err:
+                pass
+            except (aiohttp.ClientConnectionError, ApiError) as err:
                 show_error_message(err.__str__())
             else:
-                self.populate_listctrl(logs=logs)
+                wx.CallAfter(self.delete_item, index=index)
 
         asyncio.get_event_loop().create_task(
             delete_log(settings.token, self._logs[index].key)
         )
+
+    def delete_item(self, index: int) -> bool:
+        self._logs.pop(index)
+        return self.listctrl.DeleteItem(item=index)
 
     def populate_listctrl(self, logs: List[ErrorLog]) -> None:
         self.clear_logs()
@@ -111,6 +129,9 @@ class LogsListCtrlPanel(ListCtrlPanel):
 
 
 class LogsFrame(wx.Frame):
+
+    """LogsFrame: has a listctrl that contains all the Log entries found on the database"""
+
     def __init__(self, parent: wx.Window, size: Tuple[int, int] = wx.DefaultSize):
         super().__init__(parent=parent, id=-1, title="")
 
@@ -155,27 +176,42 @@ class LogsFrame(wx.Frame):
         return menu
 
     def _on_clear_logs(self, evt: wx.MenuEvent) -> None:
+        """clear logs menu item selected start a new task to clear and delete the logs on the database
+
+        Args:
+            evt (wx.MenuEvent): _description_
+        """
         asyncio.get_event_loop().create_task(self.clear_logs_request())
 
     async def clear_logs_request(self) -> None:
+        """deletes all the log entries in the database"""
         settings = Settings.load()
         try:
             logs = await delete_logs(settings.token, "all")
-        except ApiError as err:
-            show_error_message(err.message, f"Code: {err.status_code}")
-        except aiohttp.ClientConnectionError as err:
-            show_error_message("Connection Error", "Error")
+        except (ApiError, aiohttp.ClientConnectionError) as err:
+            show_error_message(err.__str__())
         else:
             self.logslstctrl_panel.populate_listctrl(logs=logs)
+        finally:
+            return
 
     async def load_list(self) -> None:
+        """gets the logs from the server and loads into listctrl
+
+        Raises:
+            err: unhandled exception
+        """
         settings = Settings.load()
-        error_logs = await send_request_and_handle_exception(
-            get_logs,
-            token=settings.token,
-            params={"sort_by": "date_added", "order_by": "desc"},
-        )
-        if not error_logs:
-            return
-        for index, log in enumerate(error_logs):
-            self.logslstctrl_panel.set_item(index, log)
+        try:
+            error_logs = await get_logs(
+                settings.token, params={"sort_by": "date_added", "order_by": "desc"}
+            )
+        except (aiohttp.ClientConnectionError, ApiError) as err:
+            show_error_message(err.__str__())
+        except Exception as err:
+            raise err
+        else:
+            if not error_logs:
+                return
+            for index, log in enumerate(error_logs):
+                self.logslstctrl_panel.set_item(index, log)

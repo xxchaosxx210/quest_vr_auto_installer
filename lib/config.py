@@ -144,11 +144,26 @@ def async_log_handler(loop: asyncio.ProactorEventLoop, context: dict) -> None:
         loop (asyncio.ProactorEventLoop): the event loop the exception came from
         context (dict): contains message: str and exception: BaseException
     """
-    exception = context.get("exception", None)
+    exception: Exception = context.get("exception", None)
     if not exception:
         _Log.error(context.get("message", ""))
         return
-    _Log.error("".join(traceback.format_exception(exception)))
+    settings = Settings.load()
+    tb_list: List[str] = traceback.format_tb(exception.__traceback__)
+    tb_str = "".join(tb_list)
+    error_request = LogErrorRequest(
+        type=exception.__class__.__name__,
+        uuid=settings.uuid,
+        exception=exception.__str__(),
+        traceback=tb_str,
+    )
+    try:
+        lib.tasks.create_log_error_task(post_error, error_request=error_request)
+    except lib.tasks.TaskIsRunning:
+        pass
+    except Exception as err:
+        _Log.error(err.__str__())
+    _Log.error(tb_str)
 
 
 def save_local_quest_magnets(path: str, qm_list: List[QuestMagnet]) -> bool:
