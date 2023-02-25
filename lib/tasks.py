@@ -23,6 +23,7 @@ class Tasks:
     load_installed: asyncio.Task = None
     remove_package: asyncio.Task = None
     user_info: asyncio.Task = None
+    extra_magnet_info: asyncio.Task = None
 
 
 class Threads:
@@ -58,6 +59,12 @@ def create_obb_dir_task(func: callable, **kwargs):
     if is_task_running(Tasks.obb_create):
         raise TaskIsRunning("Cannot create another task for OBB data creation")
     Tasks.obb_create = _create_task(func, **kwargs)
+
+
+def create_extra_info_task(func: callable, **kwargs):
+    if is_task_running(Tasks.extra_magnet_info):
+        raise TaskIsRunning("Extra info is already running")
+    Tasks.extra_magnet_info = _create_task(func, **kwargs)
 
 
 def load_installed_task(func: callable, **kwargs):

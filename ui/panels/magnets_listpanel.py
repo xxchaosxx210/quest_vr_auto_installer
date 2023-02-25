@@ -361,10 +361,10 @@ class MagnetsListPanel(ListPanel):
         magnet_data = self.get_selected_torrent_item()
         if not magnet_data:
             return
-
-        # create the coroutine for retrieving the meta data on the selected magnet link in the list
-        loop = asyncio.get_event_loop()
-        loop.create_task(_get_extra_meta_data(magnet_data.uri))
+        try:
+            lib.tasks.create_extra_info_task(_get_extra_meta_data, uri=magnet_data.uri)
+        except lib.tasks.TaskIsRunning:
+            pass
 
     def on_install_apk(self, evt: wx.MenuEvent):
         """debug menu item: skips download process and starts the install from local apk
@@ -529,7 +529,7 @@ class MagnetsListPanel(ListPanel):
             quest_data (QuestMagnet): new data to update
         """
         if index > self.listctrl.GetItemCount():
-            show_error_message(
+            ui.utils.show_error_message(
                 "Index is out of range could not Update Magnet ListCtrl Item Column"
             )
             return
