@@ -262,13 +262,15 @@ async def send_json_request(
     params: dict = {},
     _json: dict = {},
     request_type: RequestType = RequestType.GET,
+    timeout: float = 5.0,
 ) -> dict:
     if not token:
         headers = {}
     else:
         headers = create_auth_token_header(token=token)
     headers["Content-Type"] = "application/json"
-    async with aiohttp.ClientSession() as session:
+    timeout_total = aiohttp.ClientTimeout(total=timeout)
+    async with aiohttp.ClientSession(timeout=timeout_total) as session:
         # find out what request is being sent
         if request_type == RequestType.GET:
             request_ctxmgr = session.get
