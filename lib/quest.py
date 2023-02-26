@@ -4,7 +4,7 @@ import os
 import shutil
 import time
 from datetime import timedelta
-from typing import Callable
+from typing import Callable, List
 from dataclasses import dataclass
 
 from adblib import adb_interface
@@ -22,12 +22,12 @@ InstallStatusFunction = Callable[[str], None]
 @dataclass
 class InstallPackage:
     apk_path: str
-    apk_sub_directories: str
+    apk_sub_directories: List[str]
     apk_filename: str
 
 
 def cleanup(path_to_remove: str, error_callback) -> None:
-    def on_error(func: callable, path: str, exc_info: tuple) -> None:
+    def on_error(func: Callable, path: str, exc_info: tuple) -> None:
         error_callback(exc_info[1].__str__())
 
     shutil.rmtree(path_to_remove, ignore_errors=False, onerror=on_error)
@@ -87,19 +87,19 @@ async def dummy_install_game(
     install_results = InstallPackage(
         apk_path=apk_path, apk_sub_directories=apk_sub_paths, apk_filename=apk_filename
     )
-    asyncio.sleep(0.2)
+    await asyncio.sleep(0.2)
     callback(
         "Installing game this may take several minutes. Please do not disconnect your device"
     )
-    asyncio.sleep(time_to_install)
+    await asyncio.sleep(time_to_install)
     callback("Game has been installed. Moving to next step...")
     callback(
         "Moving files onto device. This may take a few minutes. Do not disconnect Device"
     )
     if raise_exception:
-        raise RemoteDeviceError("Remote device not responding")
+        raise TypeError("This is a test")
 
-    asyncio.sleep(5)
+    await asyncio.sleep(5)
 
     elapsed_time = time.time() - start_time
     formatted_time = str(timedelta(seconds=elapsed_time))

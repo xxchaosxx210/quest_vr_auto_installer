@@ -13,9 +13,13 @@ class UserInfoDialog(wx.Dialog):
         email_value = wx.StaticText(self, -1, user.email)
 
         date_created_label = wx.StaticText(self, -1, "Date Registered: ")
-        date_created_value = wx.StaticText(
-            self, -1, format_timestamp_to_str(user.date_created, include_hms=True)
-        )
+        if user.date_created is None:
+            str_date_created = ""
+        else:
+            str_date_created = format_timestamp_to_str(
+                user.date_created, include_hms=True
+            )
+        date_created_value = wx.StaticText(self, -1, str_date_created)
 
         account_type_label = wx.StaticText(self, -1, "Account Type: ")
         account_type_value = wx.StaticText(self, -1, get_account_type(user))

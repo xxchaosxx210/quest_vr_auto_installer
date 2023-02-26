@@ -126,8 +126,8 @@ class Q2GApp(wxasync.WxAsyncApp):
         )
         try:
             lib.tasks.create_log_error_task(send_error, _error_request=error_request)
-        except lib.tasks.TaskIsRunning as err:
-            wx.MessageBox(err.__str__(), "Cannot Send Error")
+        except lib.tasks.TaskIsRunning:
+            pass
 
     async def start_download_process(self, **kwargs) -> None:
         """download using the deluge torrent client
@@ -144,6 +144,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         # check that a device is selected
         if (
             not config.DebugSettings.enabled
+            and self.devices_listpanel is not None
             and not self.devices_listpanel.selected_device
         ):
             wx.MessageBox(
@@ -182,6 +183,8 @@ class Q2GApp(wxasync.WxAsyncApp):
         self.install_dialog = InstallProgressDialog(self.frame)
         self.install_dialog.Show()
         result = False
+        if self.devices_listpanel is None:
+            return False
         try:
             device_name = self.devices_listpanel.selected_device
             # if not device_name:
@@ -220,9 +223,10 @@ class Q2GApp(wxasync.WxAsyncApp):
         Args:
             torrent_status (dict): a dict containing torrent download status
         """
-        wx.CallAfter(
-            self.magnets_listpanel.update_list_item, torrent_status=torrent_status
-        )
+        if self.magnets_listpanel is not None:
+            wx.CallAfter(
+                self.magnets_listpanel.update_list_item, torrent_status=torrent_status
+            )
 
     def on_install_update(self, message: str) -> None:
         """update the Progress Dialog textbox from the install process
@@ -240,9 +244,12 @@ class Q2GApp(wxasync.WxAsyncApp):
         Args:
             package_name (str): the name of the package to uninstall
         """
-        device_name = self.devices_listpanel.selected_device
-        if not device_name:
+        if (
+            self.devices_listpanel is None
+            or self.devices_listpanel.selected_device == ""
+        ):
             return
+        device_name = self.devices_listpanel.selected_device
         try:
             self.frame.SetStatusText(
                 f"Removing {package_name} from Device {device_name}"
@@ -257,7 +264,8 @@ class Q2GApp(wxasync.WxAsyncApp):
             )
         else:
             # reload the package list
-            await self.install_listpanel.load(device_name)
+            if self.install_listpanel is not None:
+                await self.install_listpanel.load(device_name)
         finally:
             return
 

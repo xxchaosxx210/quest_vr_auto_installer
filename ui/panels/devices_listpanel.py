@@ -110,14 +110,15 @@ class DevicesListPanel(ListPanel):
         except lib.tasks.TaskIsRunning:
             pass
         # Load the installed apps into the install listctrl
-        try:
-            lib.tasks.load_installed_task(
-                self.app.install_listpanel.load, device_name=device_name
-            )
-        except lib.tasks.TaskIsRunning:
-            pass
+        if self.app.install_listpanel is not None:
+            try:
+                lib.tasks.load_installed_task(
+                    self.app.install_listpanel.load, device_name=device_name
+                )
+            except lib.tasks.TaskIsRunning:
+                pass
 
-    def get_selected_device_name(self) -> str:
+    def get_selected_device_name(self) -> str | None:
         """gets the selected device name
 
         Returns:

@@ -33,7 +33,7 @@ COLUMN_ETA = 6
 
 
 class MagnetsListPanel(ListPanel):
-    find_game_task: asyncio.Task = None
+    find_game_task: asyncio.Task | None = None
 
     magnet_data_list: List[MagnetData] = []
 
@@ -100,6 +100,9 @@ class MagnetsListPanel(ListPanel):
             settings (Settings): _description_
             magnet_data (MagnetData): _description_
         """
+        if settings.token is None:
+            ui.utils.show_error_message("No token was found. Unable to Authenticate")
+            return
         magnets = await lib.api_handler.get_magnets_from_torrent_id(
             settings.token, magnet_data.torrent_id, ui.utils.show_error_message
         )
@@ -131,6 +134,8 @@ class MagnetsListPanel(ListPanel):
             _Log.info("ListCtrl sort has been disabled while install is in progress")
             return
         column = evt.GetColumn()
+        if type(column) != int:
+            return
         items = self._get_list_items()
         if not self.sort_items_from_column(column, items):
             return
@@ -173,7 +178,7 @@ class MagnetsListPanel(ListPanel):
             )
         return items
 
-    def sort_items_from_column(self, column: int, items: dict) -> bool:
+    def sort_items_from_column(self, column: int, items: List[dict]) -> bool:
         """sorts the list items based on column
 
         Args:
@@ -193,7 +198,7 @@ class MagnetsListPanel(ListPanel):
             return False
         return True
 
-    def _rebuild_list(self, items: dict) -> None:
+    def _rebuild_list(self, items: List[dict]) -> None:
         """change the magnet data index to the new index in the rebuilt listctrl
         creates a new row entry in the listctrl
 
@@ -246,10 +251,8 @@ class MagnetsListPanel(ListPanel):
         except Exception as err:
             # something else went wrong notify the user and return. Skip loading
             self.app.exception_handler(err)
-            magnets = None
+            return
         finally:
-            if not isinstance(magnets, list):
-                return
             # sort the magnets in alphaebetical order and load into listctrl
             magnets = sorted(magnets, key=lambda item: item.display_name.lower())
             await self.load_magnets(magnets)
@@ -388,7 +391,7 @@ class MagnetsListPanel(ListPanel):
         except lib.tasks.TaskIsRunning as err:
             wx.MessageBox(err.__str__(), "Cannot install")
 
-    def on_pause_item_selected(self, evt: wx.MenuEvent):
+    def on_pause_item_selected(self, evt: wx.MenuEvent) -> None:
         """puts a pause flag on the selected items queue
 
         Args:
@@ -397,7 +400,8 @@ class MagnetsListPanel(ListPanel):
         item = self.get_selected_torrent_item()
         if not item:
             return
-        item.queue.put_nowait({"request": QueueRequest.PAUSE})
+        if item.queue is not None:
+            item.queue.put_nowait({"request": QueueRequest.PAUSE})
 
     def on_resume_item_selected(self, evt: wx.MenuEvent):
         """puts a resume flag on the selected items queue
@@ -408,7 +412,8 @@ class MagnetsListPanel(ListPanel):
         item = self.get_selected_torrent_item()
         if not item:
             return
-        item.queue.put_nowait({"request": QueueRequest.RESUME})
+        if item.queue is not None:
+            item.queue.put_nowait({"request": QueueRequest.RESUME})
 
     def on_cancel_item_selected(self, evt: wx.MenuEvent):
         """puts a cancel flag on the running tasks queue
@@ -430,7 +435,8 @@ class MagnetsListPanel(ListPanel):
         dlg.Destroy()
         if result == wx.ID_CANCEL:
             return
-        item.queue.put_nowait({"request": QueueRequest.CANCEL})
+        if item.queue is not None:
+            item.queue.put_nowait({"request": QueueRequest.CANCEL})
 
     def get_selected_torrent_item(self) -> MagnetData | None:
         """gets the magnet data connected to the selected item in the listctrl
@@ -484,12 +490,12 @@ class MagnetsListPanel(ListPanel):
         index = torrent_status["index"]
         progress = deluge_utils.format_progress(torrent_status.get("progress", 0.0))
         self.listctrl.SetItem(index, 3, f"{progress}%")
-        self.listctrl.SetItem(index, 4, torrent_status.get("state"))
+        self.listctrl.SetItem(index, 4, torrent_status.get("state", ""))
         formatted_speed = deluge_utils.format_download_speed(
             torrent_status.get("download_payload_rate", 0)
         )
         self.listctrl.SetItem(index, 5, formatted_speed)
-        formatted_eta = deluge_utils.format_eta(torrent_status.get("eta"))
+        formatted_eta = deluge_utils.format_eta(torrent_status.get("eta", 0))
         self.listctrl.SetItem(index, 6, formatted_eta)
 
     def search_game(self, text: str) -> None:
@@ -527,7 +533,6 @@ class MagnetsListPanel(ListPanel):
             int: returns the index of the row. -1 if none found
         """
         for row_index, magnet_data in enumerate(self.magnet_data_list):
-            magnet_data: MagnetData = magnet_data
             if magnet_data.torrent_id == torrent_id:
                 return row_index
         return -1

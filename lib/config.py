@@ -39,9 +39,12 @@ else:
     raise OSError("OS not yet supported")
 
 # Have to add the Home Drive otherwise Deluge kicks up an error
-APP_BASE_PATH = HOMEDRIVE + os.path.join(os.getenv("HOMEPATH"), APP_NAME)
+HOMEPATH = os.getenv("HOMEPATH")
+if HOMEPATH is None:
+    raise EnvironmentError("Unable to find enviroment Home Path")
+APP_BASE_PATH = HOMEDRIVE + os.path.join(HOMEPATH, APP_NAME)
 # The path to save the torrent files to
-APP_DOWNLOADS_PATH = os.path.join(APP_BASE_PATH, "Games")
+APP_DOWNLOADS_PATH: str = os.path.join(APP_BASE_PATH, "Games")
 # Path to save log data, local magnet json file and the APP settings
 APP_DATA_PATH = os.path.join(APP_BASE_PATH, "Data")
 APP_LOG_PATH = os.path.join(APP_DATA_PATH, "log.txt")
@@ -225,7 +228,9 @@ def create_path_from_name(download_path: str, name: str) -> str:
     Returns:
         str: returns the full path name
     """
-    name = sanitize_filename(name)
-    name = name.replace(" ", "_")
-    pathname = os.path.join(download_path, name)
+    filename = sanitize_filename(name)
+    if type(filename) != str:
+        raise TypeError("Filename from sanitize_filename is not str type")
+    filename = filename.replace(" ", "_")
+    pathname = os.path.join(download_path, filename)
     return pathname

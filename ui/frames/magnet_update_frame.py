@@ -1,6 +1,6 @@
 import asyncio
 import base64
-from typing import Tuple
+from typing import Any, Tuple
 
 import wx
 import aiohttp
@@ -106,7 +106,7 @@ class MagnetUpdateFrame(wx.Frame):
             dict:
         """
 
-        def _get_correct_value(_name, _value) -> any:
+        def _get_correct_value(_name: str, _value: Any) -> Any:
             """checks for correct value types and does extra encoding if needed depending on
             the name
 
@@ -158,6 +158,8 @@ class MagnetUpdateFrame(wx.Frame):
             data_to_update (dict):
         """
         settings = Settings.load()
+        if settings.token is None:
+            return
         try:
             updated_magnet = await update_game_magnet(
                 settings.token, self.original_magnet_data.key, data_to_update
@@ -170,14 +172,15 @@ class MagnetUpdateFrame(wx.Frame):
             wx.MessageBox("Game has been updated", "", wx.OK | wx.ICON_EXCLAMATION)
             # get the game from the database and update the game in the magnet_listpanel
             # Ill do this tomorrow!!
-            index = self.app.magnets_listpanel.find_row_by_torrent_id(
-                self.original_magnet_data.id
-            )
-            wx.CallAfter(
-                self.app.magnets_listpanel.update_row,
-                index=index,
-                quest_data=updated_magnet,
-            )
+            if self.app.magnets_listpanel is not None:
+                index = self.app.magnets_listpanel.find_row_by_torrent_id(
+                    self.original_magnet_data.id
+                )
+                wx.CallAfter(
+                    self.app.magnets_listpanel.update_row,
+                    index=index,
+                    quest_data=updated_magnet,
+                )
             # self.original_magnet_data = updated_magnet
             # Need to update the original_magnet_data here
             self.original_magnet_data = updated_magnet

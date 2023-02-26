@@ -108,15 +108,15 @@ class LogsListCtrlPanel(ListCtrlPanel):
         async def delete_log(token: str, key: str) -> None:
             try:
                 logs = await delete_logs(token=token, key=key)
-                pass
             except (aiohttp.ClientConnectionError, ApiError) as err:
                 show_error_message(err.__str__())
             else:
                 wx.CallAfter(self.delete_item, index=index)
 
-        asyncio.get_event_loop().create_task(
-            delete_log(settings.token, self._logs[index].key)
-        )
+        if settings.token is not None:
+            asyncio.get_event_loop().create_task(
+                delete_log(settings.token, self._logs[index].key)
+            )
 
     def delete_item(self, index: int) -> bool:
         self._logs.pop(index)
@@ -186,6 +186,8 @@ class LogsFrame(wx.Frame):
     async def clear_logs_request(self) -> None:
         """deletes all the log entries in the database"""
         settings = Settings.load()
+        if settings.token is None:
+            return
         try:
             logs = await delete_logs(settings.token, "all")
         except (ApiError, aiohttp.ClientConnectionError) as err:
@@ -202,6 +204,8 @@ class LogsFrame(wx.Frame):
             err: unhandled exception
         """
         settings = Settings.load()
+        if settings.token is None:
+            return
         try:
             error_logs = await get_logs(
                 settings.token, params={"sort_by": "date_added", "order_by": "desc"}

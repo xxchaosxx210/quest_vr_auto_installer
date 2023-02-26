@@ -25,7 +25,7 @@ class Auth(BaseModel):
 
 
 class Settings(BaseModel):
-    download_path: str = APP_DOWNLOADS_PATH
+    download_path: str = str(APP_DOWNLOADS_PATH)
     remove_files_after_install: bool = False
     close_dialog_after_install: bool = False
     download_only: bool = False
@@ -42,6 +42,7 @@ class Settings(BaseModel):
             return False
         self.auth = None
         self.save()
+        return True
 
     @property
     def token(self) -> str | None:
@@ -60,10 +61,9 @@ class Settings(BaseModel):
         Returns:
             str:
         """
-        try:
+        if self.auth is not None:
             return self.auth.user.email
-        except AttributeError:
-            return ""
+        return ""
 
     def is_user_admin(self) -> bool:
         """check if the user stored to settings is an admin
