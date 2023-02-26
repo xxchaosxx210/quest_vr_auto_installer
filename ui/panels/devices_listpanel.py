@@ -59,16 +59,24 @@ class DevicesListPanel(ListPanel):
         return device_names
 
     async def load(self):
+        """load the device names from ADB daemon
+
+        Raises:
+            err: RemoteDeviceError | Exception
+        """
         self.listctrl.DeleteAllItems()
         try:
             device_names = await self._get_device_names()
         except adblib.errors.RemoteDeviceError as err:
             wx.CallAfter(self.app.exception_handler, err=err)
+        except Exception as err:
+            # raise any unhandled exceptions
+            _Log.error(err.__str__())
+            raise err
         else:
+            # everything went ok insert the device names into the device listctrl
             for index, device in enumerate(device_names):
                 wx.CallAfter(self.listctrl.InsertItem, index=index, label=device)
-        finally:
-            return
 
     def on_listitem_selected(self, evt: wx.ListEvent) -> None:
         """get the selected device name, create an obb path on the remote device

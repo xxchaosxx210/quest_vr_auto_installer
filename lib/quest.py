@@ -129,7 +129,11 @@ async def install_game(
         raise FileNotFoundError(f"{apk_dir.path} could not be found")
     if not device_name:
         raise ValueError("No Device selected")
-    if not device_name in await adb_interface.get_device_names():
+    try:
+        device_names = await adb_interface.get_device_names()
+    except Exception as err:
+        raise err
+    if not device_name in device_names:
         raise LookupError("Device disconnected. Please reconnect device and re-install")
 
     # get file stats from apk package

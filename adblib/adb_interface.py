@@ -6,7 +6,7 @@ interfaces with the Android Debugging Bridge
 
 import subprocess
 import asyncio
-from typing import AsyncGenerator, Generator, List
+from typing import AsyncGenerator, List
 
 from adblib.errors import RemoteDeviceError
 
@@ -20,6 +20,22 @@ class Code:
     SUCCESS = 0
     FAILURE = 1
     INVALID_COMMAND = 2
+
+
+async def _get_bytes_from_stream(stream_reader: asyncio.StreamReader | None) -> bytes:
+    """gets the bytes if stream_reader not None
+
+    Args:
+        stream_reader (asyncio.StreamReader|None): the IO buffer from subprocess
+
+    Returns:
+        bytes: returns the byte string from the IO buffer
+    """
+    if stream_reader is None:
+        bstr = b""
+    else:
+        bstr = await stream_reader.read()
+    return bstr
 
 
 def _remove_showwindow_flag() -> subprocess.STARTUPINFO:
@@ -156,7 +172,10 @@ async def uninstall(
     if options:
         commands.extend(options)
     commands.append(package_name)
-    await execute_subprocess(commands)
+    try:
+        await execute_subprocess(commands)
+    except Exception as err:
+        raise err
 
 
 async def get_installed_packages(
@@ -200,9 +219,9 @@ async def get_installed_packages(
     return package_names
 
 
-def get_package_generator(
+async def get_package_generator(
     device_name: str, options: List[str] = []
-) -> Generator[str, None, None]:
+) -> AsyncGenerator[str, None]:
     """lazy load the package names from an adb command
 
     Args:
@@ -215,7 +234,7 @@ def get_package_generator(
     commands = [ADB_PATH_DEFAULT, "-s", device_name, "shell", "pm", "list", "packages"]
     if options:
         commands.extend(options)
-    for byte_line in execute_subprocess_by_line(commands=commands):
+    async for byte_line in execute_subprocess_by_line(commands=commands):
         line: str = byte_line.decode("utf-8")
         if line.startswith("package:"):
             line = line.replace("package:", "")
@@ -271,7 +290,9 @@ def execute(commands: List[str]) -> str:
     return stdout
 
 
-async def execute_subprocess_by_line(commands: List[str]) -> AsyncGenerator | bytes:
+async def execute_subprocess_by_line(
+    commands: List[str],
+) -> AsyncGenerator[bytes, None]:
     """generator function for reading by line from a command subprocess
 
     Args:
@@ -287,16 +308,25 @@ async def execute_subprocess_by_line(commands: List[str]) -> AsyncGenerator | by
         startupinfo=_remove_showwindow_flag()
     )
     while True:
+        if process.stdout is None:
+            raise ValueError("process.stdout is None and has no readline method")
         line = await process.stdout.readline()
         if not line:
             break
         yield line
-    if process.returncode != 0:
-        stdout = await process.stdout.read()
-        stderr = await process.stderr.read()
+    if process.returncode is None or process.returncode != 0:
+        stdout = await _get_bytes_from_stream(process.stdout)
+        stderr = await _get_bytes_from_stream(process.stderr)
+        if process.returncode is None:
+            returncode = -1
+        else:
+            returncode = process.returncode
         raise RemoteDeviceError(
             subprocess.CompletedProcess(
-                args=None, returncode=process.returncode, stdout=stdout, stderr=stderr
+                args=commands,
+                returncode=returncode,
+                stdout=stdout,
+                stderr=stderr,
             )
         )
     await process.wait()
@@ -319,12 +349,19 @@ async def execute_subprocess(commands: List[str]) -> str:
     )
     stdout, stderr = await process.communicate()
     await process.wait()
-    if process.returncode != 0:
-        stdout = await process.stdout.read()
-        stderr = await process.stderr.read()
+    if process.returncode is None or process.returncode != 0:
+        stdout = await _get_bytes_from_stream(process.stdout)
+        stderr = await _get_bytes_from_stream(process.stderr)
+        if process.returncode is None:
+            returncode = -1
+        else:
+            returncode = process.returncode
         raise RemoteDeviceError(
             subprocess.CompletedProcess(
-                args=None, returncode=process.returncode, stdout=stdout, stderr=stderr
+                args=commands,
+                returncode=returncode,
+                stdout=stdout,
+                stderr=stderr,
             )
         )
     decoded_output = stdout.decode()

@@ -14,14 +14,17 @@ class RemoteDeviceError(Exception):
 
     def __init__(self, result: CompletedProcess, *args: object) -> None:
         super().__init__(*args)
-        stdout = result.stdout.decode()
-        stderr = result.stderr.decode()
-        if not stderr:
-            # use stdout instead for message
-            self.message = stdout
+        self.message: str = ""
+        self.code: int = 0
+        if result.stdout is not None:
+            self.message += result.stdout.decode()
+        if result.stderr is not None:
+            self.message += result.stderr.decode()
+
+        if result.returncode is None:
+            self.code = -1
         else:
-            self.message = stderr
-        self.code = result.returncode
+            self.code = result.returncode
 
     def __str__(self) -> str:
         return f"RemoteDeviceError: message={self.message}, code={self.code}"

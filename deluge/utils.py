@@ -16,6 +16,8 @@ import deluge.config
 
 TORRENT_ID_IN_ERROR_PATTERN = re.compile(r"\(([a-zA-Z0-9]+)\)")
 
+USER_AUTH_PATTERN = re.compile(r"^([^:]+):(\w+):([0-9]|10)$")
+
 
 _Log = logging.getLogger()
 
@@ -30,14 +32,17 @@ class File(BaseModel):
 
 class MetaData(BaseModel):
     name: str
-    files: Optional[List[File]]
+    files: Optional[List[File]] | None
     piece_length: int
     torrent_id: str
 
     def __str__(self) -> str:
-        paths = ["\n".join(file.path) for file in self.files]
-        paths = "\n".join(paths)
-        return f"Name: {self.name}\nPaths: {paths}\nLength: {self.piece_length}\nTorrent ID: {self.torrent_id}"
+        if self.files is not None:
+            paths = ["\n".join(file.path) for file in self.files]
+            formatted_path = "\n".join(paths)
+        else:
+            formatted_path = ""
+        return f"Name: {self.name}\nPaths: {formatted_path}\nLength: {self.piece_length}\nTorrent ID: {self.torrent_id}"
 
     def get_paths(self) -> List[str]:
         if not self.files:
@@ -132,22 +137,38 @@ def format_progress(progress) -> str:
     return formatted_progress
 
 
-def get_deluge_account(client_name: str) -> DelugeAccount:
+def get_deluge_account(client_name: str) -> DelugeAccount | None:
     """incase you want to connect to a different deluge account rather than the  default localclient
 
     Args:
-        client_name (str): username of the client
+        client_name (str): username of the client. Must not be empty string
+
+    Raises:
+        ValueError: If client_name id empty string
+        Exception: Unhandled exception
 
     Returns:
-        DelugeAccount: check DelugeAccount for info
+        DelugeAccount | None: check DelugeAccount for info
     """
-    with open(deluge.config.AUTH_FILE_PATH, "r") as fp:
-        for line in fp.read().split("\n"):
-            username, password, admin_level = line.split(":")
-            if username == client_name:
-                return DelugeAccount(
-                    name=username, password=password, level=admin_level
-                )
+    if not client_name.strip():
+        raise ValueError("Client name must be a non-empty string")
+    try:
+        with open(deluge.config.AUTH_FILE_PATH, "r") as fp:
+            for line in fp.read().split("\n"):
+                match = USER_AUTH_PATTERN.match(line)
+                if not match:
+                    continue
+                username = match.group(1)
+                password_hash = match.group(2)
+                admin_level = int(match.group(3))
+                if username == client_name:
+                    return DelugeAccount(
+                        name=username, password=password_hash, level=admin_level
+                    )
+    except FileNotFoundError:
+        return None
+    except Exception as err:
+        raise err
     return None
 
 
