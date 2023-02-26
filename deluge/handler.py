@@ -42,7 +42,7 @@ TorrentOptions create a dict of the torrent options.
 
 import asyncio
 from enum import Enum, auto as auto_enum
-from typing import Callable
+from typing import Any, Callable, Dict, cast
 from dataclasses import dataclass
 
 from deluge_client import (
@@ -56,8 +56,8 @@ import deluge.utils
 from deluge.exceptions import TorrentIdNotFound
 
 
-StatusUpdateFunction = Callable[[dir], bool]
-ErrorUpdateFunction = Callable[[Exception], None]
+StatusUpdateFunction = Callable[[Dict[str, Any]], None]
+ErrorUpdateFunction = Callable[[Exception], bool]
 
 
 class QueueRequest(Enum):
@@ -92,7 +92,7 @@ class MagnetData:
     index: int
     name: str
     torrent_id: str
-    queue: asyncio.Queue = None
+    queue: asyncio.Queue | None = None
     timeout: float = 1.0
 
 
@@ -182,7 +182,7 @@ async def download(
             if not torrent_id:
                 raise TorrentIdNotFound("Could not get Torrent ID from Daemon")
             while True:
-                torrent_status = deluge_client.call(
+                torrent_status: Dict[str, Any] = deluge_client.call(
                     "core.get_torrent_status",
                     torrent_id,
                     ["progress", "state", "download_payload_rate", "eta", "name"],
@@ -195,15 +195,20 @@ async def download(
                     break
                 if state == State.Seeding or state == State.Finished:
                     torrent_status["state"] = State.Finished
-                    await callback(torrent_status)
-                    ok_to_install = True
+                    await cast(Any, callback)(torrent_status)
                     break
                 elif state == State.Error:
-                    await error_callback(Exception(deluge_client.utils.get_log_data()))
+                    await cast(Any, error_callback)(
+                        Exception(deluge_client.utils.get_log_data())
+                    )
                     break
                 elif state == State.Downloading or state == State.Paused:
-                    await callback(torrent_status)
+                    await cast(Any, callback)(torrent_status)
                 try:
+                    if magnet_data.queue is None:
+                        raise TypeError(
+                            "queue is not type queue.Queue. cannot wait on queue"
+                        )
                     message = await asyncio.wait_for(
                         magnet_data.queue.get(), timeout=1.0
                     )
@@ -218,7 +223,7 @@ async def download(
                         torrent_status["download_payload_rate"] = 0
                         torrent_status["eta"] = 0
                         torrent_status["progress"] = 0.0
-                        await callback(torrent_status)
+                        await cast(Any, callback)(torrent_status)
                         break
                 except asyncio.TimeoutError:
                     pass
@@ -228,9 +233,7 @@ async def download(
                     "core.remove_torrent", torrent_id, remove_data_when_complete
                 )
     except Exception as err:
-        error_callback(err)
-        asyncio.get_event_loop().call_exception_handler(
-            {"message": err.__str__(), "exception": err}
-        )
-    finally:
+        cast(Any, error_callback)(err)
+        raise err
+    else:
         return ok_to_install

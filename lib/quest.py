@@ -138,7 +138,7 @@ async def install_game(
 
     # get file stats from apk package
     total_size = lib.utils.get_folder_size(apk_dir.root)
-    formatted_size = lib.utils.format_size(total_size)
+    formatted_size = lib.utils.format_size(float(total_size))
     apk_name = os.path.split(apk_dir.path)[-1]
     message = f"Installing {apk_name}. Total Size: {formatted_size}"
 

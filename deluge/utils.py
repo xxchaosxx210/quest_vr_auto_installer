@@ -4,7 +4,7 @@ import base64
 import asyncio
 import logging
 import subprocess
-from typing import List, Optional
+from typing import Any, Dict, List, Optional, Union
 import datetime
 
 from pydantic import BaseModel
@@ -181,6 +181,9 @@ async def get_magnet_info(uri: str, timeout: int = 10) -> MetaData:
         uri (str): the magnet uri
         timeout (int, optional): how long the connection stays until timing out. Defaults to 10.
 
+    Raises:
+        Exception: unhandled exception
+
     Returns:
         deluge.utils.MetaData: check the deluge.utils module for properties
     """
@@ -191,40 +194,54 @@ async def get_magnet_info(uri: str, timeout: int = 10) -> MetaData:
             )
             if not b64_str:
                 raise ValueError("b64_str was empty. Proberbly lack of seeders")
-            bmeta_base64 = str_to_be(b64_str)
-            bin_meta = base64.b64decode(bmeta_base64)
-            bin_meta = bendecode(bin_meta)
+            # convert the binary encoded data to bytes
+            be_base64 = str_to_be(b64_str)
+            be_dict_data = base64.b64decode(be_base64)
+            be_meta: Union[bytes, dict, int, list] = bendecode(be_dict_data)
+            if type(be_meta) is not dict:
+                raise TypeError("be_meta returned from bencode was not of type dict")
 
-            decoded_meta = {}
-            if b"files" in bin_meta:
-                decoded_meta["files"] = list(
-                    map(lambda bfile: decode_bfile(bfile), bin_meta[b"files"])
+            # decode the binary keys to normal string keys
+            # basically construct a new dict
+            decoded_data = {}
+            if b"files" in be_meta:
+                decoded_data["files"] = list(
+                    map(lambda bfile: decode_bfile(bfile), be_meta[b"files"])
                 )
-            decoded_meta["piece_length"] = bin_meta[b"piece length"]
-            decoded_meta["name"] = bin_meta[b"name"].decode()
-            decoded_meta["torrent_id"] = torrent_id
+            decoded_data["piece_length"] = be_meta[b"piece length"]
+            decoded_data["name"] = be_meta[b"name"].decode()
+            decoded_data["torrent_id"] = torrent_id
 
-            metadata = MetaData(**decoded_meta)
-
-            _Log.info(
-                f"Meta Data recieved. Name: {metadata.name}, Piece Size: {metadata.piece_length}"
-            )
+            # validate and turn dict into class object
+            metadata = MetaData(**decoded_data)
+            return metadata
 
     except Exception as err:
-        loop = asyncio.get_event_loop()
-        loop.call_exception_handler({"message": err.__str__(), "exception": err})
-        metadata = None
-    finally:
-        return metadata
+        raise err
 
 
-def decode_bfile(bfile: dict):
-    decoded_file = {}
+def decode_bfile(bfile: dict) -> Dict[str, Any]:
+    """decode the file key from the meta data dict
+
+    file is a dict and contains keys: length: int, path: List[str]
+
+    Args:
+        bfile (dict): the dict with the bytes key names
+
+    Returns:
+        Dict[str, Any]: returns a decoded key names as strings
+    """
+    decoded_file: Dict[str, Any] = {}
     decoded_file["length"] = bfile[b"length"]
     decoded_file["path"] = list(map(lambda path: path.decode(), bfile[b"path"]))
     return decoded_file
 
 
 def get_log_data() -> str:
+    """gets the log data from the
+
+    Returns:
+        str:
+    """
     with open(deluge.config.DELUGED_LOG_PATH, "r") as fp:
         return fp.read()

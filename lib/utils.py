@@ -59,7 +59,7 @@ def _unix_is_connected_to_internet() -> bool:
         return connected
 
 
-def apk_exists(magnetdata: MagnetData) -> str:
+def apk_exists(magnetdata: MagnetData) -> str | None:
     """appends the default download game path and the torrent path from the meta data
     and checks if the path exists and then scans for an apk package in that directory
 
@@ -105,7 +105,7 @@ def get_folder_size(folder_path: str) -> int:
     return size
 
 
-def format_size(size: int) -> str:
+def format_size(size: float) -> str:
     """formats the size of bytes into a formatted string representation
 
     Args:
@@ -115,9 +115,9 @@ def format_size(size: int) -> str:
         str: the formatted string
     """
     for unit in ["", "K", "M", "G"]:
-        if size < 1024:
+        if size < 1024.0:
             return f"{size:.1f} {unit}Bytes"
-        size /= 1024
+        size /= 1024.0
     return f"{size:.1f} TBytes"
 
 
@@ -145,8 +145,8 @@ def find_install_dirs(root_dir: str) -> Generator[ApkPath, None, None]:
                 # If we haven't seen this APK file before, process it.
                 if apk_path not in apk_files:
                     # Create lists to store paths to data directories and files.
-                    data_dirs = []
-                    file_paths = []
+                    data_dirs: List[str] = []
+                    file_paths: List[str] = []
                     apk_dir = os.path.dirname(apk_path)
                     # Loop through all subdirectories of the APK directory.
                     for sub_dir in os.listdir(apk_dir):

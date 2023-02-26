@@ -304,7 +304,7 @@ class MagnetsListPanel(ListPanel):
         dld_install_item = menu.Append(wx.ID_ANY, "Download and Install")
         self.Bind(wx.EVT_MENU, self.on_dld_and_install_item, dld_install_item)
         menu.AppendSeparator()
-        if lib.utils.apk_exists(magnet_data):
+        if lib.utils.apk_exists(magnet_data) is not None:
             install_only_item = menu.Append(wx.ID_ANY, "Install")
             self.Bind(wx.EVT_MENU, self.on_install_only_item, install_only_item)
             menu.AppendSeparator()
@@ -338,13 +338,16 @@ class MagnetsListPanel(ListPanel):
             Args:
                 uri (str): the magnet uri to get meta data from
             """
-            meta_data = await deluge_utils.get_magnet_info(uri)
-            if not meta_data:
-                self.app.exception_handler(
-                    Exception("Could not get extra information. Read logs for errors")
+            try:
+                meta_data = await asyncio.wait_for(
+                    deluge_utils.get_magnet_info(uri), timeout=5
                 )
-                return
-            load_info_dialog(meta_data)
+            except asyncio.TimeoutError:
+                ui.utils.show_error_message("Fetching Game information took too long")
+            except Exception as err:
+                self.app.exception_handler(err)
+            else:
+                load_info_dialog(meta_data)
 
         def load_info_dialog(metadata: deluge_utils.MetaData) -> None:
             """displays the meta data about the requested magnet in the magnets listctrl
@@ -472,7 +475,7 @@ class MagnetsListPanel(ListPanel):
             return
         pass
 
-    def update_list_item(self, torrent_status: dict):
+    def update_list_item(self, torrent_status: dict) -> None:
         """updates the columns on the magnet that is being installed
 
         Args:
