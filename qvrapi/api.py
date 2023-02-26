@@ -2,7 +2,7 @@
 """
 
 import logging
-from typing import Iterator, List
+from typing import Any, Dict, Iterator, List
 from urllib.parse import urljoin
 from enum import Enum, auto as auto_enum
 
@@ -214,7 +214,7 @@ async def get_user_info(token: str) -> schemas.User:
         raise err
 
 
-async def get_logs(token: str, params: dict = None) -> Iterator:
+async def get_logs(token: str, params: dict = {}) -> Iterator:
     """gets the error logs from the api server
 
     Args:
@@ -244,29 +244,50 @@ async def delete_logs(token: str, key: str) -> List[schemas.ErrorLog]:
     async with aiohttp.ClientSession() as session:
         async with session.delete(URI_LOGS, params=params, headers=headers) as response:
             if response.content_type == "text/plain":
-                data = await response.content.read()
+                byte_error_response = await response.content.read()
                 raise ApiError(
-                    status_code=response.status, message=data.decode("utf-8")
+                    status_code=response.status,
+                    message=byte_error_response.decode("utf-8"),
                 )
             if response.status != 200:
-                data = await response.json()
-                raise ApiError(status_code=response.status, message=data["detail"])
-            data = await response.json()
+                json_error_data: Dict[str, str] = await response.json()
+                raise ApiError(
+                    status_code=response.status, message=json_error_data["detail"]
+                )
+            json_data: Dict[str, Any] = await response.json()
             error_logs = list(
-                map(lambda _log_dict: schemas.ErrorLog(**_log_dict), data["logs"])
+                map(lambda _log_dict: schemas.ErrorLog(**_log_dict), json_data["logs"])
             )
             return error_logs
 
 
 async def send_json_request(
     uri: str,
-    token: str = None,
+    token: str | None = None,
     params: dict = {},
     _json: dict = {},
     request_type: RequestType = RequestType.GET,
     timeout: float = 5.0,
 ) -> dict:
-    if not token:
+    """abstract function for connecting and handling json api requests and responses
+
+    Args:
+        uri (str): the endpoint to connect to
+        token (str | None, optional): the JWT token to auth None of no oauth required. Defaults to None.
+        params (dict, optional): query. Defaults to {}.
+        _json (dict, optional): json query. Defaults to {}.
+        request_type (RequestType, optional): check the RequestType Enum class for details. Defaults to RequestType.GET.
+        timeout (float, optional): timeout until the connection drops. Defaults to 5.0.
+
+    Raises:
+        TypeError: if the RequestType Enum is not found
+        ApiError: if return code is not 200
+        ApiError: if the content type is not a json response
+
+    Returns:
+        dict: json object
+    """
+    if token is None:
         headers = {}
     else:
         headers = create_auth_token_header(token=token)
@@ -289,14 +310,15 @@ async def send_json_request(
             url=uri, params=params, headers=headers, json=_json
         ) as response:
             if response.content_type != "application/json":
-                data = await response.content.read()
+                bytes_error_resp = await response.content.read()
                 raise ApiError(
-                    status_code=response.status, message=data.decode("utf-8")
+                    status_code=response.status,
+                    message=bytes_error_resp.decode("utf-8"),
                 )
             if response.status != 200:
-                error_message = await response.json()
+                json_error_data: Dict[str, str] = await response.json()
                 raise ApiError(
-                    status_code=response.status, message=error_message["detail"]
+                    status_code=response.status, message=json_error_data["detail"]
                 )
-            data = await response.json()
-            return data
+            json_data: Dict[str, Any] = await response.json()
+            return json_data

@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from typing import Any, Dict
 
 import wx
 
@@ -16,7 +17,7 @@ class LoginDialog(wx.Dialog):
     def __init__(self, email_field: str, *args, **kw):
         super().__init__(*args, **kw)
 
-        self._login_data: dict = None
+        self._login_data: Dict[str, Any] | None = None
 
         self.username_sbox = TextCtrlStaticBox(
             self,
@@ -70,8 +71,6 @@ class LoginDialog(wx.Dialog):
                     caption="Error",
                     style=wx.MB_OK | wx.ICON_ERROR,
                 )
-            finally:
-                return
 
         def running_thread() -> None:
             asyncio.run(authenticate())
@@ -97,10 +96,10 @@ class LoginDialog(wx.Dialog):
             )
             self.submit_button.Enable(True)
 
-    def get_data(self) -> str | None:
+    def get_data(self) -> Dict[str, Any] | None:
         """gets the token if been authenticated
 
         Returns:
-            str | None: token string or none if not authenticated
+            Dict[str, Any] | None: token string or none if not authenticated
         """
         return self._login_data

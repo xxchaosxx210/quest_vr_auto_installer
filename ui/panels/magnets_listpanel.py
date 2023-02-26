@@ -103,7 +103,7 @@ class MagnetsListPanel(ListPanel):
         magnets = await lib.api_handler.get_magnets_from_torrent_id(
             settings.token, magnet_data.torrent_id, ui.utils.show_error_message
         )
-        if magnets is None or len(magnets) < 1:
+        if len(magnets) < 1:
             return
         # load the frame
         MagnetUpdateFrame(

@@ -115,10 +115,10 @@ class AddGameDialog(wx.Dialog):
             html = await mparser.MagnetParser.get_html(url)
             parser = mparser.MagnetParser()
             parser.feed(html)
-            return parser.magnet_urls
-        except mparser.ParserConnectionError as err:
-            show_error_message(err.message)
-        except aiohttp.ClientConnectionError as err:
+        except (aiohttp.ClientConnectionError, mparser.ParserConnectionError) as err:
             show_error_message(err.__str__())
+            return []
         except Exception as err:
             raise err
+        else:
+            return parser.magnet_urls

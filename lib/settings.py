@@ -30,7 +30,7 @@ class Settings(BaseModel):
     close_dialog_after_install: bool = False
     download_only: bool = False
     uuid: UUID = Field(default_factory=uuid4)
-    auth: Auth = None
+    auth: Auth | None = None
 
     def remove_auth(self) -> bool:
         """Sets the auth property to None and saves to file
@@ -38,7 +38,7 @@ class Settings(BaseModel):
         Returns:
             bool: returns True if successful or False if no auth was removed
         """
-        if not isinstance(self.auth, Auth):
+        if self.auth is None:
             return False
         self.auth = None
         self.save()

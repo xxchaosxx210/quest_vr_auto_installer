@@ -215,7 +215,7 @@ class MainFrame(wx.Frame):
         if return_code == wx.OK:
             # save the returned data to json file
             data = dlg.get_data()
-            if data:
+            if data is not None:
                 settings.set_auth(data)
                 settings.save()
         dlg.Destroy()

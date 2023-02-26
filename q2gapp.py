@@ -205,7 +205,8 @@ class Q2GApp(wxasync.WxAsyncApp):
                     path_to_remove=path, error_callback=self.on_install_update
                 )
             # reload the package list
-            await self.install_listpanel.load(device_name)
+            if self.install_listpanel is not None:
+                await self.install_listpanel.load(device_name)
             if settings.close_dialog_after_install:
                 self.install_dialog.Destroy()
             else:
