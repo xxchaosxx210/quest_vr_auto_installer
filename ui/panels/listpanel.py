@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import wx
 
@@ -45,7 +45,9 @@ class CustomListCtrl(wx.ListCtrl):
 
 
 class ListPanel(wx.Panel):
-    def __init__(self, title: str, columns=List[dict], *args, **kw):
+    def __init__(
+        self, title: str, columns: List[Dict[str, Union[int, str]]] = [], *args, **kw
+    ):
         super().__init__(*args, **kw)
 
         self.listctrl = CustomListCtrl(self, -1, style=wx.LC_REPORT)
@@ -55,7 +57,7 @@ class ListPanel(wx.Panel):
         self.listctrl.Bind(wx.EVT_LIST_COL_CLICK, self.on_col_left_click)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_double_click)
 
-        self.columns = columns
+        self._columns = columns
         self.bitmap_buttons: Dict[str, wx.BitmapButton] = {}
 
         staticbox = wx.StaticBox(self, label=title)
@@ -140,10 +142,10 @@ class ListPanel(wx.Panel):
         width = self.listctrl.GetSize()[0]
 
         # Get the total width of all columns
-        total_width = sum(column["width"] for column in self.columns)
+        total_width: int = sum(int(column["width"]) for column in self._columns)
 
         # Set the width of each column based on the ratio of width to total width
-        for column in self.columns:
+        for column in self._columns:
             self.listctrl.SetColumnWidth(
                 column["col"], int(width * column["width"] / total_width)
             )

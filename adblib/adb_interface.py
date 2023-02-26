@@ -6,7 +6,7 @@ interfaces with the Android Debugging Bridge
 
 import subprocess
 import asyncio
-from typing import List
+from typing import AsyncGenerator, Generator, List
 
 from adblib.errors import RemoteDeviceError
 
@@ -200,18 +200,27 @@ async def get_installed_packages(
     return package_names
 
 
-async def get_package_generator(device_name: str, options: List[str] = []) -> str:
+def get_package_generator(
+    device_name: str, options: List[str] = []
+) -> Generator[str, None, None]:
+    """lazy load the package names from an adb command
+
+    Args:
+        device_name (str): the name of the android ie. Quest device
+        options (List[str], optional): check the package manager API for list of options to use for this command. Defaults to [].
+
+    Yields:
+        Generator[str]: package name on that line
+    """
     commands = [ADB_PATH_DEFAULT, "-s", device_name, "shell", "pm", "list", "packages"]
     if options:
         commands.extend(options)
-    line_offset = 0
-    async for byte_line in execute_subprocess_by_line(commands=commands):
-        line = byte_line.decode("utf-8")
+    for byte_line in execute_subprocess_by_line(commands=commands):
+        line: str = byte_line.decode("utf-8")
         if line.startswith("package:"):
             line = line.replace("package:", "")
         line = line.strip()
-        yield line_offset, line
-        line_offset += 1
+        yield line
 
 
 async def copy_path(device_name: str, local_path: str, destination_path: str) -> str:
@@ -262,7 +271,7 @@ def execute(commands: List[str]) -> str:
     return stdout
 
 
-async def execute_subprocess_by_line(commands: List[str]) -> bytes:
+async def execute_subprocess_by_line(commands: List[str]) -> AsyncGenerator | bytes:
     """generator function for reading by line from a command subprocess
 
     Args:

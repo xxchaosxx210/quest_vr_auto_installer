@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import wx
 
@@ -20,8 +20,8 @@ class CustomListCtrl(wx.ListCtrl):
         """
         super().__init__(parent=parent, style=style)
 
-        self._columns = []
-        self._cols_toggle_state = []
+        self._columns: List[Dict[str, Union[int, str]]] = []
+        self._cols_toggle_state: List[bool] = []
         self._insert_columns(columns)
         self.Bind(wx.EVT_SIZE, self.on_size)
         self.Bind(wx.EVT_LIST_COL_CLICK, self.on_col_left_click)
@@ -52,7 +52,7 @@ class CustomListCtrl(wx.ListCtrl):
         width = self.GetSize()[0]
 
         # Get the total width of all columns
-        total_width = sum(column["width"] for column in self._columns)
+        total_width: int = sum(int(column["width"]) for column in self._columns)
 
         # Set the width of each column based on the ratio of width to total width
         for column in self._columns:

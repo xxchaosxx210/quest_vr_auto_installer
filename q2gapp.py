@@ -25,13 +25,13 @@ from ui.dialogs.install_progress_dialog import InstallProgressDialog
 
 class Q2GApp(wxasync.WxAsyncApp):
     # global wxwindow instances
-    devices_listpanel: DevicesListPanel = None
-    magnets_listpanel: MagnetsListPanel = None
-    install_listpanel: InstalledListPanel = None
-    install_dialog: InstallProgressDialog = None
+    devices_listpanel: DevicesListPanel | None = None
+    magnets_listpanel: MagnetsListPanel | None = None
+    install_listpanel: InstalledListPanel | None = None
+    install_dialog: InstallProgressDialog | None = None
 
     # store the global settings
-    settings: Settings = None
+    settings: Settings | None = None
 
     # online mode flag
     online_mode: bool = False
