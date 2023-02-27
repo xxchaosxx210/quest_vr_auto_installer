@@ -5,7 +5,7 @@
 		}
 	],
 	"settings": {
-		"python.analysis.typeCheckingMode": "strict",
+		"python.analysis.typeCheckingMode": "basic",
 		"editor.formatOnSaveMode": "file",
 		"editor.formatOnSave": true,
 		"editor.codeActionsOnSave": {

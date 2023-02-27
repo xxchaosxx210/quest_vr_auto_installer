@@ -182,9 +182,10 @@ class Q2GApp(wxasync.WxAsyncApp):
         """
         self.install_dialog = InstallProgressDialog(self.frame)
         self.install_dialog.Show()
-        result = False
+        # set the return value to False. Set to True if everything went ok
+        return_value = False
         if self.devices_listpanel is None:
-            return False
+            return return_value
         try:
             device_name = self.devices_listpanel.selected_device
             # if not device_name:
@@ -200,7 +201,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             # await asyncio.sleep(0.5)
             self.on_install_update(f"Error: {err.__str__()}. Installation has quit")
         else:
-            result = True
+            return_value = True
             settings = Settings.load()
             if settings.remove_files_after_install:
                 # delete the torrent files on the local path
@@ -215,7 +216,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             else:
                 self.on_install_update("Installation has completed. Enjoy!!")
         finally:
-            return result
+            return return_value
 
     async def on_torrent_update(self, torrent_status: dict) -> None:
         """passes the torrent status onto the update list item function in the magnet listpanel

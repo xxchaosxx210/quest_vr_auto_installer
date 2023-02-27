@@ -1,3 +1,4 @@
+from typing import List
 import wx
 import asyncio
 import random
@@ -286,6 +287,7 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.CommandEvent): not used
         """
+        self.statusbar.SetStatusText("Scanning for Quest devices...")
         asyncio.create_task(self.load_lists())
         evt.Skip()
 
@@ -294,15 +296,19 @@ class MainFrame(wx.Frame):
         create seperate coroutines to collect information for the quest device,
         game torrents load the listctrls
         """
-        wx.CallAfter(self.statusbar.SetStatusText, text="Scanning for Quest devices...")
         await asyncio.sleep(0.1)
         if self.app.devices_listpanel is None or self.app.magnets_listpanel is None:
             return
-        else:
-            task1 = asyncio.create_task(self.app.devices_listpanel.load())
-            task2 = asyncio.create_task(
-                self.app.magnets_listpanel.load_magnets_from_api()
-            )
-            while not task1.done() and not task2.done():
-                await asyncio.sleep(0.1)
-            wx.CallAfter(self.statusbar.SetStatusText, text="All Complete")
+        tasks: List[asyncio.Task] = []
+        # load the devices
+        tasks.append(asyncio.create_task(self.app.devices_listpanel.load()))
+        # load the magnets list
+        tasks.append(
+            asyncio.create_task(self.app.magnets_listpanel.load_magnets_from_api())
+        )
+        results: list = await asyncio.gather(*tasks, return_exceptions=True)
+        for exception in results:
+            if exception is not None:
+                # there was an error
+                self.app.exception_handler(exception)
+        wx.CallAfter(self.statusbar.SetStatusText, text="All Tasks Loaded")

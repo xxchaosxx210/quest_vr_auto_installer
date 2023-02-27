@@ -58,7 +58,7 @@ class DevicesListPanel(ListPanel):
             device_names = await adb_interface.get_device_names()
         return device_names
 
-    async def load(self):
+    async def load(self) -> None:
         """load the device names from ADB daemon
 
         Raises:
@@ -70,15 +70,13 @@ class DevicesListPanel(ListPanel):
         except adblib.errors.RemoteDeviceError as err:
             wx.CallAfter(self.app.exception_handler, err=err)
         except Exception as err:
-            # raise any unhandled exceptions
-            _Log.error(err.__str__())
             raise err
         else:
             # everything went ok insert the device names into the device listctrl
             for index, device in enumerate(device_names):
                 wx.CallAfter(self.listctrl.InsertItem, index=index, label=device)
 
-    def on_listitem_selected(self, evt: wx.ListEvent) -> None:
+    def on_item_double_click(self, evt: wx.ListEvent) -> None:
         """get the selected device name, create an obb path on the remote device
         and load the installed apps
 
@@ -93,6 +91,7 @@ class DevicesListPanel(ListPanel):
         device_name = item.GetText()
         # set the global selected device
         self.selected_device = device_name
+        # self.disable_list()
 
         async def create_obb_dir():
             """create the data directory on the quest device"""

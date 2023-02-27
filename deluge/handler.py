@@ -170,7 +170,13 @@ async def download(
     # 'time_added': returns the time the torrent was added as a timestamp
     # 'tracker_host': returns the hostname of the tracker for the torrent
     # 'next_announce': returns the time of the next announce as a timestamp
-    ok_to_install = False
+
+    # set the return value to false the only time it sets to True is when the download has completed
+    # this is when the state is either Seeding or Finished
+    return_value = False
+    # set this flag to False. Only sets to True if the download is cancelled.
+    # This is used to remove any downloaded files. Normally the files removal is handled
+    # from the calling function. Will add a parameter at a later date to have that option
     remove_data_when_complete = False
     try:
         with LocalDelugeRPCClient() as deluge_client:
@@ -195,6 +201,7 @@ async def download(
                     break
                 if state == State.Seeding or state == State.Finished:
                     torrent_status["state"] = State.Finished
+                    return_value = True
                     await cast(Any, callback)(torrent_status)
                     break
                 elif state == State.Error:
@@ -209,6 +216,7 @@ async def download(
                         raise TypeError(
                             "queue is not type queue.Queue. cannot wait on queue"
                         )
+                    # see if there are any messages from the queue
                     message = await asyncio.wait_for(
                         magnet_data.queue.get(), timeout=1.0
                     )
@@ -218,6 +226,7 @@ async def download(
                     elif request == QueueRequest.RESUME:
                         deluge_client.call("core.resume_torrent", torrent_id)
                     elif request == QueueRequest.CANCEL:
+                        # user wants to cancel. Reset the torrent_status
                         remove_data_when_complete = True
                         torrent_status["state"] = State.Cancelled
                         torrent_status["download_payload_rate"] = 0
@@ -236,4 +245,4 @@ async def download(
         cast(Any, error_callback)(err)
         raise err
     else:
-        return ok_to_install
+        return return_value
