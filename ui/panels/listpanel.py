@@ -77,6 +77,9 @@ class ListPanel(wx.Panel):
     def enable_list(self) -> bool:
         return self.listctrl.Enable(True)
 
+    def is_list_enabled(self) -> bool:
+        return self.listctrl.IsEnabled()
+
     def set_label(self, label: str) -> None:
         self._staticbox.SetLabel(label=label)
 
@@ -109,7 +112,7 @@ class ListPanel(wx.Panel):
 
     @staticmethod
     def create_bitmap_button_sizer(
-        bitmap_buttons: Dict[str, wx.BitmapButton]
+        bitmap_buttons: Dict[str, wx.BitmapButton], border: int = 0
     ) -> wx.BoxSizer:
         """creates a Horizontal sizer and adds the bitmap_buttons to it and returns to the calling
         function
@@ -124,6 +127,7 @@ class ListPanel(wx.Panel):
         hbox_btns = wx.BoxSizer(wx.HORIZONTAL)
         for button in bitmap_buttons.values():
             hbox_btns.Add(button, 0, wx.EXPAND, 0)
+            hbox_btns.AddSpacer(border)
         return hbox_btns
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:

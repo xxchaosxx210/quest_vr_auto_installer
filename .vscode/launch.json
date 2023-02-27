@@ -5,7 +5,15 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Run main.py (normal)",
+            "type": "python",
+            "request": "launch",
+            "program": "main.py",
+            "console": "integratedTerminal",
+            "justMyCode": true
+        },
+        {
+            "name": "Run main.py with -d option (GUI debug)",
             "type": "python",
             "request": "launch",
             "program": "main.py",
