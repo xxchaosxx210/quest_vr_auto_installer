@@ -250,6 +250,8 @@ class Q2GApp(wxasync.WxAsyncApp):
         ):
             return
         device_name = self.devices_listpanel.selected_device
+        if self.install_listpanel is not None:
+            self.install_listpanel.disable_list()
         try:
             self.frame.SetStatusText(
                 f"Removing {package_name} from Device {device_name}"
@@ -267,6 +269,8 @@ class Q2GApp(wxasync.WxAsyncApp):
             if self.install_listpanel is not None:
                 await self.install_listpanel.load(device_name)
         finally:
+            if self.install_listpanel is not None:
+                self.install_listpanel.enable_list()
             return
 
     async def check_internet_and_notify(self) -> None:

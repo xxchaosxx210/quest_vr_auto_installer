@@ -60,16 +60,25 @@ class ListPanel(wx.Panel):
         self._columns = columns
         self.bitmap_buttons: Dict[str, wx.BitmapButton] = {}
 
-        staticbox = wx.StaticBox(self, label=title)
-        sizer = wx.StaticBoxSizer(staticbox, wx.VERTICAL)
+        self._staticbox = wx.StaticBox(self, label=title)
+        self._staticbox_sizer = wx.StaticBoxSizer(self._staticbox, wx.VERTICAL)
 
         for column in columns:
             self.listctrl.InsertColumn(
                 col=column["col"], heading=column["heading"], width=column["width"]
             )
 
-        sizer.Add(self.listctrl, proportion=1, flag=wx.EXPAND)
-        self.SetSizer(sizer=sizer)
+        self._staticbox_sizer.Add(self.listctrl, proportion=1, flag=wx.EXPAND)
+        self.SetSizer(sizer=self._staticbox_sizer)
+
+    def disable_list(self) -> bool:
+        return self.listctrl.Enable(False)
+
+    def enable_list(self) -> bool:
+        return self.listctrl.Enable(True)
+
+    def set_label(self, label: str) -> None:
+        self._staticbox.SetLabel(label=label)
 
     def insert_button_panel(
         self,

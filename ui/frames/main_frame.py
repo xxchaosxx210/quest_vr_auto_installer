@@ -33,6 +33,8 @@ class MainFrame(wx.Frame):
         gs.Add(self.main_panel, 1, wx.ALL | wx.EXPAND, 0)
         self.SetSizerAndFit(gs)
         self.SetSize((800, 600))
+
+        # capture the on Window show event
         self.Bind(wx.EVT_SHOW, self.on_show)
 
     def _init_ui(self) -> None:
@@ -277,29 +279,30 @@ class MainFrame(wx.Frame):
         dlg = InstallProgressDialog(self)
         dlg.Show()
 
-    def on_show(self, evt: wx.CommandEvent):
-        """when the window is shown load the listctrls
+    def on_show(self, evt: wx.ShowEvent) -> None:
+        """when the window is shown start the async tasks to retrieve the resources
+        and load device listctrl and magnets listctrl
 
         Args:
-            evt (wx.CommandEvent):
+            evt (wx.CommandEvent): not used
         """
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.load_lists(loop))
+        asyncio.create_task(self.load_lists())
+        evt.Skip()
 
-    async def load_lists(self, loop: asyncio.AbstractEventLoop) -> None:
-        """create seperate coroutines to collect information for the quest device, game torrents
-        load the listctrls
-
-        Args:
-            loop (asyncio.AbstractEventLoop): the event loop to create the tasks
+    async def load_lists(self) -> None:
+        """
+        create seperate coroutines to collect information for the quest device,
+        game torrents load the listctrls
         """
         wx.CallAfter(self.statusbar.SetStatusText, text="Scanning for Quest devices...")
         await asyncio.sleep(0.1)
         if self.app.devices_listpanel is None or self.app.magnets_listpanel is None:
             return
         else:
-            task1 = loop.create_task(self.app.devices_listpanel.load())
-            task2 = loop.create_task(self.app.magnets_listpanel.load_magnets_from_api())
+            task1 = asyncio.create_task(self.app.devices_listpanel.load())
+            task2 = asyncio.create_task(
+                self.app.magnets_listpanel.load_magnets_from_api()
+            )
             while not task1.done() and not task2.done():
                 await asyncio.sleep(0.1)
             wx.CallAfter(self.statusbar.SetStatusText, text="All Complete")
