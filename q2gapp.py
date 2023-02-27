@@ -14,6 +14,7 @@ from deluge.handler import download, MagnetData
 from adblib.errors import RemoteDeviceError
 from qvrapi.schemas import LogErrorRequest
 from lib.settings import Settings
+from lib.debug_settings import Debug
 
 from ui.frames.main_frame import MainFrame
 from ui.panels.devices_listpanel import DevicesListPanel
@@ -143,7 +144,7 @@ class Q2GApp(wxasync.WxAsyncApp):
 
         # check that a device is selected
         if (
-            not config.DebugSettings.enabled
+            not Debug.enabled
             and self.devices_listpanel is not None
             and not self.devices_listpanel.selected_device
         ):

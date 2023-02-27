@@ -6,12 +6,12 @@ import socket
 import lib.utils
 import lib.config
 import adblib
-
 import lib.quest as quest
+from lib.debug_settings import Debug
 
 
 def test_create_obb_path_no_path_exists():
-    lib.config.DebugSettings.enabled = False
+    Debug.enabled = False
     adblib.adb_interface.path_exists = Mock(return_value=False)
     adblib.adb_interface.make_dir = Mock(return_value=lib.config.QUEST_OBB_DIRECTORY)
     assert quest.create_obb_path("NJNDCJNDCN", lib.config.QUEST_OBB_DIRECTORY) == True

@@ -7,6 +7,7 @@ import lib.tasks
 import ui.utils
 from ui.panels.listpanel import ListPanel
 from adblib import adb_interface
+from lib.debug_settings import Debug
 
 
 _Log = logging.getLogger(__name__)
@@ -44,8 +45,8 @@ class InstalledListPanel(ListPanel):
         return button_panel
 
     async def load(self, device_name: str):
-        if lib.config.DebugSettings.enabled:
-            package_names = lib.config.DebugSettings.package_names
+        if Debug.enabled:
+            package_names = Debug.package_names
         else:
             package_names = await adb_interface.get_installed_packages(
                 device_name, ["-3"]

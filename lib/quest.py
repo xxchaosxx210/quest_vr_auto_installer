@@ -11,6 +11,7 @@ from adblib import adb_interface
 from adblib.errors import RemoteDeviceError
 import lib.config
 import lib.utils
+from lib.debug_settings import Debug
 
 
 _Log = logging.getLogger(__name__)
@@ -45,7 +46,7 @@ def create_obb_path(
     Returns:
         bool: True if new directory created or False if no directory was created
     """
-    if lib.config.DebugSettings.enabled:
+    if Debug.enabled:
         obb_path_exists = True
         return not obb_path_exists
 

@@ -72,17 +72,6 @@ from lib.settings import Settings
 _Log = logging.getLogger(__name__)
 
 
-class DebugSettings:
-    enabled: bool = False
-    device_names = ["QUEST1FAKE", "QUEST2FAKE"]
-    package_names = [
-        "com.oculus.TestGame",
-        "com.rockstar.GTAV",
-        "com.ubisoft.SplinterCellConviction",
-        "com.golfcompany.MiniGolfAwesome",
-    ]
-
-
 def parse_args() -> argparse.Namespace:
     """parse the arguments from the terminal
 
