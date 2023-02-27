@@ -7,7 +7,7 @@ import lib.tasks
 import ui.utils
 from ui.panels.listpanel import ListPanel
 from adblib import adb_interface
-from lib.debug_settings import Debug
+from lib.debug import Debug
 
 
 _Log = logging.getLogger(__name__)
@@ -44,9 +44,15 @@ class InstalledListPanel(ListPanel):
         button_panel.SetSizer(hbox_btns)
         return button_panel
 
-    async def load(self, device_name: str):
+    async def load(self, device_name: str) -> None:
         if Debug.enabled:
-            package_names = Debug.package_names
+            try:
+                fake_quest = Debug.get_device(device_name)
+            except LookupError:
+                _Log.error(f"No device found with name {device_name}")
+                return
+            else:
+                package_names = fake_quest.package_names
         else:
             package_names = await adb_interface.get_installed_packages(
                 device_name, ["-3"]

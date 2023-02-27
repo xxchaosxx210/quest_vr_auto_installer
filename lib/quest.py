@@ -11,7 +11,7 @@ from adblib import adb_interface
 from adblib.errors import RemoteDeviceError
 import lib.config
 import lib.utils
-from lib.debug_settings import Debug
+from lib.debug import Debug
 
 
 _Log = logging.getLogger(__name__)

@@ -8,7 +8,7 @@ import sys
 
 
 import lib.config as config
-from lib.debug_settings import Debug
+from lib.debug import Debug
 from deluge.utils import start_deluge_daemon
 from adblib import adb_interface
 from lib.settings import Settings

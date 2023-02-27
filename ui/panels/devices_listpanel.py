@@ -10,7 +10,7 @@ import ui.utils
 import lib.quest as quest
 from adblib import adb_interface
 from ui.panels.listpanel import ListPanel
-from lib.debug_settings import Debug
+from lib.debug import Debug
 
 
 _Log = logging.getLogger()
@@ -54,7 +54,7 @@ class DevicesListPanel(ListPanel):
             List[str]: list of device names if found
         """
         if Debug.enabled:
-            device_names = Debug.device_names
+            device_names = Debug.get_device_names()
         else:
             device_names = await adb_interface.get_device_names()
         return device_names

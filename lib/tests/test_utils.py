@@ -7,7 +7,7 @@ import lib.utils
 import lib.config
 import adblib
 import lib.quest as quest
-from lib.debug_settings import Debug
+from lib.debug import Debug
 
 
 def test_create_obb_path_no_path_exists():

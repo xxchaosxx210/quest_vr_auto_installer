@@ -14,7 +14,7 @@ from deluge.handler import download, MagnetData
 from adblib.errors import RemoteDeviceError
 from qvrapi.schemas import LogErrorRequest
 from lib.settings import Settings
-from lib.debug_settings import Debug
+from lib.debug import Debug
 
 from ui.frames.main_frame import MainFrame
 from ui.panels.devices_listpanel import DevicesListPanel
