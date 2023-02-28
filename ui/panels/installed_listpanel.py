@@ -45,6 +45,16 @@ class InstalledListPanel(ListPanel):
         return button_panel
 
     async def load(self, device_name: str) -> None:
+        """get the installed packages from the device_name string using the ADB interface.
+        device_name cannot be empty string
+
+        Args:
+            device_name (str): the name of the device to get the installed packages from
+
+        Raises:
+            ValueError: device_name is an empty string then exception is raised
+            LookupError: (Debug mode only) if device_name cant be found then this will be raised
+        """
         if not device_name:
             raise ValueError(
                 "Device name must be non empty string. Could not load installed packages. Dialog must have returned empty selected device"

@@ -105,7 +105,9 @@ class DevicesListPanel(ListPanel):
         Raises:
             err: unhandled exceptions
         """
-        index = evt.GetSelection()
+        index = self.listctrl.GetFirstSelected()
+        if index == -1:
+            return
         item: wx.ListItem = self.listctrl.GetItem(index, 0)
         device_name = item.GetText()
         # set the global selected device

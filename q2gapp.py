@@ -293,6 +293,5 @@ class Q2GApp(wxasync.WxAsyncApp):
         )
         if result != wx.OK and result != 0:
             raise ValueError("Dialog did not return a wx.OK or Close id")
-
         if self.selected_device and self.install_listpanel is not None:
             await self.install_listpanel.load(self.selected_device)

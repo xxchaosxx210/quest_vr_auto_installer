@@ -24,15 +24,13 @@ async def open_device_selection_dialog(
     """
     dlg = DeviceListDialog(parent=parent, id=id, title=title, style=style, size=size)
     result = await wxasync.AsyncShowDialogModal(dlg=dlg)
-    return (result, dlg.selected_device_name)
+    return (result, dlg.get_device_name())
 
 
 class DeviceListDialog(wx.Dialog):
-    selected_device_name: str = ""
-
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
-
+        self._selected_device_name: str = ""
         try:
             self.device_listpanel = devices_panel.DevicesListPanel(self)
             wxasync.AsyncBind(
@@ -63,7 +61,10 @@ class DeviceListDialog(wx.Dialog):
         self.Close()
 
     async def _on_device_selected(self, evt: devices_panel.DeviceEvent) -> None:
-        self.selected_device_name = evt.GetDeviceName()
-        if self.selected_device_name:
+        self._selected_device_name = evt.GetDeviceName()
+        if self._selected_device_name:
             self.SetReturnCode(wx.OK)
             self.Close()
+
+    def get_device_name(self) -> str:
+        return self._selected_device_name

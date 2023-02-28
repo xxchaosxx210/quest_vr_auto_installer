@@ -8,6 +8,11 @@ class Quest:
 
 
 class Debug:
+
+    """
+    for testing the GUI controls
+    """
+
     enabled: bool = False
     devices = [
         Quest("QUEST1", ["com.fake.MarioKart"]),
@@ -16,6 +21,11 @@ class Debug:
 
     @staticmethod
     def get_device_names() -> List[str]:
+        """simulate the adblib.adb_interface.get_device_names method
+
+        Returns:
+            List[str]: list of device names
+        """
         device_names = list(map(lambda quest: quest.name, Debug.devices))
         return device_names
 
@@ -30,7 +40,7 @@ class Debug:
             LookupError: if no device found then this gets raised
 
         Returns:
-            Quest: the Quest object
+            Quest: the Quest fake object for testing
         """
         found_devices = list(filter(lambda device: device.name == name, Debug.devices))
         if not found_devices:

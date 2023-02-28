@@ -17,7 +17,7 @@ class MainPanel(wx.Panel):
         splitter_window.SplitHorizontally(
             self.install_listpanel, self.magnet_listpanel, 300
         )
-        self.install_listpanel.SetMinSize((-1, 50))
+        self.install_listpanel.SetMinSize((-1, -1))
         self.magnet_listpanel.SetMinSize((-1, 300))
 
         gs = wx.GridSizer(cols=1)
