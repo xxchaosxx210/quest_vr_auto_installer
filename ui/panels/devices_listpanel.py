@@ -83,7 +83,15 @@ class DevicesListPanel(ListPanel):
         Raises:
             err: RemoteDeviceError | Exception
         """
+
         self.listctrl.DeleteAllItems()
+        progress = wx.ProgressDialog(
+            "Starting Daemon",
+            "Loading, Please wait...",
+            parent=self.app.frame,
+            style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_SMOOTH,
+        )
+        progress.Pulse()
         try:
             device_names = await self._get_device_names()
         except adblib.errors.RemoteDeviceError as err:
@@ -94,6 +102,8 @@ class DevicesListPanel(ListPanel):
             # everything went ok insert the device names into the device listctrl
             for index, device in enumerate(device_names):
                 wx.CallAfter(self.listctrl.InsertItem, index=index, label=device)
+        finally:
+            progress.Destroy()
 
     def on_item_double_click(self, evt: wx.ListEvent) -> None:
         """get the selected device name, create an obb path on the remote device
