@@ -32,15 +32,6 @@ class DevicesListPanel(ListPanel):
         # create the button panel
         button_panel = wx.Panel(self, -1)
 
-        self.bitmap_buttons["unlock"] = ui.utils.create_bitmap_button(
-            "unlock.png", "Unlock Device", button_panel, size=(22, 22)
-        )
-        self.Bind(
-            wx.EVT_BUTTON,
-            lambda *args: _Log.info("Unlock button pressed"),
-            self.bitmap_buttons["unlock"],
-        )
-
         # create the buttons and store them into the super classes bitmap_buttons dict
         self.bitmap_buttons["refresh"] = ui.utils.create_bitmap_button(
             "refresh.png", "Refresh Games List", button_panel, size=(24, 24)
