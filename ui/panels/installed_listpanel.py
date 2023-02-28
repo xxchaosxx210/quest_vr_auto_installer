@@ -45,6 +45,10 @@ class InstalledListPanel(ListPanel):
         return button_panel
 
     async def load(self, device_name: str) -> None:
+        if not device_name:
+            raise ValueError(
+                "Device name must be non empty string. Could not load installed packages. Dialog must have returned empty selected device"
+            )
         if Debug.enabled:
             try:
                 fake_quest = Debug.get_device(device_name)

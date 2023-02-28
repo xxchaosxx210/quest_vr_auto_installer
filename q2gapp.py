@@ -293,3 +293,5 @@ class Q2GApp(wxasync.WxAsyncApp):
         )
         if result != wx.OK:
             raise ValueError("Dialog did not return a wx.OK id")
+
+        await self.install_listpanel.load(self.selected_device)
