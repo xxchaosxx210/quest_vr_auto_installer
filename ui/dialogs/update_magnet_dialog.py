@@ -13,11 +13,11 @@ from qvrapi.api import ApiError, update_game_magnet
 from lib.utils import format_timestamp_to_str, get_changed_properties
 
 
-async def load_dialog(parent: wx.Frame, title: str, magnet: QuestMagnetWithKey) -> None:
+async def load_dialog(parent: wx.Frame, title: str, magnet: QuestMagnetWithKey) -> int:
     dlg = MagnetUpdateDialog(
         parent=parent,
         title=title,
-        style=wx.DEFAULT_DIALOG_STYLE,
+        style=wx.RESIZE_BORDER | wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX,
         size=parent.GetSize(),
         magnet=magnet,
     )
@@ -70,7 +70,8 @@ class MagnetUpdateDialog(wx.Dialog):
         gs = wx.GridSizer(cols=1)
         gs.Add(panel, 1, wx.EXPAND | wx.ALL, 0)
         self.SetSizerAndFit(gs)
-        self.SetSize((800, 640))
+        self.SetSize(size)
+        self.CenterOnParent()
 
     def _create_static_text_ctrls(
         self, parent: wx.Panel, magnet: QuestMagnetWithKey
