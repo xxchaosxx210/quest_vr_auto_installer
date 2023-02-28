@@ -44,16 +44,10 @@ def check_task_and_create(async_func: Callable, **kwargs) -> asyncio.Task:
         asyncio.Task: _description_
     """
     func_name = async_func.__name__
-
-    if func_name in GlobalTasks:
-        task = GlobalTasks[func_name]
-        done = task.done()
-        cancelled = task.cancelled()
-        running_task = is_task_running(task)
-        if running_task:
-            raise TaskIsRunning(
-                f"{func_name} is already running. Please wait for task to complete or cancel it"
-            )
+    if func_name in GlobalTasks and is_task_running(GlobalTasks[func_name]):
+        raise TaskIsRunning(
+            f"{func_name} is already running. Please wait for task to complete or cancel it"
+        )
     task = asyncio.create_task(async_func(**kwargs))
     # store the task reference
     GlobalTasks[func_name] = task
