@@ -292,13 +292,14 @@ class Q2GApp(wxasync.WxAsyncApp):
         loads the device selection dialog and retrieves a selected device to use
         for installing the games to
         """
-        try:
-            result = await open_device_selection_dialog(
-                self.frame,
-                wx.ID_ANY,
-                "Select a Device to install to",
-                wx.NO_BORDER,
-                (300, 300),
-            )
-        except Exception as err:
-            pass
+        result, selected_device = await open_device_selection_dialog(
+            self.frame,
+            wx.ID_ANY,
+            "Select a Device to install to",
+            wx.NO_BORDER,
+            (300, 300),
+        )
+        if result != wx.OK:
+            raise ValueError("Dialog did not return a wx.OK id")
+        if self.devices_listpanel is not None:
+            self.devices_listpanel.selected_device = selected_device

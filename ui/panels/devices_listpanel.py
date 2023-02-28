@@ -16,6 +16,25 @@ from lib.debug import Debug
 _Log = logging.getLogger()
 
 
+newEVT_DEVICE_SELECTED = wx.NewEventType()
+EVT_DEVICE_SELECTED = wx.PyEventBinder(newEVT_DEVICE_SELECTED, 1)
+
+
+class DeviceEvent(wx.PyCommandEvent):
+    def __init__(self, event_type: int, id: int, index: int, device_name: str = ""):
+        super().__init__(event_type, id)
+        self.DeviceName = device_name
+        self._device_name = device_name
+        self.Index = index
+        self._index = index
+
+    def GetIndex(self) -> int:
+        return self._index
+
+    def GetDeviceName(self) -> str:
+        return self._device_name
+
+
 class DevicesListPanel(ListPanel):
     def __init__(self, parent: wx.Window):
         from q2gapp import Q2GApp
@@ -92,31 +111,35 @@ class DevicesListPanel(ListPanel):
         device_name = item.GetText()
         # set the global selected device
         self.selected_device = device_name
-        # self.disable_list()
+        event = DeviceEvent(newEVT_DEVICE_SELECTED, self.GetId(), index, device_name)
+        # wx.PostEvent(self.GetEventHandler(), event)
+        handler: wx.Window = self.GetEventHandler()
+        if isinstance(handler, wx.Window):
+            handler.ProcessEvent(event)
 
-        async def create_obb_dir():
-            """create the data directory on the quest device"""
-            try:
-                quest.create_obb_path(device_name, config.QUEST_OBB_DIRECTORY)
-            except adblib.errors.RemoteDeviceError as err:
-                wx.CallAfter(self.app.exception_handler, err=err)
-            except Exception as err:
-                raise err
-            finally:
-                return
+        # async def create_obb_dir():
+        #     """create the data directory on the quest device"""
+        #     try:
+        #         quest.create_obb_path(device_name, config.QUEST_OBB_DIRECTORY)
+        #     except adblib.errors.RemoteDeviceError as err:
+        #         wx.CallAfter(self.app.exception_handler, err=err)
+        #     except Exception as err:
+        #         raise err
+        #     finally:
+        #         return
 
-        try:
-            lib.tasks.create_obb_dir_task(create_obb_dir)
-        except lib.tasks.TaskIsRunning:
-            pass
-        # Load the installed apps into the install listctrl
-        if self.app.install_listpanel is not None:
-            try:
-                lib.tasks.load_installed_task(
-                    self.app.install_listpanel.load, device_name=device_name
-                )
-            except lib.tasks.TaskIsRunning:
-                pass
+        # try:
+        #     lib.tasks.create_obb_dir_task(create_obb_dir)
+        # except lib.tasks.TaskIsRunning:
+        #     pass
+        # # Load the installed apps into the install listctrl
+        # if self.app.install_listpanel is not None:
+        #     try:
+        #         lib.tasks.load_installed_task(
+        #             self.app.install_listpanel.load, device_name=device_name
+        #         )
+        #     except lib.tasks.TaskIsRunning:
+        #         pass
 
     def get_selected_device_name(self) -> str | None:
         """gets the selected device name
