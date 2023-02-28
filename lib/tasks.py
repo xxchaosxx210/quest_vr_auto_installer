@@ -6,7 +6,7 @@ handles running tasks within the app in a global scope
 
 import asyncio
 import threading
-from typing import Callable
+from typing import Callable, Dict
 
 
 class TaskIsRunning(BaseException):
@@ -17,151 +17,56 @@ class TaskIsRunning(BaseException):
         return "".join(self.args)
 
 
-TaskDict: Dict[str, asyncio.Task] = {}
+# global task and thread instances
+GlobalTasks: Dict[str, asyncio.Task] = {}
+GlobalThreads: Dict[str, threading.Thread] = {}
 
 
-class Tasks:
-    """
-    stores strong asyncio.Task references
-    """
-
-    # Game install task
-    install: asyncio.Task | None = None
-    # error log task
-    log_error: asyncio.Task | None = None
-    # obb directory creation task
-    obb_create: asyncio.Task | None = None
-    # load the installed apps task
-    load_installed: asyncio.Task | None = None
-    # uninstall a package on a device task
-    remove_package: asyncio.Task | None = None
-    # user info task
-    user_info: asyncio.Task | None = None
-    # extra Game magnet information task
-    extra_magnet_info: asyncio.Task | None = None
-    # loading games task
-    load_magnets: asyncio.Task | None = None
-    # device selection task
-    device_selection: asyncio.Task | None = None
-
-
-class Threads:
-    """the same as Task class but for Threads instead"""
-
-    login_submit: threading.Thread | None = None
-    add_game_dlg: threading.Thread | None = None
-
-
-# These functions below makes sure there is only one instance of each task or thread running at one time
-
-
-def create_install_task(func: Callable, **kwargs):
-    """checks if the task is not running then sets the Tasks.install to the new created install task
+def check_task_and_create(async_func: Callable, **kwargs) -> asyncio.Task:
+    """checks if there is already a task running with that name.
+    if not creates coroutine and stores in global dict
+    uses the function name as a key name in the global dictionary
 
     Args:
-        func (Callable): _description_
+        func (Callable): async func to run the task
 
     Raises:
-        TaskIsRunning: _description_
-    """
-    if is_task_running(Tasks.install):
-        raise TaskIsRunning(
-            "You already have a Game being installed. Please cancel current installation or wait for the Game to be installed"
-        )
-    Tasks.install = _create_task(func, **kwargs)
-
-
-def create_log_error_task(func: Callable, **kwargs):
-    if is_task_running(Tasks.log_error):
-        raise TaskIsRunning(
-            "Cannot create multiple Error logs. Wait for current request to end"
-        )
-    Tasks.log_error = _create_task(func, **kwargs)
-
-
-def create_device_selection_task(func: Callable, **kwargs):
-    if is_task_running(Tasks.device_selection):
-        raise TaskIsRunning("Device selection Task is already running.")
-    Tasks.device_selection = _create_task(func, **kwargs)
-
-
-def create_obb_dir_task(func: Callable, **kwargs):
-    if is_task_running(Tasks.obb_create):
-        raise TaskIsRunning("Cannot create another task for OBB data creation")
-    Tasks.obb_create = _create_task(func, **kwargs)
-
-
-def create_extra_info_task(func: Callable, **kwargs):
-    if is_task_running(Tasks.extra_magnet_info):
-        raise TaskIsRunning("Extra info is already running")
-    Tasks.extra_magnet_info = _create_task(func, **kwargs)
-
-
-def create_load_magnets_task(func: Callable, **kwargs) -> None:
-    if is_task_running(Tasks.load_magnets):
-        raise TaskIsRunning("Already loading Games from API. Wait for task to finish")
-    Tasks.load_magnets = _create_task(func, **kwargs)
-
-
-def load_installed_task(func: Callable, **kwargs):
-    if is_task_running(Tasks.load_installed):
-        raise TaskIsRunning(
-            "Cannot reload list as another Coroutine is already running"
-        )
-    Tasks.load_installed = _create_task(func, **kwargs)
-
-
-def remove_package_task(func: Callable, **kwargs):
-    if is_task_running(Tasks.remove_package):
-        raise TaskIsRunning("Cannot Uninstall as already Removing another App")
-    Tasks.remove_package = _create_task(func, **kwargs)
-
-
-def get_user_info(func: Callable, **kwargs):
-    if is_task_running(Tasks.user_info):
-        raise TaskIsRunning("Already waiting for User Information")
-    Tasks.user_info = _create_task(func, **kwargs)
-
-
-def login_submit_thread(func: Callable, **kwargs):
-    """creates a new login submit thread
-
-    this function is blocking and wont exit until whatever running tasks are complete
-
-    Args:
-        func (Callable): the function to run the login task
-
-    Raises:
-        TaskIsRunning: raises if the thread is still alive
-    """
-    if is_thread_running(Threads.login_submit):
-        raise TaskIsRunning("Please wait for the last login request to be submitted")
-    Threads.login_submit = threading.Thread(target=func, kwargs=kwargs)
-    Threads.login_submit.start()
-    Threads.login_submit.join()
-
-
-def add_game_dialog_thread(func: Callable, **kwargs):
-    if is_thread_running(Threads.add_game_dlg):
-        raise TaskIsRunning("Add Game Dialog has a thread already running")
-    Threads.add_game_dlg = threading.Thread(target=func, kwargs=kwargs)
-    Threads.add_game_dlg.start()
-
-
-def _create_task(func: Callable, **kwargs) -> asyncio.Task:
-    """
-    creates a task from the given function and keyword arguments passed. Uses the current event loop
-    so if running in seperate thread make sure a new event loop is created
-
-    Args:
-        func (Callable): the function to create a task to
+        TaskIsRunning: if task already running will be raised
 
     Returns:
-        asyncio.Task: the created coroutine
+        asyncio.Task: _description_
     """
-    loop = asyncio.get_event_loop()
-    task = loop.create_task(func(**kwargs))
+    func_name = async_func.__name__
+    if func_name in GlobalTasks and is_task_running(GlobalTasks[func_name]):
+        raise TaskIsRunning(
+            f"{func_name} is already running. Please wait for task to complete or cancel it"
+        )
+    task = asyncio.create_task(async_func(**kwargs))
+    # store the task reference
+    GlobalTasks[func_name] = task
     return task
+
+
+def check_thread_and_start(func: Callable, **kwargs) -> threading.Thread:
+    """the same as check_task_and_create but for threads
+
+    Args:
+        func (Callable): the thread to execute
+
+    Raises:
+        TaskIsRunning: raises if thread is already running
+
+    Returns:
+        threading.Thread: returns the newly started thread
+    """
+    func_name = func.__name__
+    if func_name in GlobalThreads and is_thread_running(GlobalThreads[func_name]):
+        raise TaskIsRunning(
+            f"{func_name} is already running. Please wait for the Thread to finish"
+        )
+    th = threading.Thread(target=func, kwargs=kwargs)
+    th.start()
+    return th
 
 
 def is_task_running(task: asyncio.Task | None) -> bool:

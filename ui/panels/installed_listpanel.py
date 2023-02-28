@@ -79,7 +79,7 @@ class InstalledListPanel(ListPanel):
         except IndexError:
             return
         try:
-            lib.tasks.remove_package_task(
+            lib.tasks.check_task_and_create(
                 self.app.remove_package, package_name=package_name
             )
         except lib.tasks.TaskIsRunning as err:

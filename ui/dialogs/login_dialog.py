@@ -89,7 +89,8 @@ class LoginDialog(wx.Dialog):
             return
         self.submit_button.Enable(False)
         try:
-            tasks.login_submit_thread(running_thread)
+            th = tasks.check_thread_and_start(running_thread)
+            th.join()
         except tasks.TaskIsRunning:
             _Log.error(
                 "A login request is already being processed. Please wait until this request has finished"

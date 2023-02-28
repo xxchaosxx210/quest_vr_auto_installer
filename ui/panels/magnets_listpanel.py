@@ -363,7 +363,7 @@ class MagnetsListPanel(ListPanel):
         if not magnet_data:
             return
         try:
-            lib.tasks.create_extra_info_task(_get_extra_meta_data, uri=magnet_data.uri)
+            lib.tasks.check_task_and_create(_get_extra_meta_data, uri=magnet_data.uri)
         except lib.tasks.TaskIsRunning:
             pass
 
@@ -380,7 +380,7 @@ class MagnetsListPanel(ListPanel):
         if not magnet_data:
             return
         try:
-            lib.tasks.create_install_task(
+            lib.tasks.check_task_and_create(
                 self.app.start_install_process, path=magnet_data.download_path
             )
         except lib.tasks.TaskIsRunning as err:

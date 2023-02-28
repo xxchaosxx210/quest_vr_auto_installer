@@ -60,7 +60,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             magnet_data (MagnetData):
         """
         try:
-            lib.tasks.create_install_task(
+            lib.tasks.check_task_and_create(
                 self.start_download_process,
                 callback=self.on_torrent_update,
                 error_callback=self.exception_handler,
@@ -128,9 +128,9 @@ class Q2GApp(wxasync.WxAsyncApp):
             type=str(err), uuid=uuid, exception=exception, traceback=""
         )
         try:
-            lib.tasks.create_log_error_task(send_error, _error_request=error_request)
-        except lib.tasks.TaskIsRunning:
-            pass
+            lib.tasks.check_task_and_create(send_error, _error_request=error_request)
+        except lib.tasks.TaskIsRunning as err:
+            self.exception_handler(err=err)
 
     async def start_download_process(self, **kwargs) -> None:
         """download using the deluge torrent client
@@ -294,5 +294,5 @@ class Q2GApp(wxasync.WxAsyncApp):
         if result != wx.OK and result != 0:
             raise ValueError("Dialog did not return a wx.OK or Close id")
 
-        if self.selected_device:
+        if self.selected_device and self.install_listpanel is not None:
             await self.install_listpanel.load(self.selected_device)

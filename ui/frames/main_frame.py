@@ -196,7 +196,7 @@ class MainFrame(wx.Frame):
 
         # check if a request is already running if so then ignore this event
         try:
-            tasks.get_user_info(_get_user_info, token=settings.token)
+            tasks.check_task_and_create(_get_user_info, token=settings.token)
         except tasks.TaskIsRunning as err:
             wx.MessageBox(err.__str__(), "", wx.OK)
 
@@ -289,13 +289,13 @@ class MainFrame(wx.Frame):
             evt (wx.CommandEvent): not used
         """
         try:
-            tasks.create_device_selection_task(self.app.prompt_user_for_device)
+            tasks.check_task_and_create(self.app.prompt_user_for_device)
         except tasks.TaskIsRunning:
             ui.utils.show_error_message(
                 "Dialog already open please close existing Dialog"
             )
         try:
-            tasks.create_load_magnets_task(self.load_games)
+            tasks.check_task_and_create(self.load_games)
         except tasks.TaskIsRunning:
             ui.utils.show_error_message("Already loading Games Please wait...")
         evt.Skip()

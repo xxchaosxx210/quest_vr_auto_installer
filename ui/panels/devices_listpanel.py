@@ -128,13 +128,13 @@ class DevicesListPanel(ListPanel):
         #         return
 
         # try:
-        #     lib.tasks.create_obb_dir_task(create_obb_dir)
+        #   lib.tasks.check_task_and_create(create_obb_dir)
         # except lib.tasks.TaskIsRunning:
         #     pass
         # # Load the installed apps into the install listctrl
         # if self.app.install_listpanel is not None:
         #     try:
-        #         lib.tasks.load_installed_task(
+        #         lib.tasks.check_task_and_create(
         #             self.app.install_listpanel.load, device_name=device_name
         #         )
         #     except lib.tasks.TaskIsRunning:
