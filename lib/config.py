@@ -124,7 +124,7 @@ def unhandled_exception_handler(
         traceback=traceback_string,
     )
     try:
-        lib.tasks.create_log_error_task(post_error, error_request=error_request)
+        lib.tasks.check_task_and_create(post_error, error_request=error_request)
     except lib.tasks.TaskIsRunning:
         pass
 
@@ -150,7 +150,7 @@ def async_log_handler(loop: asyncio.ProactorEventLoop, context: dict) -> None:
         traceback=tb_str,
     )
     try:
-        lib.tasks.create_log_error_task(post_error, error_request=error_request)
+        lib.tasks.check_task_and_create(post_error, error_request=error_request)
     except lib.tasks.TaskIsRunning:
         pass
     except Exception as err:

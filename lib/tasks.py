@@ -22,6 +22,13 @@ GlobalTasks: Dict[str, asyncio.Task] = {}
 GlobalThreads: Dict[str, threading.Thread] = {}
 
 
+def get_task(func: Callable) -> asyncio.Task:
+    task = GlobalTasks.get(func.__name__)
+    if task is None:
+        raise KeyError(f"Task with function name: {func.__name__} could not be found")
+    return task
+
+
 def check_task_and_create(async_func: Callable, **kwargs) -> asyncio.Task:
     """checks if there is already a task running with that name.
     if not creates coroutine and stores in global dict
