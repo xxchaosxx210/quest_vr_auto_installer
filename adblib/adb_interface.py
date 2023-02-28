@@ -59,6 +59,16 @@ def close_adb() -> str:
     return stdout
 
 
+def start_adb() -> str:
+    """starts the adb daemon
+
+    Returns:
+        str: decoded string from the stdout stream
+    """
+    stdout = execute([ADB_PATH_DEFAULT, "start-server"])
+    return stdout
+
+
 async def get_device_names() -> List[str]:
     """gets all Android devices found using ADB and returns a list of device names
 
