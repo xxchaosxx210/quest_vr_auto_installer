@@ -8,7 +8,6 @@ from typing import Callable, List
 from dataclasses import dataclass
 
 from adblib import adb_interface
-from adblib.errors import RemoteDeviceError
 import lib.config
 import lib.utils
 from lib.debug import Debug
