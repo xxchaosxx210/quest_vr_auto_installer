@@ -33,8 +33,6 @@ COLUMN_ETA = 6
 
 
 class MagnetsListPanel(ListPanel):
-    find_game_task: asyncio.Task | None = None
-
     magnet_data_list: List[MagnetData] = []
 
     def __init__(self, parent: wx.Window):
@@ -73,17 +71,29 @@ class MagnetsListPanel(ListPanel):
         _Log.info("Hello from the Magnet ListPanel")
 
     def on_item_double_click(self, evt: wx.ListEvent) -> None:
+        """when the user double clicks on a game in the list then
+        check if user is admin before getting extra information on the game and loading the
+        game edit dialog
+
+        Args:
+            evt (wx.ListEvent): not used
+
+        Returns:
+            None: returns None from the super class method
+        """
         settings = Settings.load()
         magnet_data = self.get_selected_torrent_item()
         if not settings.is_user_admin() or not magnet_data:
             return super().on_item_double_click(evt)
 
-        if not lib.tasks.is_task_running(self.find_game_task):
-            self.find_game_task = asyncio.create_task(
-                self.find_and_launch_magnet_update_frame(settings, magnet_data)
+        try:
+            lib.tasks.check_task_and_create(
+                self.find_and_launch_magnet_update_frame,
+                settings=settings,
+                magnet_data=magnet_data,
             )
-        else:
-            ui.utils.show_error_message("Request is already running")
+        except lib.tasks.TaskIsRunning as err:
+            ui.utils.show_error_message(err.__str__())
         return super().on_item_double_click(evt)
 
     async def find_and_launch_magnet_update_frame(
@@ -125,7 +135,10 @@ class MagnetsListPanel(ListPanel):
         """
         # check if install is running. I will change this later and send
         # a message to the install queue with the new index to update to
-        if lib.tasks.is_task_running(lib.tasks.Tasks.install):
+        # lib.tasks.is_task_running(lib.tasks.get_task())
+        if lib.tasks.is_task_running(
+            lib.tasks.get_task(self.app.start_download_process)
+        ):
             _Log.info("ListCtrl sort has been disabled while install is in progress")
             return
         column = evt.GetColumn()
