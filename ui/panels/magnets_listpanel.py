@@ -15,7 +15,7 @@ import lib.api_handler
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
 from ui.panels.listpanel import ListPanel, ColumnListType
-from ui.frames.magnet_update_frame import MagnetUpdateFrame
+from ui.dialogs.update_magnet_dialog import load_dialog as load_update_magnet_dialog
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
 
@@ -88,7 +88,7 @@ class MagnetsListPanel(ListPanel):
 
         try:
             lib.tasks.check_task_and_create(
-                self.find_and_launch_magnet_update_frame,
+                self.find_and_launch_magnet_update_dialog,
                 settings=settings,
                 magnet_data=magnet_data,
             )
@@ -96,7 +96,7 @@ class MagnetsListPanel(ListPanel):
             ui.utils.show_error_message(err.__str__())
         return super().on_item_double_click(evt)
 
-    async def find_and_launch_magnet_update_frame(
+    async def find_and_launch_magnet_update_dialog(
         self, settings: Settings, magnet_data: MagnetData
     ) -> None:
         """async function for launching the update magnet frame with the magnet to update
@@ -113,10 +113,9 @@ class MagnetsListPanel(ListPanel):
         )
         if len(magnets) < 1:
             return
-        # load the frame
-        MagnetUpdateFrame(
-            self.app.frame, "Update Magnet", self.app.frame.GetSize(), magnets[0]
-        ).Show()
+        return_value = await load_update_magnet_dialog(
+            parent=self.app.frame, title="Update Game", magnet=magnets[0]
+        )
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
         """sort the magnets by alphabetical order.

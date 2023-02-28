@@ -4,6 +4,7 @@ from typing import Any, Tuple
 
 import wx
 import aiohttp
+import wxasync
 
 from ui.utils import TextCtrlStaticBox, show_error_message
 from lib.settings import Settings
@@ -12,18 +13,31 @@ from qvrapi.api import ApiError, update_game_magnet
 from lib.utils import format_timestamp_to_str, get_changed_properties
 
 
-class MagnetUpdateFrame(wx.Frame):
+async def load_dialog(parent: wx.Frame, title: str, magnet: QuestMagnetWithKey) -> None:
+    dlg = MagnetUpdateDialog(
+        parent=parent,
+        title=title,
+        style=wx.DEFAULT_DIALOG_STYLE,
+        size=parent.GetSize(),
+        magnet=magnet,
+    )
+    result = await wxasync.AsyncShowDialogModal(dlg)
+    return result
+
+
+class MagnetUpdateDialog(wx.Dialog):
     def __init__(
         self,
         parent: wx.Frame,
         title: str,
         size: Tuple[int, int],
+        style: int,
         magnet: QuestMagnetWithKey,
     ):
         from q2gapp import Q2GApp
 
         self.app: Q2GApp = wx.GetApp()
-        super().__init__(parent=parent, title=title, size=size)
+        super().__init__(parent=parent, title=title, size=size, style=style)
 
         self.original_magnet_data = magnet
 
@@ -39,16 +53,16 @@ class MagnetUpdateFrame(wx.Frame):
         update_btn = wx.Button(panel, wx.ID_SAVE, "Update")
         delete_btn = wx.Button(panel, wx.ID_DELETE, "Delete")
         close_btn = wx.Button(panel, wx.ID_CLOSE, "Close")
-        self.Bind(wx.EVT_BUTTON, lambda *args: self.Destroy(), close_btn)
-        self.Bind(wx.EVT_BUTTON, self._on_update_button, update_btn)
-        self.Bind(wx.EVT_BUTTON, self._on_delete_button, delete_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_button, close_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_update_button, update_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_delete_button, delete_btn)
 
         btn_hbox = wx.BoxSizer(wx.HORIZONTAL)
         btn_hbox.Add(update_btn, 0, wx.EXPAND, 0)
         btn_hbox.Add(delete_btn, 0, wx.EXPAND, 0)
         btn_hbox.Add(close_btn, 0, wx.EXPAND, 0)
 
-        panel_vbox.AddStretchSpacer(1)
+        # panel_vbox.AddStretchSpacer(1)
         panel_vbox.Add(btn_hbox, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         panel_vbox.AddSpacer(10)
         panel.SetSizerAndFit(panel_vbox)
@@ -56,7 +70,7 @@ class MagnetUpdateFrame(wx.Frame):
         gs = wx.GridSizer(cols=1)
         gs.Add(panel, 1, wx.EXPAND | wx.ALL, 0)
         self.SetSizerAndFit(gs)
-        self.SetSize(size)
+        self.SetSize((800, 640))
 
     def _create_static_text_ctrls(
         self, parent: wx.Panel, magnet: QuestMagnetWithKey
@@ -133,7 +147,11 @@ class MagnetUpdateFrame(wx.Frame):
             for name, ctrl in self.static_txtctrls.items()
         }
 
-    def _on_update_button(self, evt: wx.CommandEvent) -> None:
+    async def _on_close_button(self, evt: wx.CommandEvent) -> None:
+        self.SetReturnCode(wx.CLOSE)
+        self.Close()
+
+    async def _on_update_button(self, evt: wx.CommandEvent) -> None:
         """update button pressed check if any data has been changed in the textctrls
         update if change has been made and send to api
 
@@ -149,7 +167,7 @@ class MagnetUpdateFrame(wx.Frame):
         if not data_update:
             return
         # there have been changes update the fields only that have changed
-        asyncio.get_event_loop().create_task(self.update_magnet(data_update))
+        await self.update_magnet(data_update)
 
     async def update_magnet(self, data_to_update: dict) -> None:
         """update the magnet data to the API
@@ -187,5 +205,5 @@ class MagnetUpdateFrame(wx.Frame):
         finally:
             return
 
-    def _on_delete_button(self, evt: wx.CommandEvent) -> None:
+    async def _on_delete_button(self, evt: wx.CommandEvent) -> None:
         evt.Skip()
