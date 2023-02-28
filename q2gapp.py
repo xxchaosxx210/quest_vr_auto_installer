@@ -27,10 +27,11 @@ from ui.dialogs.device_list_dialog import open_device_selection_dialog
 
 class Q2GApp(wxasync.WxAsyncApp):
     # global wxwindow instances
-    devices_listpanel: DevicesListPanel | None = None
     magnets_listpanel: MagnetsListPanel | None = None
     install_listpanel: InstalledListPanel | None = None
     install_dialog: InstallProgressDialog | None = None
+
+    selected_device: str = ""
 
     # store the global settings
     settings: Settings | None = None
@@ -144,11 +145,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         """
 
         # check that a device is selected
-        if (
-            not Debug.enabled
-            and self.devices_listpanel is not None
-            and not self.devices_listpanel.selected_device
-        ):
+        if not Debug.enabled and not self.selected_device:
             wx.MessageBox(
                 "No device selected. Please connect your Quest Headset into the PC and select it from the Devices List",
                 "No Device selected",
@@ -186,16 +183,15 @@ class Q2GApp(wxasync.WxAsyncApp):
         self.install_dialog.Show()
         # set the return value to False. Set to True if everything went ok
         return_value = False
-        if self.devices_listpanel is None:
+        if not self.selected_device:
             return return_value
         try:
-            device_name = self.devices_listpanel.selected_device
-            # if not device_name:
+            # if not self.selected_device:
             #     raise Exception("No device selected")
             for apk_dir in lib.utils.find_install_dirs(path):
                 await quest.install_game(
                     callback=self.on_install_update,
-                    device_name=device_name,
+                    device_name=self.selected_device,
                     apk_dir=apk_dir,
                 )
         except Exception as err:
@@ -212,7 +208,7 @@ class Q2GApp(wxasync.WxAsyncApp):
                 )
             # reload the package list
             if self.install_listpanel is not None:
-                await self.install_listpanel.load(device_name)
+                await self.install_listpanel.load(self.selected_device)
             if settings.close_dialog_after_install:
                 self.install_dialog.Destroy()
             else:
@@ -247,19 +243,15 @@ class Q2GApp(wxasync.WxAsyncApp):
         Args:
             package_name (str): the name of the package to uninstall
         """
-        if (
-            self.devices_listpanel is None
-            or self.devices_listpanel.selected_device == ""
-        ):
+        if not self.selected_device:
             return
-        device_name = self.devices_listpanel.selected_device
         if self.install_listpanel is not None:
             self.install_listpanel.disable_list()
         try:
             self.frame.SetStatusText(
-                f"Removing {package_name} from Device {device_name}"
+                f"Removing {package_name} from Device {self.selected_device}"
             )
-            await adb_interface.uninstall(device_name, package_name)
+            await adb_interface.uninstall(self.selected_device, package_name)
             self.frame.SetStatusText("Uninstall was successful")
         except RemoteDeviceError as err:
             self.exception_handler(err)
@@ -270,7 +262,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         else:
             # reload the package list
             if self.install_listpanel is not None:
-                await self.install_listpanel.load(device_name)
+                await self.install_listpanel.load(self.selected_device)
         finally:
             if self.install_listpanel is not None:
                 self.install_listpanel.enable_list()
@@ -292,7 +284,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         loads the device selection dialog and retrieves a selected device to use
         for installing the games to
         """
-        result, selected_device = await open_device_selection_dialog(
+        result, self.selected_device = await open_device_selection_dialog(
             self.frame,
             wx.ID_ANY,
             "Select a Device to install to",
@@ -301,5 +293,3 @@ class Q2GApp(wxasync.WxAsyncApp):
         )
         if result != wx.OK:
             raise ValueError("Dialog did not return a wx.OK id")
-        if self.devices_listpanel is not None:
-            self.devices_listpanel.selected_device = selected_device

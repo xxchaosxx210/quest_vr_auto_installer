@@ -298,18 +298,19 @@ class MainFrame(wx.Frame):
         game torrents load the listctrls
         """
         await asyncio.sleep(0.1)
-        if self.app.devices_listpanel is None or self.app.magnets_listpanel is None:
+        if self.app.magnets_listpanel is None:
             return
-        tasks: List[asyncio.Task] = []
-        # load the devices
-        # tasks.append(asyncio.create_task(self.app.devices_listpanel.load()))
-        # load the magnets list
-        tasks.append(
-            asyncio.create_task(self.app.magnets_listpanel.load_magnets_from_api())
-        )
-        results: list = await asyncio.gather(*tasks, return_exceptions=True)
-        for exception in results:
-            if exception is not None:
-                # there was an error
-                self.app.exception_handler(exception)
+        # tasks: List[asyncio.Task] = []
+        # # load the devices
+        # # tasks.append(asyncio.create_task(self.app.devices_listpanel.load()))
+        # # load the magnets list
+        # tasks.append(
+        #     asyncio.create_task(self.app.magnets_listpanel.load_magnets_from_api())
+        # )
+        # results: list = await asyncio.gather(*tasks, return_exceptions=True)
+        # for exception in results:
+        #     if exception is not None:
+        #         # there was an error
+        #         self.app.exception_handler(exception)
+        await asyncio.create_task(self.app.magnets_listpanel.load_magnets_from_api())
         wx.CallAfter(self.statusbar.SetStatusText, text="All Tasks Loaded")
