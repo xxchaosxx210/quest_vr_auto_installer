@@ -5,7 +5,7 @@ import wx
 import lib.config
 import lib.tasks
 import ui.utils
-from ui.panels.listpanel import ListPanel
+from ui.panels.listpanel import ListPanel, ColumnListType
 from adblib import adb_interface
 from lib.debug import Debug
 
@@ -14,12 +14,12 @@ _Log = logging.getLogger(__name__)
 
 
 class InstalledListPanel(ListPanel):
-    def __init__(self, *args, **kw):
+    def __init__(self, parent: wx.Window):
         from q2gapp import Q2GApp
 
         self.app: Q2GApp = wx.GetApp()
-        columns = [{"col": 0, "heading": "Name", "width": 100}]
-        super().__init__(title="Installed Games", columns=columns, *args, **kw)
+        columns: ColumnListType = [{"col": 0, "heading": "Name", "width": 100}]
+        super().__init__(parent=parent, title="Installed Games", columns=columns)
 
         self.app.install_listpanel = self
 

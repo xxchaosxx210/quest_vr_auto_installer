@@ -22,6 +22,7 @@ from ui.panels.installed_listpanel import InstalledListPanel
 from ui.panels.magnets_listpanel import MagnetsListPanel
 from ui.dialogs.error_dialog import ErrorDialog
 from ui.dialogs.install_progress_dialog import InstallProgressDialog
+from ui.dialogs.device_list_dialog import open_device_selection_dialog
 
 
 class Q2GApp(wxasync.WxAsyncApp):
@@ -285,3 +286,19 @@ class Q2GApp(wxasync.WxAsyncApp):
                 \nLoading in offline mode"
             )
         )
+
+    async def prompt_user_for_device(self) -> None:
+        """
+        loads the device selection dialog and retrieves a selected device to use
+        for installing the games to
+        """
+        try:
+            result = await open_device_selection_dialog(
+                self.frame,
+                wx.ID_ANY,
+                "Select a Device to install to",
+                wx.NO_BORDER,
+                (300, 300),
+            )
+        except Exception as err:
+            pass

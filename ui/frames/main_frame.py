@@ -281,13 +281,14 @@ class MainFrame(wx.Frame):
         dlg.Show()
 
     def on_show(self, evt: wx.ShowEvent) -> None:
-        """when the window is shown start the async tasks to retrieve the resources
-        and load device listctrl and magnets listctrl
+        """
+        when the Window is shown load the device list dialog task and connect to the API
+        or a saved json and load the magnets
 
         Args:
             evt (wx.CommandEvent): not used
         """
-        self.statusbar.SetStatusText("Scanning for Quest devices...")
+        asyncio.create_task(self.app.prompt_user_for_device())
         asyncio.create_task(self.load_lists())
         evt.Skip()
 
@@ -301,7 +302,7 @@ class MainFrame(wx.Frame):
             return
         tasks: List[asyncio.Task] = []
         # load the devices
-        tasks.append(asyncio.create_task(self.app.devices_listpanel.load()))
+        # tasks.append(asyncio.create_task(self.app.devices_listpanel.load()))
         # load the magnets list
         tasks.append(
             asyncio.create_task(self.app.magnets_listpanel.load_magnets_from_api())

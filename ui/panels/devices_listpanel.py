@@ -1,5 +1,5 @@
 import logging
-from typing import List
+from typing import Dict, List, Union
 
 import wx
 
@@ -9,7 +9,7 @@ import lib.tasks
 import ui.utils
 import lib.quest as quest
 from adblib import adb_interface
-from ui.panels.listpanel import ListPanel
+from ui.panels.listpanel import ListPanel, ColumnListType
 from lib.debug import Debug
 
 
@@ -17,14 +17,14 @@ _Log = logging.getLogger()
 
 
 class DevicesListPanel(ListPanel):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, parent: wx.Window):
         from q2gapp import Q2GApp
 
         self.app: Q2GApp = wx.GetApp()
         # the device that is currently selected in the listctrl
-        self.selected_device: str = None
-        columns = [{"col": 0, "heading": "Name", "width": 200}]
-        super().__init__(title="Devices", columns=columns, *args, **kwargs)
+        self.selected_device: str = ""
+        columns: ColumnListType = [{"col": 0, "heading": "Name", "width": 200}]
+        super().__init__(parent=parent, title="Devices", columns=columns)
         self.app.devices_listpanel = self
         self.insert_button_panel(self._create_button_panel(), 0, flag=wx.ALIGN_RIGHT)
 

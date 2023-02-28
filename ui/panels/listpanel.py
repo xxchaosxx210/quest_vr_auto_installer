@@ -3,6 +3,9 @@ from typing import Dict, List, Union
 import wx
 
 
+ColumnListType = List[Dict[str, Union[int, str]]]
+
+
 class CustomListCtrl(wx.ListCtrl):
     _COLUMN_ASCENDING_DEFAULT_TOGGLE_STATE = True
 
@@ -46,9 +49,12 @@ class CustomListCtrl(wx.ListCtrl):
 
 class ListPanel(wx.Panel):
     def __init__(
-        self, title: str, columns: List[Dict[str, Union[int, str]]] = [], *args, **kw
+        self,
+        parent: wx.Window,
+        title: str,
+        columns: ColumnListType = [],
     ):
-        super().__init__(*args, **kw)
+        super().__init__(parent=parent)
 
         self.listctrl = CustomListCtrl(self, -1, style=wx.LC_REPORT)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_listitem_selected)

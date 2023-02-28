@@ -14,7 +14,7 @@ import ui.utils
 import lib.api_handler
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
-from ui.panels.listpanel import ListPanel
+from ui.panels.listpanel import ListPanel, ColumnListType
 from ui.frames.magnet_update_frame import MagnetUpdateFrame
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
@@ -37,12 +37,12 @@ class MagnetsListPanel(ListPanel):
 
     magnet_data_list: List[MagnetData] = []
 
-    def __init__(self, *args, **kw):
+    def __init__(self, parent: wx.Window):
         from q2gapp import Q2GApp
 
         self.app: Q2GApp = wx.GetApp()
         # store the magnet items state
-        columns = [
+        columns: ColumnListType = [
             {"col": COLUMN_NAME, "heading": "Name", "width": 150},
             {"col": COLUMN_DATE_ADDED, "heading": "Date Added", "width": 70},
             {"col": COLUMN_SIZE, "heading": "Size (MB)", "width": 50},
@@ -51,12 +51,7 @@ class MagnetsListPanel(ListPanel):
             {"col": COLUMN_SPEED, "heading": "Speed", "width": 50},
             {"col": COLUMN_ETA, "heading": "ETA", "width": 70},
         ]
-        super().__init__(
-            title="Games Availible",
-            columns=columns,
-            *args,
-            **kw,
-        )
+        super().__init__(parent=parent, title="Games Availible", columns=columns)
         self.app.magnets_listpanel = self
         self.insert_button_panel(self._create_button_panel())
 
