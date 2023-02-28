@@ -24,7 +24,6 @@ async def open_device_selection_dialog(
     """
     dlg = DeviceListDialog(parent=parent, id=id, title=title, style=style, size=size)
     result = await wxasync.AsyncShowDialogModal(dlg=dlg)
-    dlg.Destroy()
     return (result, dlg.selected_device_name)
 
 
