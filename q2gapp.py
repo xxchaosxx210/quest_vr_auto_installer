@@ -288,10 +288,11 @@ class Q2GApp(wxasync.WxAsyncApp):
             self.frame,
             wx.ID_ANY,
             "Select a Device to install to",
-            wx.NO_BORDER,
-            (300, 300),
+            wx.DEFAULT_DIALOG_STYLE,
+            (500, 300),
         )
-        if result != wx.OK:
-            raise ValueError("Dialog did not return a wx.OK id")
+        if result != wx.OK and result != 0:
+            raise ValueError("Dialog did not return a wx.OK or Close id")
 
-        await self.install_listpanel.load(self.selected_device)
+        if self.selected_device:
+            await self.install_listpanel.load(self.selected_device)

@@ -33,7 +33,7 @@ class MainFrame(wx.Frame):
         gs = wx.GridSizer(1)
         gs.Add(self.main_panel, 1, wx.ALL | wx.EXPAND, 0)
         self.SetSizerAndFit(gs)
-        self.SetSize((800, 600))
+        self.SetSize((800, 200))
 
         # capture the on Window show event
         self.Bind(wx.EVT_SHOW, self.on_show)
@@ -288,11 +288,19 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.CommandEvent): not used
         """
-        asyncio.create_task(self.app.prompt_user_for_device())
-        asyncio.create_task(self.load_lists())
+        try:
+            tasks.create_device_selection_task(self.app.prompt_user_for_device)
+        except tasks.TaskIsRunning:
+            ui.utils.show_error_message(
+                "Dialog already open please close existing Dialog"
+            )
+        try:
+            tasks.create_load_magnets_task(self.load_games)
+        except tasks.TaskIsRunning:
+            ui.utils.show_error_message("Already loading Games Please wait...")
         evt.Skip()
 
-    async def load_lists(self) -> None:
+    async def load_games(self) -> None:
         """
         create seperate coroutines to collect information for the quest device,
         game torrents load the listctrls

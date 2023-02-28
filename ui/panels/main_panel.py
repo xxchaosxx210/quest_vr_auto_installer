@@ -16,8 +16,8 @@ class MainPanel(wx.Panel):
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.install_listpanel, 1, wx.EXPAND, wx.ALL, 0)
-        panel_vbox.Add(hbox, 1, wx.EXPAND | wx.ALL, 0)
+        panel_vbox.Add(hbox, 0, wx.EXPAND | wx.ALL, 0)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.magnet_listpanel, 1, wx.EXPAND, wx.ALL, 0)
-        panel_vbox.Add(hbox, 3, wx.EXPAND | wx.ALL, 0)
+        panel_vbox.Add(hbox, 2, wx.EXPAND | wx.ALL, 0)
         self.SetSizer(panel_vbox)

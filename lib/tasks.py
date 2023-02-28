@@ -17,19 +17,42 @@ class TaskIsRunning(BaseException):
         return "".join(self.args)
 
 
+TaskDict: Dict[str, asyncio.Task] = {}
+
+
 class Tasks:
+    """
+    stores strong asyncio.Task references
+    """
+
+    # Game install task
     install: asyncio.Task | None = None
+    # error log task
     log_error: asyncio.Task | None = None
+    # obb directory creation task
     obb_create: asyncio.Task | None = None
+    # load the installed apps task
     load_installed: asyncio.Task | None = None
+    # uninstall a package on a device task
     remove_package: asyncio.Task | None = None
+    # user info task
     user_info: asyncio.Task | None = None
+    # extra Game magnet information task
     extra_magnet_info: asyncio.Task | None = None
+    # loading games task
+    load_magnets: asyncio.Task | None = None
+    # device selection task
+    device_selection: asyncio.Task | None = None
 
 
 class Threads:
+    """the same as Task class but for Threads instead"""
+
     login_submit: threading.Thread | None = None
     add_game_dlg: threading.Thread | None = None
+
+
+# These functions below makes sure there is only one instance of each task or thread running at one time
 
 
 def create_install_task(func: Callable, **kwargs):
@@ -56,6 +79,12 @@ def create_log_error_task(func: Callable, **kwargs):
     Tasks.log_error = _create_task(func, **kwargs)
 
 
+def create_device_selection_task(func: Callable, **kwargs):
+    if is_task_running(Tasks.device_selection):
+        raise TaskIsRunning("Device selection Task is already running.")
+    Tasks.device_selection = _create_task(func, **kwargs)
+
+
 def create_obb_dir_task(func: Callable, **kwargs):
     if is_task_running(Tasks.obb_create):
         raise TaskIsRunning("Cannot create another task for OBB data creation")
@@ -66,6 +95,12 @@ def create_extra_info_task(func: Callable, **kwargs):
     if is_task_running(Tasks.extra_magnet_info):
         raise TaskIsRunning("Extra info is already running")
     Tasks.extra_magnet_info = _create_task(func, **kwargs)
+
+
+def create_load_magnets_task(func: Callable, **kwargs) -> None:
+    if is_task_running(Tasks.load_magnets):
+        raise TaskIsRunning("Already loading Games from API. Wait for task to finish")
+    Tasks.load_magnets = _create_task(func, **kwargs)
 
 
 def load_installed_task(func: Callable, **kwargs):
@@ -114,6 +149,16 @@ def add_game_dialog_thread(func: Callable, **kwargs):
 
 
 def _create_task(func: Callable, **kwargs) -> asyncio.Task:
+    """
+    creates a task from the given function and keyword arguments passed. Uses the current event loop
+    so if running in seperate thread make sure a new event loop is created
+
+    Args:
+        func (Callable): the function to create a task to
+
+    Returns:
+        asyncio.Task: the created coroutine
+    """
     loop = asyncio.get_event_loop()
     task = loop.create_task(func(**kwargs))
     return task
