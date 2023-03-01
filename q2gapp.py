@@ -12,7 +12,7 @@ import lib.quest as quest
 import lib.tasks
 import ui.utils
 import adblib.adb_interface as adb_interface
-from deluge.handler import download, MagnetData
+import deluge.handler
 from adblib.errors import RemoteDeviceError
 from qvrapi.schemas import LogErrorRequest
 from lib.settings import Settings
@@ -57,7 +57,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             title = f"{self.title}\t(Offline)"
         wx.CallAfter(self.frame.SetTitle, title=title)
 
-    def create_download_task(self, magnet_data: MagnetData) -> None:
+    def create_download_task(self, magnet_data: deluge.handler.MagnetData) -> None:
         """create the download task and store it in the global install
 
         Args:
@@ -136,16 +136,23 @@ class Q2GApp(wxasync.WxAsyncApp):
         except lib.tasks.TaskIsRunning as err:
             self.exception_handler(err=err)
 
-    async def start_download_process(self, **kwargs) -> None:
+    async def start_download_process(
+        self,
+        callback: deluge.handler.StatusUpdateFunction,
+        error_callback: deluge.handler.ErrorUpdateFunction,
+        magnet_data: deluge.handler.MagnetData,
+    ) -> None:
         """download using the deluge torrent client
+
+        2 parts to this function: download part and install part
+
+        basically using deluge to download the torrent files and then...
+        using adb to install the apk along with its data files
 
         Args:
             callback (StatusUpdateFunction): any updates will be sent to this callback
             error_callback (ErrorUpdateFunction): any errors go to this callback
             magnet_data (MagnetData): extra information about the magnet to be downloaded
-
-        Returns:
-            str: "download-error" | "success" | "install-error"
         """
 
         # check that a device is selected
@@ -157,18 +164,18 @@ class Q2GApp(wxasync.WxAsyncApp):
             )
             return
 
-        ok_to_install = await download(**kwargs)
+        # start the download task
+
+        ok_to_install = await deluge.handler.download(
+            callback=callback, error_callback=error_callback, magnet_data=magnet_data
+        )
 
         settings = Settings.load()
 
+        # check if user wants to continue to install step and make sure that download went ok
+
         if not settings.download_only and ok_to_install:
-            # start the install process
-            magnet_data: MagnetData = kwargs["magnet_data"]
-            install_success = await self.start_install_process(
-                magnet_data.download_path
-            )
-            if not install_success:
-                raise ValueError("Installation was unsuccessful")
+            await self.start_install_process(magnet_data.download_path)
 
     async def start_install_process(self, path: str) -> bool:
         """starts the install process communicates with ADB and pushes any data paths onto
@@ -183,15 +190,19 @@ class Q2GApp(wxasync.WxAsyncApp):
         Returns:
             bool: True if install was successful. False is no install
         """
+
+        # show the progress dialog. i might change this to a wx.ProgressDialog
+
         self.install_dialog = InstallProgressDialog(self.frame)
         self.install_dialog.Show()
-        # set the return value to False. Set to True if everything went ok
-        return_value = False
+
         if not self.selected_device:
-            return return_value
+            ui.utils.show_error_message("No Device selected. Cannot install")
+            return False
         try:
-            # if not self.selected_device:
-            #     raise Exception("No device selected")
+            # loop through all the sub directories searching for apk files
+            # for every apk file found copy the sub folders to the OBB directory
+            # on the Quest device
             for apk_dir in lib.utils.find_install_dirs(path):
                 await quest.install_game(
                     callback=self.on_install_update,
@@ -199,26 +210,34 @@ class Q2GApp(wxasync.WxAsyncApp):
                     apk_dir=apk_dir,
                 )
         except Exception as err:
-            # show the error dialog
-            # await asyncio.sleep(0.5)
             self.on_install_update(f"Error: {err.__str__()}. Installation has quit")
+            self.exception_handler(err)
+            return False
         else:
-            return_value = True
             settings = Settings.load()
             if settings.remove_files_after_install:
                 # delete the torrent files on the local path
+
                 quest.cleanup(
                     path_to_remove=path, error_callback=self.on_install_update
                 )
-            # reload the package list
+
+            # check listpanel exists and reload the package listctrl
+
             if self.install_listpanel is not None:
                 await self.install_listpanel.load(self.selected_device)
+
+            # close install dialog?
+
             if settings.close_dialog_after_install:
                 self.install_dialog.Destroy()
             else:
+                # install went ok. Update statustext
                 self.on_install_update("Installation has completed. Enjoy!!")
-        finally:
-            return return_value
+                wx.CallAfter(
+                    self.frame.SetStatusText, text="Installation has completed. Enjoy!"
+                )
+        return True
 
     async def on_torrent_update(self, torrent_status: dict) -> None:
         """passes the torrent status onto the update list item function in the magnet listpanel

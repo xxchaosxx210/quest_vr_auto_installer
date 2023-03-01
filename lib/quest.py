@@ -13,7 +13,7 @@ import lib.utils
 from lib.debug import Debug
 
 
-_Log = logging.getLogger(__name__)
+_Log = logging.getLogger()
 
 
 InstallStatusFunction = Callable[[str], None]
@@ -46,8 +46,7 @@ def create_obb_path(
         bool: True if new directory created or False if no directory was created
     """
     if Debug.enabled:
-        obb_path_exists = True
-        return not obb_path_exists
+        return False
 
     obb_path_exists = adb_interface.path_exists(device_name=device_name, path=obb_path)
     if not obb_path_exists:
