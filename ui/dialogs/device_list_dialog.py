@@ -1,5 +1,5 @@
 import asyncio
-from typing import Tuple, Union
+from typing import Tuple
 
 import wx
 import wxasync

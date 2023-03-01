@@ -1,5 +1,4 @@
 import binascii
-import pdb
 import pytest
 from qvrapi.schemas import QuestMagnet
 

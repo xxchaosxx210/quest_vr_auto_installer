@@ -1,13 +1,10 @@
 import logging
-from typing import Dict, List, Union
+from typing import List
 
 import wx
 
-import lib.config as config
 import adblib.errors
-import lib.tasks
 import ui.utils
-import lib.quest as quest
 from adblib import adb_interface
 from ui.panels.listpanel import ListPanel, ColumnListType
 from lib.debug import Debug

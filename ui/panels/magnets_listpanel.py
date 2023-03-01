@@ -106,15 +106,23 @@ class MagnetsListPanel(ListPanel):
             settings (Settings): _description_
             magnet_data (MagnetData): _description_
         """
+
         if settings.token is None:
             ui.utils.show_error_message("No token was found. Unable to Authenticate")
             return
+
+        # find the magnet in the database by torrent ID
+
         magnets = await lib.api_handler.get_magnets_from_torrent_id(
             settings.token, magnet_data.torrent_id, ui.utils.show_error_message
         )
+
         if len(magnets) < 1:
             return
-        return_value = await load_update_magnet_dialog(
+
+        # open the magnet dialog with the first magnet
+
+        await load_update_magnet_dialog(
             parent=self.app.frame, title="Update Game", magnet=magnets[0]
         )
 

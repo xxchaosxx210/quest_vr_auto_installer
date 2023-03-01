@@ -107,7 +107,7 @@ class LogsListCtrlPanel(ListCtrlPanel):
 
         async def delete_log(token: str, key: str) -> None:
             try:
-                logs = await delete_logs(token=token, key=key)
+                await delete_logs(token=token, key=key)
             except (aiohttp.ClientConnectionError, ApiError) as err:
                 show_error_message(err.__str__())
             else:
