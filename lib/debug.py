@@ -1,10 +1,20 @@
-from typing import List
+from typing import Callable, List
+
+import deluge.handler as dh
 
 
 class Quest:
     def __init__(self, name: str, package_names: List[str]) -> None:
         self.name = name
         self.package_names = package_names
+
+    async def simulate_download(
+        self,
+        callback: dh.StatusUpdateFunction,
+        error_callback: dh.ErrorUpdateFunction,
+        magnet_data: dh.MagnetData,
+    ) -> bool:
+        pass
 
 
 class Debug:

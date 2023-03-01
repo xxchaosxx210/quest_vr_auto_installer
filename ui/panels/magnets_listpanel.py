@@ -487,14 +487,17 @@ class MagnetsListPanel(ListPanel):
         Args:
             evt (wx.MenuEvent):
         """
-        # get the app instance and check if there is already an installation task running in the background
+        # get the app instance and check if there is already
+        # an installation task running in the background
+
         index: int = self.listctrl.GetFirstSelected()
         if index == -1:
             return
+
         # create a new download path name using the display_name as a prefix
+
         display_name = self.listctrl.GetItem(index, 0).GetText()
         magnet_data = self.magnet_data_list[index]
-        # create a pathname for the torrent files to be downloaded to
         magnet_data.download_path = config.create_path_from_name(
             Settings.load().download_path, display_name
         )
