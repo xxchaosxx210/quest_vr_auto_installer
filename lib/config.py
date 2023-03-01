@@ -25,8 +25,8 @@ import lib.tasks
 
 
 # App Meta data
-APP_NAME = "QuestVRAutoinstaller"
-APP_VERSION = "0.1"
+APP_NAME = "QuestCave"
+APP_VERSION = "1.0.0"
 AUTHOR = "Paul Millar"
 
 

@@ -12,8 +12,10 @@ from ui.dialogs.find_text_dialog import FindTextDialog
 from ui.dialogs.login_dialog import LoginDialog
 from ui.dialogs.user_info_dialog import UserInfoDialog
 from ui.dialogs.add_game_dialog import AddGameDialog
+from ui.dialogs.about_dialog import load_dialog as load_about_dialog
 from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
+import lib.config
 import lib.image_manager as img_mgr
 import qvrapi.api as api
 import lib.tasks as tasks
@@ -27,22 +29,26 @@ class MainFrame(wx.Frame):
 
         super().__init__(*args, **kw)
         self.app: Q2GApp = wx.GetApp()
-        self._init_ui()
         self.main_panel = MainPanel(parent=self)
-        gs = wx.GridSizer(1)
-        gs.Add(self.main_panel, 1, wx.ALL | wx.EXPAND, 0)
-        self.SetSizerAndFit(gs)
+        self.__do_properties()
+        self.__do_layout()
         self.SetSize((800, 200))
 
         # capture the on Window show event
         self.Bind(wx.EVT_SHOW, self.on_show)
 
-    def _init_ui(self) -> None:
+    def __do_properties(self) -> None:
         """set up the statusbar, icon and menubar for the main window"""
         self.statusbar = wx.StatusBar(self)
         self.SetStatusBar(self.statusbar)
         self._create_menubar()
         self.SetIcon(wx.Icon(img_mgr.ICON_PATH))
+
+    def __do_layout(self) -> None:
+        """set up the layout for the main window"""
+        gs = wx.GridSizer(1)
+        gs.Add(self.main_panel, 1, wx.ALL | wx.EXPAND, 0)
+        self.SetSizerAndFit(gs)
 
     def _create_menubar(self) -> None:
         menubar = wx.MenuBar()
@@ -56,20 +62,37 @@ class MainFrame(wx.Frame):
         self.SetMenuBar(menubar)
 
     def _create_help_menu(self) -> wx.Menu:
+        def on_about_menu_item(evt: wx.MenuEvent) -> None:
+            asyncio.create_task(
+                load_about_dialog(
+                    parent=self,
+                    title="About",
+                    id=wx.ID_ANY,
+                    size=(300, 300),
+                    app_name=lib.config.APP_NAME,
+                    version=lib.config.APP_VERSION,
+                    description="QuestVRAutoInstaller is a tool for downloading and installing Quest 2 games for free\nI take no responsibility for the abuse of this program. Enjoy :)",
+                    author=lib.config.AUTHOR,
+                )
+            )
+            evt.Skip()
+
         menu = wx.Menu()
         about_m_item = menu.Append(wx.ID_ANY, "About")
-        self.Bind(wx.EVT_MENU, lambda *args: args, about_m_item)
+        self.Bind(wx.EVT_MENU, on_about_menu_item, about_m_item)
         return menu
 
     def _create_search_menu(self) -> wx.Menu:
         menu = wx.Menu()
-        find_magnet_m_item = menu.Append(wx.ID_ANY, "Game")
+        find_magnet_m_item: wx.MenuItem = menu.Append(wx.ID_ANY, "Game\tCtrl+G")
+        find_magnet_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("G")))
         self.Bind(wx.EVT_MENU, self._on_find_magnet, find_magnet_m_item)
         return menu
 
     def _create_install_menu(self) -> wx.Menu:
         menu = wx.Menu()
         settings_m_item = menu.Append(wx.ID_ANY, "Settings")
+        settings_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("S")))
         self.Bind(wx.EVT_MENU, self._on_settings_menu, settings_m_item)
         return menu
 
@@ -96,6 +119,7 @@ class MainFrame(wx.Frame):
         settings = Settings.load()
         menu = wx.Menu()
         login_m_item = menu.Append(wx.ID_ANY, "Login")
+        login_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("L")))
         self.Bind(wx.EVT_MENU, self._on_user_login, login_m_item)
         menu.AppendSeparator()
         user_info_m_item = menu.Append(wx.ID_ANY, "Details")

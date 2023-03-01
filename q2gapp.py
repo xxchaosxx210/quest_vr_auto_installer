@@ -351,7 +351,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         Loads the games and starts the ADB daemon, then prompts the User to select a device
         """
         progress = ui.utils.load_progress_dialog(
-            self.frame, "QuestVRAuto", "Loading, Please wait..."
+            self.frame, config.APP_NAME, "Loading, Please wait..."
         )
         progress.Pulse()
 
