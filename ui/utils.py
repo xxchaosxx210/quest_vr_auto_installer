@@ -117,6 +117,18 @@ class ListCtrlPanel(wx.Panel):
         self.SetSizer(sizer)
 
 
+def load_progress_dialog(
+    parent: wx.Window, title: str, message: str, maximum: int = 100
+) -> wx.ProgressDialog:
+    return wx.ProgressDialog(
+        title=title,
+        message=message,
+        maximum=maximum,
+        parent=parent,
+        style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE | wx.PD_SMOOTH,
+    )
+
+
 def create_bitmap_button(
     filename: str,
     tooltip: str | None,

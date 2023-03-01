@@ -59,13 +59,13 @@ def close_adb() -> str:
     return stdout
 
 
-def start_adb() -> str:
+async def start_adb() -> str:
     """starts the adb daemon
 
     Returns:
         str: decoded string from the stdout stream
     """
-    stdout = execute([ADB_PATH_DEFAULT, "start-server"])
+    stdout = await execute_subprocess([ADB_PATH_DEFAULT, "start-server"])
     return stdout
 
 

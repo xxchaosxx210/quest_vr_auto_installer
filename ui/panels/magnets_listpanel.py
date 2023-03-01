@@ -18,6 +18,7 @@ from ui.panels.listpanel import ListPanel, ColumnListType
 from ui.dialogs.update_magnet_dialog import load_dialog as load_update_magnet_dialog
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
+from lib.debug import Debug
 
 
 _Log = logging.getLogger()
@@ -307,17 +308,29 @@ class MagnetsListPanel(ListPanel):
 
         menu = wx.Menu()
 
-        extra_info_item = menu.Append(wx.ID_ANY, "Game Info")
-        self.Bind(wx.EVT_MENU, self._on_extra_info_item, extra_info_item)
-        menu.AppendSeparator()
+        # create the download and install menuitem
 
         dld_install_item = menu.Append(wx.ID_ANY, "Download and Install")
         self.Bind(wx.EVT_MENU, self.on_dld_and_install_item, dld_install_item)
         menu.AppendSeparator()
+
+        # create the get extra games info menuitem
+
+        extra_info_item = menu.Append(wx.ID_ANY, "Game Info")
+        self.Bind(wx.EVT_MENU, self._on_extra_info_item, extra_info_item)
+        menu.AppendSeparator()
+
+        # check if there is an apk file already in the download directory
+
         if lib.utils.apk_exists(magnet_data) is not None:
+            # create an install menuitem
+
             install_only_item = menu.Append(wx.ID_ANY, "Install")
             self.Bind(wx.EVT_MENU, self.on_install_only_item, install_only_item)
             menu.AppendSeparator()
+
+        # download menu item options
+
         pause_item = menu.Append(wx.ID_ANY, "Pause")
         self.Bind(wx.EVT_MENU, self.on_pause_item_selected, pause_item)
         resume_item = menu.Append(wx.ID_ANY, "Resume")
@@ -328,10 +341,13 @@ class MagnetsListPanel(ListPanel):
 
         menu.AppendSeparator()
 
-        debug_menu = wx.Menu()
-        install_apk = debug_menu.Append(wx.ID_ANY, "Install APK")
-        self.Bind(wx.EVT_MENU, self.on_install_apk, install_apk)
-        menu.AppendSubMenu(debug_menu, "Debug")
+        # if debugging enabled then create the debug sub menu
+
+        if Debug.enabled:
+            debug_menu = wx.Menu()
+            install_apk = debug_menu.Append(wx.ID_ANY, "Install APK")
+            self.Bind(wx.EVT_MENU, self.on_install_apk, install_apk)
+            menu.AppendSubMenu(debug_menu, "Debug")
 
         self.listctrl.PopupMenu(menu)
 

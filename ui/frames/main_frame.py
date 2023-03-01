@@ -1,4 +1,3 @@
-from typing import List
 import wx
 import asyncio
 import random
@@ -288,37 +287,5 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.CommandEvent): not used
         """
-        try:
-            tasks.check_task_and_create(self.app.prompt_user_for_device)
-        except tasks.TaskIsRunning:
-            ui.utils.show_error_message(
-                "Dialog already open please close existing Dialog"
-            )
-        try:
-            tasks.check_task_and_create(self.load_games)
-        except tasks.TaskIsRunning:
-            ui.utils.show_error_message("Already loading Games Please wait...")
+        tasks.check_task_and_create(self.app.load_resources)
         evt.Skip()
-
-    async def load_games(self) -> None:
-        """
-        create seperate coroutines to collect information for the quest device,
-        game torrents load the listctrls
-        """
-        await asyncio.sleep(0.1)
-        if self.app.magnets_listpanel is None:
-            return
-        # tasks: List[asyncio.Task] = []
-        # # load the devices
-        # # tasks.append(asyncio.create_task(self.app.devices_listpanel.load()))
-        # # load the magnets list
-        # tasks.append(
-        #     asyncio.create_task(self.app.magnets_listpanel.load_magnets_from_api())
-        # )
-        # results: list = await asyncio.gather(*tasks, return_exceptions=True)
-        # for exception in results:
-        #     if exception is not None:
-        #         # there was an error
-        #         self.app.exception_handler(exception)
-        await asyncio.create_task(self.app.magnets_listpanel.load_magnets_from_api())
-        wx.CallAfter(self.statusbar.SetStatusText, text="All Tasks Loaded")

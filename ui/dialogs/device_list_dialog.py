@@ -8,7 +8,7 @@ import ui.panels.devices_listpanel as devices_panel
 
 
 async def open_device_selection_dialog(
-    parent: wx.Frame, id: int, title: str, style: int, size: Tuple[int, int]
+    parent: wx.Frame, id: int, title: str, style: int
 ) -> Tuple[int, str]:
     """creates an async modal dialog
 
@@ -22,7 +22,7 @@ async def open_device_selection_dialog(
     Returns:
         Tuple[int, str]: return code and selected device name
     """
-    dlg = DeviceListDialog(parent=parent, id=id, title=title, style=style, size=size)
+    dlg = DeviceListDialog(parent=parent, id=id, title=title, style=style)
     result = await wxasync.AsyncShowDialogModal(dlg=dlg)
     return (result, dlg.get_device_name())
 
@@ -51,7 +51,8 @@ class DeviceListDialog(wx.Dialog):
         vbox.Add(gs, 1, wx.EXPAND | wx.ALL, 0)
         vbox.Add(skip_button, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.SetSizerAndFit(vbox)
-        self.SetSize(*self.GetSize())
+        parent_width = self.GetParent().GetSize()[0]
+        self.SetSize((parent_width, -1))
         self.CenterOnParent()
 
         asyncio.create_task(self.device_listpanel.load())

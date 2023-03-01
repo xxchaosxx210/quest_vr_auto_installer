@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import wx
 import wxasync
@@ -9,6 +10,7 @@ import lib.utils
 import lib.config as config
 import lib.quest as quest
 import lib.tasks
+import ui.utils
 import adblib.adb_interface as adb_interface
 from deluge.handler import download, MagnetData
 from adblib.errors import RemoteDeviceError
@@ -17,12 +19,14 @@ from lib.settings import Settings
 from lib.debug import Debug
 
 from ui.frames.main_frame import MainFrame
-from ui.panels.devices_listpanel import DevicesListPanel
 from ui.panels.installed_listpanel import InstalledListPanel
 from ui.panels.magnets_listpanel import MagnetsListPanel
 from ui.dialogs.error_dialog import ErrorDialog
 from ui.dialogs.install_progress_dialog import InstallProgressDialog
 from ui.dialogs.device_list_dialog import open_device_selection_dialog
+
+
+_Log = logging.getLogger()
 
 
 class Q2GApp(wxasync.WxAsyncApp):
@@ -243,16 +247,28 @@ class Q2GApp(wxasync.WxAsyncApp):
         Args:
             package_name (str): the name of the package to uninstall
         """
+
+        # check a device has been selected
+
         if not self.selected_device:
             return
+
+        # dont want to upset mypy. check the listpanel exists
+        # then disable the package listctrl while removing
+
         if self.install_listpanel is not None:
             self.install_listpanel.disable_list()
+
+        # notify the user removing the package
+
+        progress = ui.utils.load_progress_dialog(
+            self.frame,
+            "Removing Package",
+            f"Removing {package_name} from Device {self.selected_device}",
+        )
+        progress.Pulse()
         try:
-            self.frame.SetStatusText(
-                f"Removing {package_name} from Device {self.selected_device}"
-            )
             await adb_interface.uninstall(self.selected_device, package_name)
-            self.frame.SetStatusText("Uninstall was successful")
         except RemoteDeviceError as err:
             self.exception_handler(err)
         except Exception as err:
@@ -260,15 +276,24 @@ class Q2GApp(wxasync.WxAsyncApp):
                 {"message": err.__str__(), "exception": err}
             )
         else:
-            # reload the package list
+            self.frame.SetStatusText("Uninstall was successful")
+
+            # reload the new package list into package listctrl
+
             if self.install_listpanel is not None:
                 await self.install_listpanel.load(self.selected_device)
         finally:
+            progress.Destroy()
+
+            # re-enable the package lisctrl
+
             if self.install_listpanel is not None:
                 self.install_listpanel.enable_list()
-            return
 
     async def check_internet_and_notify(self) -> None:
+        """
+        checks the internet connectivity on the system
+        """
         result = lib.utils.is_connected_to_internet()
         if result:
             return
@@ -278,6 +303,46 @@ class Q2GApp(wxasync.WxAsyncApp):
                 \nLoading in offline mode"
             )
         )
+
+    async def load_resources(self) -> None:
+        """
+        Loads the games and starts the ADB daemon, then prompts the User to select a device
+        """
+        progress = ui.utils.load_progress_dialog(
+            self.frame, "QuestVRAuto", "Loading, Please wait..."
+        )
+        progress.Pulse()
+
+        # start the tasks
+
+        load_games_task = asyncio.create_task(self.load_games())
+        load_adb_task = asyncio.create_task(adb_interface.start_adb())
+
+        # check for any errors within the tasks
+
+        exceptions = await asyncio.gather(
+            load_adb_task, load_games_task, return_exceptions=True
+        )
+
+        for exception in exceptions:
+            if isinstance(exception, Exception):
+                self.exception_handler(exception)
+
+        # destroy the progress dialog and sleep for half a second to allow the dialog to destroy
+        # before displaying another dialog to ask the user to select a quest device
+
+        progress.Destroy()
+        await asyncio.sleep(0.5)
+        await self.prompt_user_for_device()
+
+    async def load_games(self) -> None:
+        """
+        start a new task retrieving the magnet games from the backend server
+        """
+        await asyncio.sleep(0.1)
+        if self.magnets_listpanel is None:
+            return
+        await asyncio.create_task(self.magnets_listpanel.load_magnets_from_api())
 
     async def prompt_user_for_device(self) -> None:
         """
@@ -289,7 +354,6 @@ class Q2GApp(wxasync.WxAsyncApp):
             wx.ID_ANY,
             "Select a Device to install to",
             wx.DEFAULT_DIALOG_STYLE,
-            (500, 300),
         )
         if result != wx.OK and result != 0:
             raise ValueError("Dialog did not return a wx.OK or Close id")
