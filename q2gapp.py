@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import traceback
 
 import wx
 import wxasync
@@ -128,8 +129,9 @@ class Q2GApp(wxasync.WxAsyncApp):
             exception = err.message
         else:
             exception = str(err)
+        tb_string = "\n".join(traceback.format_exception(err))
         error_request = LogErrorRequest(
-            type=str(err), uuid=uuid, exception=exception, traceback=""
+            type=str(err), uuid=uuid, exception=exception, traceback=tb_string
         )
         try:
             lib.tasks.check_task_and_create(send_error, _error_request=error_request)
@@ -166,9 +168,32 @@ class Q2GApp(wxasync.WxAsyncApp):
 
         # start the download task
 
-        ok_to_install = await deluge.handler.download(
-            callback=callback, error_callback=error_callback, magnet_data=magnet_data
-        )
+        if Debug.enabled:
+            try:
+                quest = Debug.get_device(self.selected_device)
+            except LookupError:
+                ui.utils.show_error_message(
+                    f"Could not find device with name {self.selected_device}"
+                )
+                return
+            else:
+                try:
+                    await quest.simulate_download(
+                        callback=callback,
+                        error_callback=error_callback,
+                        magnet_data=magnet_data,
+                        total_time=20,
+                    )
+                except Exception as err:
+                    return
+                else:
+                    ok_to_install = False
+        else:
+            ok_to_install = await deluge.handler.download(
+                callback=callback,
+                error_callback=error_callback,
+                magnet_data=magnet_data,
+            )
 
         settings = Settings.load()
 
@@ -266,8 +291,6 @@ class Q2GApp(wxasync.WxAsyncApp):
         Args:
             package_name (str): the name of the package to uninstall
         """
-
-        # check a device has been selected
 
         if not self.selected_device:
             return

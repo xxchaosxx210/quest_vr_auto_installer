@@ -260,20 +260,27 @@ class MagnetsListPanel(ListPanel):
             config.save_local_quest_magnets(config.QUEST_MAGNETS_PATH, magnets)
             # enable Online mode
             self.app.set_mode(True)
-        except aiohttp.ClientConnectionError:
+        except (aiohttp.ClientConnectionError, api.ApiError) as err:
+            if isinstance(err, api.ApiError):
+                err.message = f"Error with status code: {err.status_code}. Reason: {err.message}.\n If this issue persits then send report"
+                self.app.exception_handler(err)
             # Connection issue, try and load from local json file
             magnets = config.load_local_quest_magnets(lib.config.QUEST_MAGNETS_PATH)
             self.app.set_mode(False)
+            await self.load_magnets_into_listctrl(magnets)
         except Exception as err:
             # something else went wrong notify the user and return. Skip loading
             self.app.exception_handler(err)
             return
-        finally:
+        else:
             # sort the magnets in alphaebetical order and load into listctrl
             magnets = sorted(magnets, key=lambda item: item.display_name.lower())
-            await self.load_magnets(magnets)
+            self.app.set_mode(True)
+            await self.load_magnets_into_listctrl(magnets)
+        finally:
+            return
 
-    async def load_magnets(self, magnets: List[QuestMagnet]) -> None:
+    async def load_magnets_into_listctrl(self, magnets: List[QuestMagnet]) -> None:
         self.clear_list()
         for index, magnet in enumerate(magnets):
             magnet_data = MagnetData(

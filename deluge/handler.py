@@ -180,20 +180,30 @@ async def download(
     remove_data_when_complete = False
     try:
         with LocalDelugeRPCClient() as deluge_client:
+            # add the magnet uri to the session and get the torretn ID
+            # add_paused set to False means that the download will start straight away
+
             torrent_id = await add_magnet_to_session(
                 deluge_client,
                 magnet_data.uri,
                 {"download_location": magnet_data.download_path, "add_paused": False},
             )
             if not torrent_id:
+                # No ID returned so raise an exception
                 raise TorrentIdNotFound("Could not get Torrent ID from Daemon")
+
+            # Keep looping until either quit message has been queued or
+            # the download is starting to seed or finished
             while True:
+                # get the status of the torrent
+
                 torrent_status: Dict[str, Any] = deluge_client.call(
                     "core.get_torrent_status",
                     torrent_id,
                     ["progress", "state", "download_payload_rate", "eta", "name"],
                 )
                 state = torrent_status.get("state", State.Finished)
+
                 # magnet reference for the calling thread
                 torrent_status["index"] = magnet_data.index
                 if not torrent_status:
