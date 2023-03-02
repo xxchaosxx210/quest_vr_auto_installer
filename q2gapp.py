@@ -45,6 +45,13 @@ class Q2GApp(wxasync.WxAsyncApp):
     # online mode flag
     online_mode: bool = False
 
+    # debug mode
+    debug_mode: bool = False
+
+    def __init__(self, debug_mode: bool, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.debug_mode = debug_mode
+
     def set_selected_device(self, device_name: str) -> None:
         """set the selected device name and load the device packages
 

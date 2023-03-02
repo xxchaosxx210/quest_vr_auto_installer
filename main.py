@@ -32,7 +32,7 @@ async def _main():
         # download and install deluge daemon
         sys.exit("Unable to locate the Deluge Daemon. Please reinstall Deluge Torrent")
     multiprocessing.freeze_support()
-    app = Q2GApp()
+    app = Q2GApp(args.debug)
     # catch any unhandled exceptions in the event loop
     asyncio.get_event_loop().set_exception_handler(config.async_log_handler)
     # check for an internet connection, notify user to turn back on
