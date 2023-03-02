@@ -13,10 +13,10 @@ MAX_DOWNLOAD_SPEED = 4500000.0
 MIN_DOWNLOAD_SPEED = 2500000.0
 
 
-Quests = List["Quest"]
+Quests = List["FakeQuest"]
 
 
-class Quest:
+class FakeQuest:
     def __init__(self, name: str, package_names: List[str]) -> None:
         """generates a fake quest installation environment
 
@@ -31,8 +31,8 @@ class Quest:
 class DebugState:
     enabled: bool = False
     devices: Quests = [
-        Quest("QUEST1", ["com.fake.MarioKart"]),
-        Quest("QUEST2", ["com.fake.Zelda", "org.com.F1"]),
+        FakeQuest("QUEST1", ["com.fake.MarioKart"]),
+        FakeQuest("QUEST2", ["com.fake.Zelda", "org.com.F1"]),
     ]
 
 
@@ -174,7 +174,7 @@ def get_device_names(quests: Quests) -> List[str]:
     return quest_names
 
 
-def get_device(quests: Quests, name: str) -> Quest:
+def get_device(quests: Quests, name: str) -> FakeQuest:
     """gets the device related to the device name
 
     Args:

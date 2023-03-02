@@ -73,7 +73,7 @@ class DevicesListPanel(ListPanel):
         result = dialog.ShowModal()
         if result == wx.ID_OK:
             device_name, package_names = dialog.get_values_from_dialog()
-            debug.DebugState.devices.append(debug.Quest(device_name, package_names))
+            debug.DebugState.devices.append(debug.FakeQuest(device_name, package_names))
         dialog.Destroy()
         lib.tasks.check_task_and_create(self.load)
 
