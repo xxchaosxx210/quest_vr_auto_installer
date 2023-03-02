@@ -1,9 +1,3 @@
-"""
-create an about dialog box using wxpython. The name of the app is called QuestVRAutoInstaller
-I want an Bitmap in the top left corner of the panel, with a title, a description and author called Paul Millar
-and I want a close button at the bottom
-"""
-
 import wx
 
 import wxasync
@@ -11,9 +5,9 @@ import wxasync
 import lib.image_manager as img_mgr
 
 
-def load_dialog(*args, **kwargs) -> int:
+async def load_dialog(*args, **kwargs) -> bool:
     dlg = AboutDialog(*args, **kwargs)
-    result = wxasync.AsyncShowDialogModal(dlg)
+    result = await wxasync.AsyncShowDialogModal(dlg)
     return result
 
 
@@ -32,7 +26,6 @@ class AboutDialog(wx.Dialog):
         super().__init__(parent, id, title, size=size)
 
         self.panel = wx.Panel(self, -1)
-        self.panel.SetBackgroundColour(wx.Colour(255, 255, 255))
 
         self.bitmap = img_mgr.get_image("logo.png")
         self.bitmap = wx.StaticBitmap(self.panel, -1, self.bitmap.ConvertToBitmap())
@@ -59,6 +52,7 @@ class AboutDialog(wx.Dialog):
         self.__do_layout()
 
     def on_close_button(self, event: wx.CommandEvent) -> None:
+        """close the dialog when the close button is clicked"""
         self.SetReturnCode(wx.ID_CLOSE)
         self.Close()
 

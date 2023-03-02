@@ -5,6 +5,7 @@ import wx
 
 import adblib.errors
 import ui.utils
+import lib.tasks
 from adblib import adb_interface
 from ui.panels.listpanel import ListPanel, ColumnListType
 from lib.debug import Debug
@@ -58,7 +59,8 @@ class DevicesListPanel(ListPanel):
         return button_panel
 
     def on_refresh_click(self, evt: wx.CommandEvent) -> None:
-        _Log.info("Hello from the Device ListPanel")
+        """reload the device list from ADB daemon"""
+        lib.tasks.check_task_and_create(self.load)
 
     async def _get_device_names(self) -> List[str]:
         """loads device names either from debug settings or ADB
@@ -80,7 +82,7 @@ class DevicesListPanel(ListPanel):
         Raises:
             err: RemoteDeviceError | Exception
         """
-
+        self.selected_device = ""
         self.listctrl.DeleteAllItems()
         try:
             device_names = await self._get_device_names()

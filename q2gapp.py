@@ -9,7 +9,7 @@ import wxasync
 import qvrapi.api
 import lib.utils
 import lib.config as config
-import lib.quest as quest
+import lib.quest
 import lib.tasks
 import ui.utils
 import adblib.adb_interface as adb_interface
@@ -170,24 +170,22 @@ class Q2GApp(wxasync.WxAsyncApp):
 
         if Debug.enabled:
             try:
-                quest = Debug.get_device(self.selected_device)
+                fake_quest = Debug.get_device(self.selected_device)
             except LookupError:
                 ui.utils.show_error_message(
                     f"Could not find device with name {self.selected_device}"
                 )
                 return
-            else:
-                try:
-                    await quest.simulate_download(
-                        callback=callback,
-                        error_callback=error_callback,
-                        magnet_data=magnet_data,
-                        total_time=20,
-                    )
-                except Exception as err:
-                    return
-                else:
-                    ok_to_install = False
+            try:
+                ok_to_install = await fake_quest.simulate_download(
+                    callback=callback,
+                    error_callback=error_callback,
+                    magnet_data=magnet_data,
+                    total_time=2,
+                )
+            except Exception as err:
+                self.exception_handler(err=err)
+                return
         else:
             ok_to_install = await deluge.handler.download(
                 callback=callback,
@@ -225,25 +223,35 @@ class Q2GApp(wxasync.WxAsyncApp):
             ui.utils.show_error_message("No Device selected. Cannot install")
             return False
         try:
-            # loop through all the sub directories searching for apk files
-            # for every apk file found copy the sub folders to the OBB directory
-            # on the Quest device
-            for apk_dir in lib.utils.find_install_dirs(path):
-                await quest.install_game(
+            if Debug.enabled:
+                fake_quest = Debug.get_device(self.selected_device)
+                apk_path = Debug.generate_apk_path_object(path)
+                await fake_quest.install_game(
                     callback=self.on_install_update,
                     device_name=self.selected_device,
-                    apk_dir=apk_dir,
+                    apk_dir=apk_path,
+                    raise_exception=None,
                 )
+            else:
+                # loop through all the sub directories searching for apk files
+                # for every apk file found copy the sub folders to the OBB directory
+                # on the Quest device
+                for apk_dir in lib.utils.find_install_dirs(path):
+                    await lib.quest.install_game(
+                        callback=self.on_install_update,
+                        device_name=self.selected_device,
+                        apk_dir=apk_dir,
+                    )
         except Exception as err:
             self.on_install_update(f"Error: {err.__str__()}. Installation has quit")
             self.exception_handler(err)
             return False
         else:
             settings = Settings.load()
-            if settings.remove_files_after_install:
+            # check no debug mode and remove files after install
+            if not Debug.enabled and settings.remove_files_after_install:
                 # delete the torrent files on the local path
-
-                quest.cleanup(
+                lib.quest.cleanup(
                     path_to_remove=path, error_callback=self.on_install_update
                 )
 

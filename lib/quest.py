@@ -1,16 +1,12 @@
-import asyncio
 import logging
 import os
 import shutil
-import time
-from datetime import timedelta
 from typing import Callable, List
 from dataclasses import dataclass
 
 from adblib import adb_interface
 import lib.config
 import lib.utils
-from lib.debug import Debug
 
 
 _Log = logging.getLogger()
@@ -45,8 +41,6 @@ def create_obb_path(
     Returns:
         bool: True if new directory created or False if no directory was created
     """
-    if Debug.enabled:
-        return False
 
     obb_path_exists = adb_interface.path_exists(device_name=device_name, path=obb_path)
     if not obb_path_exists:
@@ -54,59 +48,6 @@ def create_obb_path(
         adb_interface.make_dir(device_name=device_name, path=obb_path)
         _Log.debug(f"{obb_path} created successfully")
     return not obb_path_exists
-
-
-async def dummy_install_game(
-    callback: InstallStatusFunction,
-    device_name: str,
-    path: str,
-    raise_exception: bool,
-    time_to_install: float,
-) -> InstallPackage:
-    """simulates an install process
-
-    Args:
-        callback (InstallStatusFunction): the callback to update to
-        device_name (str): the name of the device to install to
-        path (str): the path of the apk file to install
-        raise_exception (bool): if true then a raise exception will be made. This is to test
-        time_to_install (float): timeout period before install is complete
-        exception handling
-    """
-    start_time = time.time()
-    callback("Appending apk file name to the full path")
-    apk_path = "C:\\Users\\somerandomname\\Games\\somerandomquestgame\\"
-    apk_sub_paths = list(
-        map(
-            lambda _path: os.path.join(apk_path, _path),
-            ["random_game_data", "more_random_game_data"],
-        )
-    )
-    apk_filename = os.path.join(apk_path, "random_game.apk")
-    install_results = InstallPackage(
-        apk_path=apk_path, apk_sub_directories=apk_sub_paths, apk_filename=apk_filename
-    )
-    await asyncio.sleep(0.2)
-    callback(
-        "Installing game this may take several minutes. Please do not disconnect your device"
-    )
-    await asyncio.sleep(time_to_install)
-    callback("Game has been installed. Moving to next step...")
-    callback(
-        "Moving files onto device. This may take a few minutes. Do not disconnect Device"
-    )
-    if raise_exception:
-        raise TypeError("This is a test")
-
-    await asyncio.sleep(5)
-
-    elapsed_time = time.time() - start_time
-    formatted_time = str(timedelta(seconds=elapsed_time))
-
-    callback("Install has completed successfully. Enjoy!")
-    callback(f"Install time: {formatted_time}")
-
-    return install_results
 
 
 async def install_game(

@@ -2,7 +2,7 @@
 
 rem Build executable
 pyinstaller --clean ^
--n QuestVRAutoInstaller ^
+-n QuestCave ^
 -w ^
 --exclude-module pyinstaller --exclude-module pyflakes --exclude-module autopep8 --exclude-module black --exclude-module pyinstaller-hooks-contrib --exclude-module pylint --exclude-module pytest --exclude-module pytest-asyncio --exclude-module mypy ^
 --add-data ".\adblib\win64;adblib\win64" ^
