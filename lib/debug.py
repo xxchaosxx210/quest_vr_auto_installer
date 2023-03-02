@@ -180,6 +180,16 @@ class Debug:
         return device_names
 
     @staticmethod
+    def add_device(name: str, packages: List[str]) -> None:
+        """adds a fake Quest device to the list of devices
+
+        Args:
+            name (str): the name of the device
+            packages (List[str]): list of packages installed on the device
+        """
+        Debug.devices.append(Quest(name, packages))
+
+    @staticmethod
     def get_device(name: str) -> Quest:
         """gets the device related to the device name
 
