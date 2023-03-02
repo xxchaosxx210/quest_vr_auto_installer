@@ -100,8 +100,7 @@ class DevicesListPanel(ListPanel):
         Raises:
             err: RemoteDeviceError | Exception
         """
-        self.app.set_selected_device("")
-        self.listctrl.DeleteAllItems()
+        self.app.set_selected_device("", load_list=False)
         try:
             device_names = await self._get_device_names()
         except adblib.errors.RemoteDeviceError as err:

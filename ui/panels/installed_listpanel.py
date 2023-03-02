@@ -55,6 +55,7 @@ class InstalledListPanel(ListPanel):
             ValueError: device_name is an empty string then exception is raised
             LookupError: (Debug mode only) if device_name cant be found then this will be raised
         """
+        self.listctrl.DeleteAllItems()
         if not device_name:
             raise ValueError(
                 "Device name must be non empty string. Could not load installed packages. Dialog must have returned empty selected device"
@@ -72,7 +73,6 @@ class InstalledListPanel(ListPanel):
                 device_name, ["-3"]
             )
         package_names.sort()
-        self.listctrl.DeleteAllItems()
         for index, package_name in enumerate(package_names):
             wx.CallAfter(self.listctrl.InsertItem, index=index, label=package_name)
 

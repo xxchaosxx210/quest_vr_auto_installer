@@ -158,7 +158,7 @@ class MainFrame(wx.Frame):
                 self, wx.ID_ANY, "Select Device", wx.DEFAULT_DIALOG_STYLE
             )
             if result == wx.ID_OK:
-                self.app.set_selected_device(device_name)
+                self.app.set_selected_device(device_name, load_list=True)
 
         tasks.check_task_and_create(new_device_selection_task)
 
