@@ -13,6 +13,7 @@ from ui.dialogs.login_dialog import LoginDialog
 from ui.dialogs.user_info_dialog import UserInfoDialog
 from ui.dialogs.add_game_dialog import AddGameDialog
 from ui.dialogs.about_dialog import load_dialog as load_about_dialog
+from ui.dialogs.device_list_dialog import open_device_selection_dialog
 from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
 import lib.config
@@ -20,6 +21,9 @@ import lib.image_manager as img_mgr
 import qvrapi.api as api
 import lib.tasks as tasks
 import ui.utils
+
+
+"""create a statusbar with 2 columns. the first column having 60% width and the second taking the rest of the space"""
 
 
 class MainFrame(wx.Frame):
@@ -40,6 +44,8 @@ class MainFrame(wx.Frame):
     def __do_properties(self) -> None:
         """set up the statusbar, icon and menubar for the main window"""
         self.statusbar = wx.StatusBar(self)
+        self.statusbar.SetFieldsCount(2)
+        self.statusbar.SetStatusWidths([-1, -2])
         self.SetStatusBar(self.statusbar)
         self._create_menubar()
         self.SetIcon(wx.Icon(img_mgr.ICON_PATH))
@@ -52,8 +58,7 @@ class MainFrame(wx.Frame):
 
     def _create_menubar(self) -> None:
         menubar = wx.MenuBar()
-        menubar.Append(self._create_install_menu(), "Install")
-        menubar.Append(self._create_user_menu(), "Account")
+        menubar.Append(self._create_user_menu(), "User")
         menubar.Append(self._create_search_menu(), "Search")
         menubar.Append(self._create_debug_menu(), "Debug")
         menubar.Append(self._create_help_menu(), "Help")
@@ -89,13 +94,6 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self._on_find_magnet, find_magnet_m_item)
         return menu
 
-    def _create_install_menu(self) -> wx.Menu:
-        menu = wx.Menu()
-        settings_m_item = menu.Append(wx.ID_ANY, "Settings")
-        settings_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("S")))
-        self.Bind(wx.EVT_MENU, self._on_settings_menu, settings_m_item)
-        return menu
-
     def _create_debug_menu(self) -> wx.Menu:
         menu = wx.Menu()
         install_dlg_m_item = menu.Append(wx.ID_ANY, "Show Install Dialog")
@@ -121,15 +119,18 @@ class MainFrame(wx.Frame):
         login_m_item = menu.Append(wx.ID_ANY, "Login")
         login_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("L")))
         self.Bind(wx.EVT_MENU, self._on_user_login, login_m_item)
-        menu.AppendSeparator()
         user_info_m_item = menu.Append(wx.ID_ANY, "Details")
         self.Bind(wx.EVT_MENU, self._on_user_info, user_info_m_item)
-        menu.AppendSeparator()
         remove_auth_m_item = menu.Append(wx.ID_ANY, "Logout")
         self.Bind(wx.EVT_MENU, self._on_logout_user, remove_auth_m_item)
+        menu.AppendSeparator()
+
+        # Device selection
+        device_m_item = menu.Append(wx.ID_ANY, "Device\tCtrl+D")
+        self.Bind(wx.EVT_MENU, self._on_device_dialog, device_m_item)
+        device_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("D")))
 
         # Create an Admin submenu
-        menu.AppendSeparator()
         self.admin_submenu = wx.Menu()
         admin_add_game_m_item = self.admin_submenu.Append(wx.ID_ANY, "Add Game")
         self.Bind(wx.EVT_MENU, self._on_add_game_dialog, admin_add_game_m_item)
@@ -138,7 +139,28 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self._on_logs_frame, admin_logs_m_item)
         ui.utils.enable_menu_items(self.admin_submenu, settings.is_user_admin())
         menu.AppendSubMenu(self.admin_submenu, "Admin", "Admin tools and testing")
+        menu.AppendSeparator()
+
+        settings_m_item = menu.Append(wx.ID_ANY, "Preferences\tCtrl+S")
+        settings_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("S")))
+        self.Bind(wx.EVT_MENU, self._on_settings_menu, settings_m_item)
         return menu
+
+    def _on_device_dialog(self, evt: wx.MenuEvent) -> None:
+        """opens a DeviceListDialog
+
+        Args:
+            evt (wx.MenuEvent): _description_
+        """
+
+        async def new_device_selection_task():
+            result, device_name = await open_device_selection_dialog(
+                self, wx.ID_ANY, "Select Device", wx.DEFAULT_DIALOG_STYLE
+            )
+            if result == wx.ID_OK:
+                self.app.set_selected_device(device_name)
+
+        tasks.check_task_and_create(new_device_selection_task)
 
     def _on_add_game_dialog(self, evt: wx.MenuEvent) -> None:
         settings = Settings.load()

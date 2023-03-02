@@ -45,6 +45,15 @@ class Q2GApp(wxasync.WxAsyncApp):
     # online mode flag
     online_mode: bool = False
 
+    def set_selected_device(self, device_name: str) -> None:
+        """set the selected device name
+
+        Args:
+            device_name (str): the name of the device
+        """
+        self.selected_device = device_name
+        self.frame.SetStatusText(f"Device: {device_name}", 1)
+
     def set_mode(self, mode: bool) -> None:
         """sets whether the app is in online or offline mode
         this is dependant on the network connection
@@ -393,7 +402,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         loads the device selection dialog and retrieves a selected device to use
         for installing the games to
         """
-        result, self.selected_device = await open_device_selection_dialog(
+        result, selected_device = await open_device_selection_dialog(
             self.frame,
             wx.ID_ANY,
             "Select a Device to install to",
@@ -401,5 +410,6 @@ class Q2GApp(wxasync.WxAsyncApp):
         )
         if result != wx.OK and result != 0:
             raise ValueError("Dialog did not return a wx.OK or Close id")
-        if self.selected_device and self.install_listpanel is not None:
+        if selected_device and self.install_listpanel is not None:
+            self.set_selected_device(selected_device)
             await self.install_listpanel.load(self.selected_device)

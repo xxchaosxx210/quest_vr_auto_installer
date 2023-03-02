@@ -40,7 +40,6 @@ class DevicesListPanel(ListPanel):
 
         self.app: Q2GApp = wx.GetApp()
         # the device that is currently selected in the listctrl
-        self.selected_device: str = ""
         columns: ColumnListType = [{"col": 0, "heading": "Name", "width": 200}]
         super().__init__(parent=parent, title="Devices", columns=columns)
         self.insert_button_panel(self._create_button_panel(), 0, flag=wx.ALIGN_RIGHT)
@@ -73,7 +72,9 @@ class DevicesListPanel(ListPanel):
         result = dialog.ShowModal()
         if result == wx.ID_OK:
             device_name, package_names = dialog.get_values_from_dialog()
-            debug.DebugState.devices.append(debug.FakeQuest(device_name, package_names))
+            debug.DebugState.devices.append(
+                debug.DummyQuest2(device_name, package_names)
+            )
         dialog.Destroy()
         lib.tasks.check_task_and_create(self.load)
 
@@ -101,7 +102,7 @@ class DevicesListPanel(ListPanel):
         Raises:
             err: RemoteDeviceError | Exception
         """
-        self.selected_device = ""
+        self.app.set_selected_device("")
         self.listctrl.DeleteAllItems()
         try:
             device_names = await self._get_device_names()
@@ -132,7 +133,7 @@ class DevicesListPanel(ListPanel):
         item: wx.ListItem = self.listctrl.GetItem(index, 0)
         device_name = item.GetText()
         # set the global selected device
-        self.selected_device = device_name
+        self.app.set_selected_device(device_name)
         event = DeviceEvent(newEVT_DEVICE_SELECTED, self.GetId(), index, device_name)
         # wx.PostEvent(self.GetEventHandler(), event)
         handler: wx.Window = self.GetEventHandler()
@@ -182,7 +183,7 @@ class DevicesListPanel(ListPanel):
         Args:
             evt (wx.ListEvent): _description_
         """
-        if not self.selected_device:
+        if not self.app.selected_device:
             return
         menu = wx.Menu()
         debug_menu = wx.Menu()
@@ -197,12 +198,12 @@ class DevicesListPanel(ListPanel):
         Args:
             evt (wx.MenuItem):
         """
-        if not self.selected_device:
+        if not self.app.selected_device:
             return
         cpb = wx.Clipboard()
         if not cpb.Open():
             return
         text_data = wx.TextDataObject()
-        text_data.SetText(self.selected_device)
+        text_data.SetText(self.app.selected_device)
         cpb.SetData(text_data)
         cpb.Close()
