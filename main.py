@@ -8,7 +8,7 @@ import sys
 
 
 import lib.config as config
-from lib.debug import Debug
+from lib.debug import DebugState
 from deluge.utils import start_deluge_daemon
 from adblib import adb_interface
 from lib.settings import Settings
@@ -19,7 +19,7 @@ async def _main():
     # parse command line arguments
     args = config.parse_args()
     # set the debug flag
-    Debug.enabled = args.debug
+    DebugState.enabled = args.debug
     # load the settings.json
     settings = Settings.load()
     # create the data and download path

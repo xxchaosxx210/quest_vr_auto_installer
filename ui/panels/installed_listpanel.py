@@ -59,9 +59,9 @@ class InstalledListPanel(ListPanel):
             raise ValueError(
                 "Device name must be non empty string. Could not load installed packages. Dialog must have returned empty selected device"
             )
-        if debug.Debug.enabled:
+        if debug.DebugState.enabled:
             try:
-                fake_quest = debug.get_device(debug.Debug.devices, device_name)
+                fake_quest = debug.get_device(debug.DebugState.devices, device_name)
             except LookupError:
                 _Log.error(f"No device found with name {device_name}")
                 return

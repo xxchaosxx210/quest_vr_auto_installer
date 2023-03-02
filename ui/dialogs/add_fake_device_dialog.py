@@ -80,7 +80,7 @@ class AddFakeDeviceDialog(wx.Dialog):
             # append a number to the end of the device name if it already exists
             device_name = f"QUEST{prefix}"
             try:
-                debug.get_device(debug.Debug.devices, device_name)
+                debug.get_device(debug.DebugState.devices, device_name)
             except LookupError:
                 break
             prefix += 1
