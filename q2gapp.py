@@ -45,19 +45,19 @@ class Q2GApp(wxasync.WxAsyncApp):
     # online mode flag
     online_mode: bool = False
 
-    def set_selected_device(self, device_name: str, load_list: bool) -> None:
-        """set the selected device name
+    def set_selected_device(self, device_name: str) -> None:
+        """set the selected device name and load the device packages
 
         Args:
             device_name (str): the name of the device
         """
         self.selected_device = device_name
-        # empty string so ignore loading listctrl, Clear all items instead
         if not self.selected_device:
-            self.install_listpanel.listctrl.DeleteAllItems()
+            if self.install_listpanel is not None:
+                self.install_listpanel.listctrl.DeleteAllItems()
             return
         self.frame.SetStatusText(f"Device: {device_name}", 1)
-        if not load_list:
+        if self.install_listpanel is None:
             return
         try:
             lib.tasks.check_task_and_create(
@@ -428,4 +428,4 @@ class Q2GApp(wxasync.WxAsyncApp):
         if result != wx.OK and result != 0:
             raise ValueError("Dialog did not return a wx.OK or Close id")
         if selected_device and self.install_listpanel is not None:
-            self.set_selected_device(selected_device, load_list=True)
+            self.set_selected_device(selected_device)
