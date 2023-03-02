@@ -192,7 +192,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         """
 
         # check that a device is selected
-        if not debug.DebugState.enabled and not self.selected_device:
+        if not self.debug_mode and not self.selected_device:
             wx.MessageBox(
                 "No device selected. Please connect your Quest Headset into the PC and select it from the Devices List",
                 "No Device selected",
@@ -202,7 +202,7 @@ class Q2GApp(wxasync.WxAsyncApp):
 
         # start the download task
 
-        if debug.DebugState.enabled:
+        if self.debug_mode:
             try:
                 ok_to_install = await debug.simulate_game_download(
                     callback=callback,
@@ -250,7 +250,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             ui.utils.show_error_message("No Device selected. Cannot install")
             return False
         try:
-            if debug.DebugState.enabled:
+            if self.debug_mode:
                 # gets some fake files and a fake apk filename
                 apk_path = debug.generate_apk_path_object(path)
                 await debug.simulate_game_install(
@@ -276,7 +276,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         else:
             settings = Settings.load()
             # check no debug mode and remove files after install
-            if not debug.DebugState.enabled and settings.remove_files_after_install:
+            if not self.debug_mode and settings.remove_files_after_install:
                 # delete the torrent files on the local path
                 lib.quest.cleanup(
                     path_to_remove=path, error_callback=self.on_install_update

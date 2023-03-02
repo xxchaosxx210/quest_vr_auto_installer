@@ -18,7 +18,6 @@ from ui.panels.listpanel import ListPanel, ColumnListType
 from ui.dialogs.update_magnet_dialog import load_dialog as load_update_magnet_dialog
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
-from lib.debug import DebugState
 
 
 _Log = logging.getLogger()
@@ -357,8 +356,7 @@ class MagnetsListPanel(ListPanel):
         menu.AppendSeparator()
 
         # if debugging enabled then create the debug sub menu
-
-        if DebugState.enabled:
+        if self.app.debug_mode:
             debug_menu = wx.Menu()
             install_apk = debug_menu.Append(wx.ID_ANY, "Install APK")
             self.Bind(wx.EVT_MENU, self.on_install_apk, install_apk)

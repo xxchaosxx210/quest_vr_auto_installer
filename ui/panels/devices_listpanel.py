@@ -49,7 +49,7 @@ class DevicesListPanel(ListPanel):
         button_panel = wx.Panel(self, -1)
 
         # create the buttons and store them into the super classes bitmap_buttons dict
-        if debug.DebugState.enabled:
+        if self.app.debug_mode:
             self.bitmap_buttons["add"] = ui.utils.create_bitmap_button(
                 "add.png", "Add Fake Device", button_panel, size=(24, 24)
             )
@@ -72,9 +72,7 @@ class DevicesListPanel(ListPanel):
             result = dialog.ShowModal()
             if result == wx.ID_OK:
                 device_name, package_names = dialog.get_values_from_dialog()
-                debug.DebugState.devices.append(
-                    debug.FakeQuest(device_name, package_names)
-                )
+                debug.fake_quests.append(debug.FakeQuest(device_name, package_names))
             lib.tasks.check_task_and_create(self.load)
 
     def on_refresh_click(self, evt: wx.CommandEvent) -> None:
@@ -89,8 +87,8 @@ class DevicesListPanel(ListPanel):
         Returns:
             List[str]: list of device names if found
         """
-        if debug.DebugState.enabled:
-            device_names = debug.get_device_names(debug.DebugState.devices)
+        if self.app.debug_mode:
+            device_names = debug.get_device_names(debug.fake_quests)
         else:
             device_names = await adb_interface.get_device_names()
         return device_names

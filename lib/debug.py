@@ -25,12 +25,10 @@ class FakeQuest:
         self.package_names = package_names
 
 
-class DebugState:
-    enabled: bool = False
-    devices: List[FakeQuest] = [
-        FakeQuest("QUEST1", ["com.fake.MarioKart"]),
-        FakeQuest("QUEST2", ["com.fake.Zelda", "org.com.F1"]),
-    ]
+fake_quests: List[FakeQuest] = [
+    FakeQuest("QUEST1", ["com.fake.MarioKart"]),
+    FakeQuest("QUEST2", ["com.fake.Zelda", "org.com.F1"]),
+]
 
 
 async def simulate_game_install(
@@ -55,7 +53,7 @@ async def simulate_game_install(
     if not device_name:
         raise ValueError("No Device selected")
     try:
-        device_names = get_device_names(DebugState.devices)
+        device_names = get_device_names(fake_quests)
     except Exception as err:
         raise err
     if not device_name in device_names:
