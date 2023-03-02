@@ -68,13 +68,14 @@ class DevicesListPanel(ListPanel):
     def on_add_device_click(self, evt: wx.CommandEvent) -> None:
         """add a fake device to the device list"""
 
-        dialog: AddFakeDeviceDialog = AddFakeDeviceDialog(self)
-        result = dialog.ShowModal()
-        if result == wx.ID_OK:
-            device_name, package_names = dialog.get_values_from_dialog()
-            debug.DebugState.devices.append(debug.FakeQuest(device_name, package_names))
-        dialog.Destroy()
-        lib.tasks.check_task_and_create(self.load)
+        with AddFakeDeviceDialog(self) as dialog:
+            result = dialog.ShowModal()
+            if result == wx.ID_OK:
+                device_name, package_names = dialog.get_values_from_dialog()
+                debug.DebugState.devices.append(
+                    debug.FakeQuest(device_name, package_names)
+                )
+            lib.tasks.check_task_and_create(self.load)
 
     def on_refresh_click(self, evt: wx.CommandEvent) -> None:
         """reload the device list from ADB daemon"""
@@ -100,6 +101,8 @@ class DevicesListPanel(ListPanel):
         Raises:
             err: RemoteDeviceError | Exception
         """
+        # Clear the Device list
+        self.listctrl.DeleteAllItems()
         self.app.set_selected_device("")
         try:
             device_names = await self._get_device_names()
