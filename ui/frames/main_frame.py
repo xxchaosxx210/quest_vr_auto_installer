@@ -45,7 +45,7 @@ class MainFrame(wx.Frame):
         """set up the statusbar, icon and menubar for the main window"""
         self.statusbar = wx.StatusBar(self)
         self.statusbar.SetFieldsCount(2)
-        self.statusbar.SetStatusWidths([-1, -2])
+        self.statusbar.SetStatusWidths([-2, -1])
         self.SetStatusBar(self.statusbar)
         self._create_menubar()
         self.SetIcon(wx.Icon(img_mgr.ICON_PATH))
@@ -233,9 +233,8 @@ class MainFrame(wx.Frame):
             except ClientConnectionError as err:
                 self.app.exception_handler(err)
             else:
-                dlg = UserInfoDialog(parent=self, size=(500, -1), user=user)
-                dlg.ShowModal()
-                dlg.Destroy()
+                with UserInfoDialog(parent=self, size=(500, -1), user=user) as dlg:
+                    dlg.ShowModal()
             finally:
                 return
 
@@ -253,20 +252,19 @@ class MainFrame(wx.Frame):
             evt (wx.MenuEvent): Not used
         """
         settings = Settings.load()
-        dlg = LoginDialog(
+        with LoginDialog(
             parent=self,
             title="Login",
             email_field=settings.get_user_email(),
             size=(300, -1),
-        )
-        return_code = dlg.ShowModal()
-        if return_code == wx.OK:
-            # save the returned data to json file
-            data = dlg.get_data()
-            if data is not None:
-                settings.set_auth(data)
-                settings.save()
-        dlg.Destroy()
+        ) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                # save the returned data to json file
+                data = dlg.get_data()
+                if data is not None:
+                    settings.set_auth(data)
+                    settings.save()
+        # enable the admin sub menus
         ui.utils.enable_menu_items(
             menu=self.admin_submenu, enable=settings.is_user_admin()
         )

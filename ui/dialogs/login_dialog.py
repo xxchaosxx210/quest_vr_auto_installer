@@ -32,7 +32,9 @@ class LoginDialog(wx.Dialog):
         self.submit_button = wx.Button(self, -1, "Submit")
         self.Bind(wx.EVT_BUTTON, self._on_submit_button, self.submit_button)
         cancel_button = wx.Button(self, wx.ID_CANCEL, "Cancel")
-        self.Bind(wx.EVT_BUTTON, lambda *args: self.EndModal(wx.CANCEL), cancel_button)
+        self.Bind(
+            wx.EVT_BUTTON, lambda *args: self.EndModal(wx.ID_CANCEL), cancel_button
+        )
 
         gs = wx.GridSizer(cols=1)
 
@@ -76,7 +78,7 @@ class LoginDialog(wx.Dialog):
             asyncio.run(authenticate())
             wx.CallAfter(self.submit_button.Enable, enable=True)
             if self._login_data is not None:
-                wx.CallAfter(self.EndModal, retCode=wx.OK)
+                wx.CallAfter(self.EndModal, retCode=wx.ID_OK)
 
         username = self.username_sbox.get_text()
         password = self.password_sbox.get_text()

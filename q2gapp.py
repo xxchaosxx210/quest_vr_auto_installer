@@ -120,9 +120,14 @@ class Q2GApp(wxasync.WxAsyncApp):
             err=err,
             disable_send=False,
         )
-        if dialog.ShowModal() != wx.ID_OK:
-            dialog.Destroy()
-            return
+        with ErrorDialog(
+            parent=self.frame,
+            title="There was an error!!",
+            message=error_message,
+            err=err,
+            disable_send=False,
+        ) as dialog:
+            dialog.ShowModal()
 
         # User clicked the send error button. Send exception to the database
 

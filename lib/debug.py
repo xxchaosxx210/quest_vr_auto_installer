@@ -13,10 +13,7 @@ MAX_DOWNLOAD_SPEED = 4500000.0
 MIN_DOWNLOAD_SPEED = 2500000.0
 
 
-DummyQuest2s = List["DummyQuest2"]
-
-
-class DummyQuest2:
+class FakeQuest:
     def __init__(self, name: str, package_names: List[str]) -> None:
         """holds the name and package names of a fake quest2 device
 
@@ -30,9 +27,9 @@ class DummyQuest2:
 
 class DebugState:
     enabled: bool = False
-    devices: DummyQuest2s = [
-        DummyQuest2("QUEST1", ["com.fake.MarioKart"]),
-        DummyQuest2("QUEST2", ["com.fake.Zelda", "org.com.F1"]),
+    devices: List[FakeQuest] = [
+        FakeQuest("QUEST1", ["com.fake.MarioKart"]),
+        FakeQuest("QUEST2", ["com.fake.Zelda", "org.com.F1"]),
     ]
 
 
@@ -164,7 +161,7 @@ def get_torrent_status(seconds: int, total_time: int) -> Dict[str, Any]:
     return torrent_status
 
 
-def get_device_names(quests: DummyQuest2s) -> List[str]:
+def get_device_names(quests: List[FakeQuest]) -> List[str]:
     """simulate the adblib.adb_interface.get_device_names method
 
     Returns:
@@ -174,7 +171,7 @@ def get_device_names(quests: DummyQuest2s) -> List[str]:
     return quest_names
 
 
-def get_device(quests: DummyQuest2s, name: str) -> DummyQuest2:
+def get_device(quests: List[FakeQuest], name: str) -> FakeQuest:
     """gets the device related to the device name
 
     Args:

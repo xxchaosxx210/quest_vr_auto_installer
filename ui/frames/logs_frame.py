@@ -67,14 +67,13 @@ class LogsListCtrlPanel(ListCtrlPanel):
         index = evt.GetIndex()
         if index == -1:
             return
-        dlg = LogInfoDialog(
+        with LogInfoDialog(
             parent=self,
             log=self._logs[index],
             size=(640, 640),
             style=wx.DEFAULT_DIALOG_STYLE | wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX,
-        )
-        dlg.ShowModal()
-        dlg.Destroy()
+        ) as dlg:
+            dlg.ShowModal()
 
     def on_right_click(self, evt: wx.ListEvent) -> None:
         """load the popupmenu for extra options for selected log

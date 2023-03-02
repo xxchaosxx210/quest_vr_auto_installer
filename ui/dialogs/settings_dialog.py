@@ -38,10 +38,9 @@ class DownloadPathPanel(wx.Panel):
             evt (wx.CommandEvent): ignored
         """
         path = Settings.load().download_path
-        dlg = wx.DirDialog(self, defaultPath=path, style=wx.DD_DEFAULT_STYLE)
-        if dlg.ShowModal() == wx.ID_OK:
-            self.downloadctrl.SetValue(dlg.GetPath())
-        dlg.Destroy()
+        with wx.DirDialog(self, defaultPath=path, style=wx.DD_DEFAULT_STYLE) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                self.downloadctrl.SetValue(dlg.GetPath())
 
 
 class SettingsDialog(wx.Dialog):
