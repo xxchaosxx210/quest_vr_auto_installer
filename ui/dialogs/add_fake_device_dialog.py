@@ -3,7 +3,7 @@ import random
 
 import wx
 
-import lib.debug
+import lib.debug as debug
 
 
 class AddFakeDeviceDialog(wx.Dialog):
@@ -77,13 +77,14 @@ class AddFakeDeviceDialog(wx.Dialog):
         """
         prefix = 1
         while True:
+            # append a number to the end of the device name if it already exists
             device_name = f"QUEST{prefix}"
-            if (
-                list(filter(lambda d: d.name == device_name, lib.debug.Debug.devices))
-                == []
-            ):
+            try:
+                debug.get_device(debug.Debug.devices, device_name)
+            except LookupError:
                 break
             prefix += 1
+
         self.device_name_textctrl.SetValue(device_name)
         self.package_name_listbox.Clear()
         self.package_name_listbox.AppendItems(

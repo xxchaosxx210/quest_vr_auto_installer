@@ -5,9 +5,9 @@ import wx
 import lib.config
 import lib.tasks
 import ui.utils
+import lib.debug as debug
 from ui.panels.listpanel import ListPanel, ColumnListType
 from adblib import adb_interface
-from lib.debug import Debug
 
 
 _Log = logging.getLogger(__name__)
@@ -59,9 +59,9 @@ class InstalledListPanel(ListPanel):
             raise ValueError(
                 "Device name must be non empty string. Could not load installed packages. Dialog must have returned empty selected device"
             )
-        if Debug.enabled:
+        if debug.Debug.enabled:
             try:
-                fake_quest = Debug.get_device(device_name)
+                fake_quest = debug.get_device(debug.Debug.devices, device_name)
             except LookupError:
                 _Log.error(f"No device found with name {device_name}")
                 return

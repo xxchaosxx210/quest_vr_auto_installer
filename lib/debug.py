@@ -13,6 +13,9 @@ MAX_DOWNLOAD_SPEED = 4500000.0
 MIN_DOWNLOAD_SPEED = 2500000.0
 
 
+Quests = List["Quest"]
+
+
 class Quest:
     def __init__(self, name: str, package_names: List[str]) -> None:
         """generates a fake quest installation environment
@@ -80,7 +83,7 @@ class Quest:
         if not device_name:
             raise ValueError("No Device selected")
         try:
-            device_names = Debug.get_device_names()
+            device_names = get_device_names(Debug.devices)
         except Exception as err:
             raise err
         if not device_name in device_names:
@@ -164,66 +167,56 @@ class Debug:
     """
 
     enabled: bool = False
-    devices = [
+    devices: Quests = [
         Quest("QUEST1", ["com.fake.MarioKart"]),
         Quest("QUEST2", ["com.fake.Zelda", "org.com.F1"]),
     ]
 
-    @staticmethod
-    def get_device_names() -> List[str]:
-        """simulate the adblib.adb_interface.get_device_names method
 
-        Returns:
-            List[str]: list of fake Quest device names
-        """
-        device_names = list(map(lambda quest: quest.name, Debug.devices))
-        return device_names
+def get_device_names(quests: Quests) -> List[str]:
+    """simulate the adblib.adb_interface.get_device_names method
 
-    @staticmethod
-    def add_device(name: str, packages: List[str]) -> None:
-        """adds a fake Quest device to the list of devices
+    Returns:
+        List[str]: list of fake Quest device names
+    """
+    quest_names = list(map(lambda quest: quest.name, quests))
+    return quest_names
 
-        Args:
-            name (str): the name of the device
-            packages (List[str]): list of packages installed on the device
-        """
-        Debug.devices.append(Quest(name, packages))
 
-    @staticmethod
-    def get_device(name: str) -> Quest:
-        """gets the device related to the device name
+def get_device(quests: Quests, name: str) -> Quest:
+    """gets the device related to the device name
 
-        Args:
-            name (str): the name of the device to retrieve
+    Args:
+        name (str): the name of the device to retrieve
 
-        Raises:
-            LookupError: if no device found then this gets raised
+    Raises:
+        LookupError: if no device found then this gets raised
 
-        Returns:
-            Quest: the Quest fake object for testing
-        """
-        found_devices = list(filter(lambda device: device.name == name, Debug.devices))
-        if not found_devices:
-            raise LookupError("Could not find device with that name")
+    Returns:
+        Quest: the Quest fake object for testing
+    """
+    matched_quests = list(filter(lambda quest: quest.name == name, quests))
+    if not matched_quests:
+        raise LookupError("Could not find device with that name")
 
-        # return the first element
+    # return the first element
 
-        return found_devices[0]
+    return matched_quests[0]
 
-    @staticmethod
-    def generate_apk_path_object(root: str) -> lib.utils.ApkPath:
-        """generate a fake apk download path complete with fake files
 
-        Args:
-            root (str): the base directory where the torrent files are downloaded
+def generate_apk_path_object(root: str) -> lib.utils.ApkPath:
+    """generate a fake apk download path complete with fake files
 
-        Returns:
-            lib.utils.ApkPath: the fake apk path object
-        """
-        path = os.path.join(root, "fake_game", "fake_gamev5674[ENG]")
-        data_dirs = [os.path.join(path, "com.fake.game")]
-        file_paths = [
-            os.path.join(path, "base.apk"),
-            os.path.join(data_dirs[0], "main.1234567890.com.example.game.obb"),
-        ]
-        return lib.utils.ApkPath(root, path, data_dirs, file_paths)
+    Args:
+        root (str): the base directory where the torrent files are downloaded
+
+    Returns:
+        lib.utils.ApkPath: the fake apk path object
+    """
+    path = os.path.join(root, "fake_game", "fake_gamev5674[ENG]")
+    data_dirs = [os.path.join(path, "com.fake.game")]
+    file_paths = [
+        os.path.join(path, "base.apk"),
+        os.path.join(data_dirs[0], "main.1234567890.com.example.game.obb"),
+    ]
+    return lib.utils.ApkPath(root, path, data_dirs, file_paths)

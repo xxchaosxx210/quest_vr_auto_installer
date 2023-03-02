@@ -51,8 +51,8 @@ class DeviceListDialog(wx.Dialog):
         vbox.Add(gs, 1, wx.EXPAND | wx.ALL, 0)
         vbox.Add(skip_button, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         self.SetSizerAndFit(vbox)
-        parent_width = self.GetParent().GetSize()[0]
-        self.SetSize((parent_width, -1))
+        parent_width, parent_height = self.GetParent().GetSize()
+        self.SetSize(int(parent_width * 0.6), int(parent_height * 0.6))
         self.CenterOnParent()
 
         asyncio.create_task(self.device_listpanel.load())

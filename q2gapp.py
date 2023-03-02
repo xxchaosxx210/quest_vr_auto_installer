@@ -14,10 +14,11 @@ import lib.tasks
 import ui.utils
 import adblib.adb_interface as adb_interface
 import deluge.handler
+import lib.debug as debug
 from adblib.errors import RemoteDeviceError
 from qvrapi.schemas import LogErrorRequest
 from lib.settings import Settings
-from lib.debug import Debug
+
 
 from ui.frames.main_frame import MainFrame
 from ui.panels.installed_listpanel import InstalledListPanel
@@ -158,7 +159,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         """
 
         # check that a device is selected
-        if not Debug.enabled and not self.selected_device:
+        if not debug.Debug.enabled and not self.selected_device:
             wx.MessageBox(
                 "No device selected. Please connect your Quest Headset into the PC and select it from the Devices List",
                 "No Device selected",
@@ -168,9 +169,9 @@ class Q2GApp(wxasync.WxAsyncApp):
 
         # start the download task
 
-        if Debug.enabled:
+        if debug.Debug.enabled:
             try:
-                fake_quest = Debug.get_device(self.selected_device)
+                fake_quest = debug.get_device(debug.Debug.devices, self.selected_device)
             except LookupError:
                 ui.utils.show_error_message(
                     f"Could not find device with name {self.selected_device}"
@@ -223,9 +224,9 @@ class Q2GApp(wxasync.WxAsyncApp):
             ui.utils.show_error_message("No Device selected. Cannot install")
             return False
         try:
-            if Debug.enabled:
-                fake_quest = Debug.get_device(self.selected_device)
-                apk_path = Debug.generate_apk_path_object(path)
+            if debug.Debug.enabled:
+                fake_quest = debug.get_device(debug.Debug.devices, self.selected_device)
+                apk_path = debug.generate_apk_path_object(path)
                 await fake_quest.install_game(
                     callback=self.on_install_update,
                     device_name=self.selected_device,
@@ -249,7 +250,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         else:
             settings = Settings.load()
             # check no debug mode and remove files after install
-            if not Debug.enabled and settings.remove_files_after_install:
+            if not debug.Debug.enabled and settings.remove_files_after_install:
                 # delete the torrent files on the local path
                 lib.quest.cleanup(
                     path_to_remove=path, error_callback=self.on_install_update

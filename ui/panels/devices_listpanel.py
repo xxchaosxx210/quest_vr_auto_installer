@@ -6,10 +6,10 @@ import wx
 import adblib.errors
 import ui.utils
 import lib.tasks
+import lib.debug as debug
 from adblib import adb_interface
 from ui.panels.listpanel import ListPanel, ColumnListType
 from ui.dialogs.add_fake_device_dialog import AddFakeDeviceDialog
-from lib.debug import Debug
 
 
 _Log = logging.getLogger()
@@ -50,7 +50,7 @@ class DevicesListPanel(ListPanel):
         button_panel = wx.Panel(self, -1)
 
         # create the buttons and store them into the super classes bitmap_buttons dict
-        if Debug.enabled:
+        if debug.Debug.enabled:
             self.bitmap_buttons["add"] = ui.utils.create_bitmap_button(
                 "add.png", "Add Fake Device", button_panel, size=(24, 24)
             )
@@ -73,7 +73,7 @@ class DevicesListPanel(ListPanel):
         result = dialog.ShowModal()
         if result == wx.ID_OK:
             device_name, package_names = dialog.get_values_from_dialog()
-            Debug.add_device(device_name, package_names)
+            debug.Debug.devices.append(debug.Quest(device_name, package_names))
         dialog.Destroy()
         lib.tasks.check_task_and_create(self.load)
 
@@ -89,8 +89,8 @@ class DevicesListPanel(ListPanel):
         Returns:
             List[str]: list of device names if found
         """
-        if Debug.enabled:
-            device_names = Debug.get_device_names()
+        if debug.Debug.enabled:
+            device_names = debug.get_device_names(debug.Debug.devices)
         else:
             device_names = await adb_interface.get_device_names()
         return device_names
