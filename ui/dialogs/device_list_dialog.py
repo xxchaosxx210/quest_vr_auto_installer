@@ -28,9 +28,12 @@ async def open_device_selection_dialog(
 
 
 class DeviceListDialog(wx.Dialog):
+    instance: "DeviceListDialog | None" = None
+
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self._selected_device_name: str = ""
+        DeviceListDialog.instance = self
         try:
             self.device_listpanel = devices_panel.DevicesListPanel(self)
             wxasync.AsyncBind(
@@ -54,8 +57,7 @@ class DeviceListDialog(wx.Dialog):
         parent_width, parent_height = self.GetParent().GetSize()
         self.SetSize(int(parent_width * 0.6), int(parent_height * 0.6))
         self.CenterOnParent()
-
-        asyncio.create_task(self.device_listpanel.load())
+        wx.GetApp().monitoring_device_thread.reset_device_names()
 
     async def _on_skip_clicked(self, evt: wx.CommandEvent) -> None:
         self.SetReturnCode(wx.OK)
@@ -69,3 +71,7 @@ class DeviceListDialog(wx.Dialog):
 
     def get_device_name(self) -> str:
         return self._selected_device_name
+
+    def Close(self, force=False):
+        self.instance = None
+        return super().Close(force)

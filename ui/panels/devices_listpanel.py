@@ -50,11 +50,17 @@ class DevicesListPanel(ListPanel):
 
         # create the buttons and store them into the super classes bitmap_buttons dict
         if self.app.debug_mode:
+            self.bitmap_buttons["remove"] = ui.utils.create_bitmap_button(
+                "uninstall.png", "Remove Fake Device", button_panel, size=(24, 24)
+            )
             self.bitmap_buttons["add"] = ui.utils.create_bitmap_button(
                 "add.png", "Add Fake Device", button_panel, size=(24, 24)
             )
+            self.Bind(wx.EVT_BUTTON, self.dbg_add_device, self.bitmap_buttons["add"])
             self.Bind(
-                wx.EVT_BUTTON, self.on_add_device_click, self.bitmap_buttons["add"]
+                wx.EVT_BUTTON,
+                self.dbg_remove_device,
+                self.bitmap_buttons["remove"],
             )
         self.bitmap_buttons["refresh"] = ui.utils.create_bitmap_button(
             "refresh.png", "Refresh Games List", button_panel, size=(24, 24)
@@ -65,7 +71,18 @@ class DevicesListPanel(ListPanel):
         button_panel.SetSizer(hbox_btns)
         return button_panel
 
-    def on_add_device_click(self, evt: wx.CommandEvent) -> None:
+    def dbg_remove_device(self, evt: wx.CommandEvent) -> None:
+        index = self.listctrl.GetFirstSelected()
+        if index == -1:
+            return
+        device_name = self.listctrl.GetItem(index, 0).GetText()
+        index = debug.get_index_by_device_name(debug.fake_quests, device_name)
+        if index is None:
+            _Log.info("device not found in debug.fake_quests")
+            return
+        debug.fake_quests.pop(index)
+
+    def dbg_add_device(self, evt: wx.CommandEvent) -> None:
         """add a fake device to the device list"""
 
         with AddFakeDeviceDialog(self) as dialog:
@@ -92,6 +109,11 @@ class DevicesListPanel(ListPanel):
         else:
             device_names = await adb_interface.get_device_names()
         return device_names
+
+    def load_listctrl(self, device_names: List[str]) -> None:
+        self.listctrl.DeleteAllItems()
+        for index, device in enumerate(device_names):
+            wx.CallAfter(self.listctrl.InsertItem, index=index, label=device)
 
     async def load(self) -> None:
         """load the device names from ADB daemon

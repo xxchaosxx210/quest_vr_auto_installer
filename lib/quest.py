@@ -50,6 +50,7 @@ class MonitorSelectedDevice(threading.Thread):
         self._lock = threading.Lock()
 
     def run(self) -> None:
+        prev_device_names: List[str] = []
         while self._stop_event.is_set() is False:
             try:
                 msg: dict = self._queue.get(timeout=3, block=True)
@@ -67,12 +68,24 @@ class MonitorSelectedDevice(threading.Thread):
                             "device-name": self.get_selected_device(),
                         }
                     )
+                elif msg["request"] == "device-names-reset":
+                    prev_device_names = []
             finally:
-                # check if a device is selected which would be a non empty string
-                # if a device is selected then check if it is in the returned device names list
+                # if selected_device is non empty string then check device is in list
+                # retrieved from get_device_names(). Also store a prev_device_names
+                # and compare prev_device_names to current_device_names using sets
+                device_names = self.get_device_names()
+                if device_names is not None and prev_device_names != device_names:
+                    prev_device_names = device_names
+                    self._callback(
+                        {
+                            "event": "device-names-changed",
+                            "device-names": device_names,
+                        }
+                    )
+
                 if not self.get_selected_device():
                     continue
-                device_names = self.get_device_names()
                 if (
                     device_names is not None
                     and self.get_selected_device() not in device_names
@@ -136,6 +149,9 @@ class MonitorSelectedDevice(threading.Thread):
     def stop(self) -> None:
         self._queue.put({"request": "stop"})
         self.join()
+
+    def reset_device_names(self) -> None:
+        self._queue.put_nowait({"request": "device-names-reset"})
 
 
 def cleanup(path_to_remove: str, error_callback) -> None:

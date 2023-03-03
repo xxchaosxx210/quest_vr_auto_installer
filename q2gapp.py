@@ -25,7 +25,7 @@ from ui.panels.installed_listpanel import InstalledListPanel
 from ui.panels.magnets_listpanel import MagnetsListPanel
 from ui.dialogs.error_dialog import ErrorDialog
 from ui.dialogs.install_progress_dialog import InstallProgressDialog
-from ui.dialogs.device_list_dialog import open_device_selection_dialog
+import ui.dialogs.device_list_dialog as dld
 
 
 _Log = logging.getLogger()
@@ -83,6 +83,10 @@ class Q2GApp(wxasync.WxAsyncApp):
                 wx.CallAfter(self.install_listpanel.listctrl.DeleteAllItems)
         elif event["event"] == "error":
             wx.CallAfter(self.exception_handler, err=event["exception"])
+        elif event["event"] == "device-names-changed":
+            dialog: dld.DeviceListDialog | None = dld.DeviceListDialog.instance
+            if dialog is not None and dialog.IsShown():
+                dialog.device_listpanel.load_listctrl(event["device-names"])
 
     def set_selected_device(self, device_name: str) -> None:
         """set the selected device name and load the device packages
@@ -466,7 +470,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         loads the device selection dialog and retrieves a selected device to use
         for installing the games to
         """
-        result, selected_device = await open_device_selection_dialog(
+        result, selected_device = await dld.open_device_selection_dialog(
             self.frame,
             wx.ID_ANY,
             "Select a Device to install to",
