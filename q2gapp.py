@@ -6,10 +6,10 @@ import wx
 import wxasync
 
 
+import lib.quest
 import qvrapi.api
 import lib.utils
 import lib.config as config
-import lib.quest
 import lib.tasks
 import ui.utils
 import adblib.adb_interface as adb_interface
@@ -37,8 +37,6 @@ class Q2GApp(wxasync.WxAsyncApp):
     install_listpanel: InstalledListPanel | None = None
     install_dialog: InstallProgressDialog | None = None
 
-    selected_device: str = ""
-
     # store the global settings
     settings: Settings | None = None
 
@@ -51,6 +49,31 @@ class Q2GApp(wxasync.WxAsyncApp):
     def __init__(self, debug_mode: bool, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.debug_mode = debug_mode
+        self.device_monitor_thread = lib.quest.MonitorSelectedDevice(
+            callback=self.on_device_event, debug_mode=self.debug_mode
+        )
+        self.device_monitor_thread.start()
+
+    def on_device_event(self, event: dict) -> None:
+        """handles the device events. Update GUI
+
+        Args:
+            event (dict): the event message
+        """
+        if event["event"] == "device-selected":
+            wx.CallAfter(
+                self.frame.SetStatusText, text=f"Device: {event['device']}", number=1
+            )
+        elif event["event"] == "device-disconnected":
+            # update and notify user
+            wx.CallAfter(
+                self.frame.SetStatusText, text="Device: Disconnected", number=2
+            )
+            # clear the package list
+            if self.install_listpanel is not None:
+                wx.CallAfter(self.install_listpanel.listctrl.DeleteAllItems)
+        elif event["event"] == "error":
+            wx.CallAfter(self.exception_handler, err=event["exception"])
 
     def set_selected_device(self, device_name: str) -> None:
         """set the selected device name and load the device packages
@@ -58,12 +81,11 @@ class Q2GApp(wxasync.WxAsyncApp):
         Args:
             device_name (str): the name of the device
         """
-        self.selected_device = device_name
-        if not self.selected_device:
-            if self.install_listpanel is not None:
-                self.install_listpanel.listctrl.DeleteAllItems()
-            return
-        self.frame.SetStatusText(f"Device: {device_name}", 1)
+
+        self.device_monitor_thread.send_message_and_wait(
+            {"request": "selected-device", "selected_device": device_name}
+        )
+
         if self.install_listpanel is None:
             return
         try:
@@ -192,7 +214,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         """
 
         # check that a device is selected
-        if not self.debug_mode and not self.selected_device:
+        if not self.debug_mode and not self.device_monitor_thread.get_selected_device():
             wx.MessageBox(
                 "No device selected. Please connect your Quest Headset into the PC and select it from the Devices List",
                 "No Device selected",
@@ -246,7 +268,7 @@ class Q2GApp(wxasync.WxAsyncApp):
         self.install_dialog = InstallProgressDialog(self.frame)
         self.install_dialog.Show()
 
-        if not self.selected_device:
+        if not self.device_monitor_thread.get_selected_device():
             ui.utils.show_error_message("No Device selected. Cannot install")
             return False
         try:
@@ -255,7 +277,7 @@ class Q2GApp(wxasync.WxAsyncApp):
                 apk_path = debug.generate_apk_path_object(path)
                 await debug.simulate_game_install(
                     callback=self.on_install_update,
-                    device_name=self.selected_device,
+                    device_name=self.device_monitor_thread.get_selected_device(),
                     apk_dir=apk_path,
                     raise_exception=None,
                 )
@@ -266,7 +288,7 @@ class Q2GApp(wxasync.WxAsyncApp):
                 for apk_dir in lib.utils.find_install_dirs(path):
                     await lib.quest.install_game(
                         callback=self.on_install_update,
-                        device_name=self.selected_device,
+                        device_name=self.device_monitor_thread.get_selected_device(),
                         apk_dir=apk_dir,
                     )
         except Exception as err:
@@ -285,7 +307,9 @@ class Q2GApp(wxasync.WxAsyncApp):
             # check listpanel exists and reload the package listctrl
 
             if self.install_listpanel is not None:
-                await self.install_listpanel.load(self.selected_device)
+                await self.install_listpanel.load(
+                    self.device_monitor_thread.get_selected_device()
+                )
 
             # close install dialog?
 
@@ -327,7 +351,7 @@ class Q2GApp(wxasync.WxAsyncApp):
             package_name (str): the name of the package to uninstall
         """
 
-        if not self.selected_device:
+        if not self.device_monitor_thread.get_selected_device():
             return
 
         # dont want to upset mypy. check the listpanel exists
@@ -341,11 +365,13 @@ class Q2GApp(wxasync.WxAsyncApp):
         progress = ui.utils.load_progress_dialog(
             self.frame,
             "Removing Package",
-            f"Removing {package_name} from Device {self.selected_device}",
+            f"Removing {package_name} from Device {self.device_monitor_thread.get_selected_device()}",
         )
         progress.Pulse()
         try:
-            await adb_interface.uninstall(self.selected_device, package_name)
+            await adb_interface.uninstall(
+                self.device_monitor_thread.get_selected_device(), package_name
+            )
         except RemoteDeviceError as err:
             self.exception_handler(err)
         except Exception as err:
@@ -358,7 +384,9 @@ class Q2GApp(wxasync.WxAsyncApp):
             # reload the new package list into package listctrl
 
             if self.install_listpanel is not None:
-                await self.install_listpanel.load(self.selected_device)
+                await self.install_listpanel.load(
+                    self.device_monitor_thread.get_selected_device()
+                )
         finally:
             progress.Destroy()
 

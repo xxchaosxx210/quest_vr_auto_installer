@@ -9,13 +9,11 @@ from dataclasses import dataclass
 from adblib import adb_interface
 import lib.config
 import lib.utils
-import lib.debug as debug
-
-
-_Log = logging.getLogger()
 
 
 InstallStatusFunction = Callable[[str], None]
+
+_Log = logging.getLogger()
 
 
 @dataclass
@@ -33,14 +31,9 @@ class InstallPackage:
 class MonitorSelectedDevice(threading.Thread):
     def __init__(self, callback: Callable[[dict], None], debug_mode: bool) -> None:
         """
-
-        message requests:
-        {"request": "stop"}
-        {"request": "selected-device", "selected-device": str}
-
         callback should take a dict properties:
 
-        {"event": "device-selected", "device": str}
+        {"event": "device-selected", "device-name": str}
         {"event": "device-disconnected"}
         {"event": "error", "exception": Exception}
 
@@ -52,9 +45,9 @@ class MonitorSelectedDevice(threading.Thread):
         self._stop_event = threading.Event()
         self._callback = callback
         self._debug_mode = debug_mode
+        self._selected_device = ""
 
     def run(self) -> None:
-        _selected_device = ""
         while self._stop_event.is_set() is False:
             try:
                 msg: dict = self._queue.get(timeout=3, block=True)
@@ -65,19 +58,25 @@ class MonitorSelectedDevice(threading.Thread):
                 if msg["request"] == "stop":
                     self._stop_event.set()
                 elif msg["request"] == "selected-device":
-                    _selected_device = msg["selected-device"]
+                    self._selected_device = msg["device-name"]
                     self._callback(
-                        {"event": "device-selected", "device": _selected_device}
+                        {
+                            "event": "device-selected",
+                            "device-name": self._selected_device,
+                        }
                     )
             finally:
                 # check if a device is selected which would be a non empty string
                 # if a device is selected then check if it is in the returned device names list
-                if not _selected_device:
+                if not self._selected_device:
                     continue
                 device_names = self.get_device_names()
-                if device_names is not None and _selected_device not in device_names:
-                    _Log.debug(f"{_selected_device} is not connected")
-                    _selected_device = ""
+                if (
+                    device_names is not None
+                    and self._selected_device not in device_names
+                ):
+                    _Log.debug(f"{self._selected_device} is not connected")
+                    self._selected_device = ""
                     self._callback({"event": "device-disconnected"})
 
     def get_device_names(self) -> List[str] | None:
@@ -98,11 +97,36 @@ class MonitorSelectedDevice(threading.Thread):
         finally:
             return device_names
 
-    def send_message_no_block(self, message: str) -> None:
+    def send_message_no_block(self, message: dict) -> None:
+        """sends a message to the thread without non blocking
+
+        message requests:
+        {"request": "stop"}
+        {"request": "selected-device", "device-name": str}
+
+        Args:
+            message (dict): see above for message requests
+        """
         self._queue.put_nowait(message)
 
-    def send_message_and_wait(self, message: str) -> None:
+    def send_message_and_wait(self, message: dict) -> None:
+        """sends a message to the thread without blocking
+
+        message requests:
+        {"request": "stop"}
+        {"request": "selected-device", "device-name": str}
+
+        Args:
+            message (dict): see above for message requests
+        """
         self._queue.put(message)
+
+    def get_selected_device(self) -> str:
+        return self._selected_device
+
+    def stop(self) -> None:
+        self._queue.put({"request": "stop"})
+        self.join()
 
 
 def cleanup(path_to_remove: str, error_callback) -> None:

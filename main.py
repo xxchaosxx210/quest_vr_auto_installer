@@ -38,6 +38,7 @@ async def _main():
     # cleanup
     daemon.terminate()
     adb_interface.close_adb()
+    app.device_monitor_thread.stop()
 
 
 if __name__ == "__main__":

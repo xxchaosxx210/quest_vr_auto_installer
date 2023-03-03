@@ -181,7 +181,7 @@ class DevicesListPanel(ListPanel):
         Args:
             evt (wx.ListEvent): _description_
         """
-        if not self.app.selected_device:
+        if not self.app.device_monitor_thread.get_selected_device():
             return
         menu = wx.Menu()
         debug_menu = wx.Menu()
@@ -196,12 +196,12 @@ class DevicesListPanel(ListPanel):
         Args:
             evt (wx.MenuItem):
         """
-        if not self.app.selected_device:
+        if not self.app.device_monitor_thread.get_selected_device():
             return
         cpb = wx.Clipboard()
         if not cpb.Open():
             return
         text_data = wx.TextDataObject()
-        text_data.SetText(self.app.selected_device)
+        text_data.SetText(self.app.device_monitor_thread.get_selected_device())
         cpb.SetData(text_data)
         cpb.Close()
