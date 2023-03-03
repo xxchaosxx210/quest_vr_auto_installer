@@ -1,12 +1,15 @@
 import logging
 import os
+import queue
 import shutil
+import threading
 from typing import Callable, List
 from dataclasses import dataclass
 
 from adblib import adb_interface
 import lib.config
 import lib.utils
+import lib.debug as debug
 
 
 _Log = logging.getLogger()
@@ -20,6 +23,86 @@ class InstallPackage:
     apk_path: str
     apk_sub_directories: List[str]
     apk_filename: str
+
+
+"""I want a thread to monitor the selected device by calling the adb_interface.get_devices_names, every 3 seconds
+ and seeing if the selected device is still connected. 
+ If it is not connected then I want to notify the parent thread that it has been disconnect"""
+
+
+class MonitorSelectedDevice(threading.Thread):
+    def __init__(self, callback: Callable[[dict], None], debug_mode: bool) -> None:
+        """
+
+        message requests:
+        {"request": "stop"}
+        {"request": "selected-device", "selected-device": str}
+
+        callback should take a dict properties:
+
+        {"event": "device-selected", "device": str}
+        {"event": "device-disconnected"}
+        {"event": "error", "exception": Exception}
+
+        Args:
+            callback (Callable[[dict], None]): check above for the callback properties
+        """
+        super().__init__(name="device-monitor", daemon=True)
+        self._queue = queue.Queue()
+        self._stop_event = threading.Event()
+        self._callback = callback
+        self._debug_mode = debug_mode
+
+    def run(self) -> None:
+        _selected_device = ""
+        while self._stop_event.is_set() is False:
+            try:
+                msg: dict = self._queue.get(timeout=3, block=True)
+            except queue.Empty:
+                pass
+            else:
+                # process message
+                if msg["request"] == "stop":
+                    self._stop_event.set()
+                elif msg["request"] == "selected-device":
+                    _selected_device = msg["selected-device"]
+                    self._callback(
+                        {"event": "device-selected", "device": _selected_device}
+                    )
+            finally:
+                # check if a device is selected which would be a non empty string
+                # if a device is selected then check if it is in the returned device names list
+                if not _selected_device:
+                    continue
+                device_names = self.get_device_names()
+                if device_names is not None and _selected_device not in device_names:
+                    _Log.debug(f"{_selected_device} is not connected")
+                    _selected_device = ""
+                    self._callback({"event": "device-disconnected"})
+
+    def get_device_names(self) -> List[str] | None:
+        """
+        this handles the debug and normal mode for getting the device names also handles any exceptions
+
+        Returns:
+            List[str]: list of device names if exception then None
+        """
+        if self._debug_mode:
+            device_names = debug.get_device_names()
+        try:
+            device_names = adb_interface.get_device_names()
+        except Exception as err:
+            _Log.error(err.__str__() + " - MonitorSelectedDevice.get_device_names()")
+            self._callback({"event": "error", "exception": err})
+            device_names = None
+        finally:
+            return device_names
+
+    def send_message_no_block(self, message: str) -> None:
+        self._queue.put_nowait(message)
+
+    def send_message_and_wait(self, message: str) -> None:
+        self._queue.put(message)
 
 
 def cleanup(path_to_remove: str, error_callback) -> None:
