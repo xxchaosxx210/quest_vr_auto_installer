@@ -169,6 +169,24 @@ def get_device_names(quests: List[FakeQuest]) -> List[str]:
     return quest_names
 
 
+def get_index_by_device_name(quests: List[FakeQuest], name: str) -> int | None:
+    """gets the index of the device in the list
+
+    Args:
+        name (str): the name of the device to retrieve
+
+    Raises:
+        LookupError: if no device found then this gets raised
+
+    Returns:
+        int: the index of the device in the list
+    """
+    index = next(
+        (i for i, fake_quest in enumerate(fake_quests) if fake_quest.name == name), None
+    )
+    return index
+
+
 def get_device(quests: List[FakeQuest], name: str) -> FakeQuest:
     """gets the device related to the device name
 

@@ -57,9 +57,7 @@ class InstalledListPanel(ListPanel):
         """
         self.listctrl.DeleteAllItems()
         if not device_name:
-            raise ValueError(
-                "Device name must be non empty string. Could not load installed packages. Dialog must have returned empty selected device"
-            )
+            return
         if self.app.debug_mode:
             try:
                 fake_quest = debug.get_device(debug.fake_quests, device_name)

@@ -89,6 +89,18 @@ async def get_device_names() -> List[str]:
     return connected_devices
 
 
+def sync_get_device_names() -> List[str]:
+    commands = [ADB_PATH_DEFAULT, "devices"]
+    output = execute(commands)
+    devices = output.strip().split("\n")[1:]
+    connected_devices = []
+    for device in devices:
+        if "device" in device:
+            connected_device = device.split("\t")[0]
+            connected_devices.append(connected_device)
+    return connected_devices
+
+
 def path_exists(device_name: str, path: str) -> bool:
     """checks if the path exists on the remote device
 

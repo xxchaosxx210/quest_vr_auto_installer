@@ -1,3 +1,4 @@
+import logging
 import wx
 import asyncio
 import random
@@ -5,6 +6,12 @@ import random
 from aiohttp import ClientConnectionError
 import wxasync
 
+import lib.config
+import lib.tasks as tasks
+import lib.image_manager as img_mgr
+import qvrapi.api as api
+import lib.debug
+import ui.utils
 from ui.panels.main_panel import MainPanel
 from ui.dialogs.install_progress_dialog import InstallProgressDialog
 from ui.dialogs.settings_dialog import SettingsDialog
@@ -16,14 +23,9 @@ from ui.dialogs.about_dialog import load_dialog as load_about_dialog
 from ui.dialogs.device_list_dialog import open_device_selection_dialog
 from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
-import lib.config
-import lib.image_manager as img_mgr
-import qvrapi.api as api
-import lib.tasks as tasks
-import ui.utils
 
 
-"""create a statusbar with 2 columns. the first column having 60% width and the second taking the rest of the space"""
+_Log = logging.getLogger()
 
 
 class MainFrame(wx.Frame):
@@ -111,7 +113,29 @@ class MainFrame(wx.Frame):
             wx.ID_ANY, "Raise an Unhandled Exception"
         )
         self.Bind(wx.EVT_MENU, self._on_raise_unhandled, raise_unhandled_err_m_item)
+        menu.AppendSeparator()
+        disconnect_m_item = menu.Append(wx.ID_ANY, "Disconnect Device")
+        self.Bind(wx.EVT_MENU, self._on_disconnect_device, disconnect_m_item)
         return menu
+
+    def _on_disconnect_device(self, evt: wx.MenuEvent) -> None:
+        if not self.app.debug_mode:
+            return
+        device_name = self.app.monitoring_device_thread.get_selected_device()
+        if not device_name:
+            return
+        try:
+            index = lib.debug.get_index_by_device_name(
+                lib.debug.fake_quests, device_name
+            )
+            if index is None:
+                raise ValueError("No name matching")
+        except ValueError:
+            _Log.error(f"Device {device_name} not found in fake_quests")
+            return
+        else:
+            # this will cause the device to be disconnected
+            lib.debug.fake_quests.pop(index)
 
     def _create_user_menu(self) -> wx.Menu:
         settings = Settings.load()
