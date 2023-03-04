@@ -36,9 +36,9 @@ class DeviceEvent(wx.PyCommandEvent):
 
 class DevicesListPanel(ListPanel):
     def __init__(self, parent: wx.Window):
-        from q2gapp import Q2GApp
+        from q2gapp import QuestCaveApp
 
-        self.app: Q2GApp = wx.GetApp()
+        self.app: QuestCaveApp = wx.GetApp()
         # the device that is currently selected in the listctrl
         columns: ColumnListType = [{"col": 0, "heading": "Name", "width": 200}]
         super().__init__(parent=parent, title="Devices", columns=columns)

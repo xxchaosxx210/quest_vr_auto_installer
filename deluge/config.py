@@ -1,5 +1,5 @@
 """
-Deluge Client is packaged with QuestVRAutoInstaller
+Deluge Client is packaged with QuestCave
 
 this file sets the paths for the Deluge daemon and required files to be loaded and run
 

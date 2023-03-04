@@ -31,10 +31,10 @@ _Log = logging.getLogger()
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kw):
         # avoids circular import I need to fix this at some point
-        from q2gapp import Q2GApp
+        from quest_cave_app import QuestCaveApp
 
         super().__init__(*args, **kw)
-        self.app: Q2GApp = wx.GetApp()
+        self.app: QuestCaveApp = wx.GetApp()
         self.main_panel = MainPanel(parent=self)
         self.__do_properties()
         self.__do_layout()
@@ -78,7 +78,7 @@ class MainFrame(wx.Frame):
                     size=(300, 300),
                     app_name=lib.config.APP_NAME,
                     version=lib.config.APP_VERSION,
-                    description="QuestVRAutoInstaller is a tool for downloading and installing Quest 2 games for free\nI take no responsibility for the abuse of this program. Enjoy :)",
+                    description="QuestCave is a tool for downloading and installing Quest 2 games for free\nI take no responsibility for the abuse of this program. Enjoy :)",
                     author=lib.config.AUTHOR,
                 )
             )

@@ -1,5 +1,5 @@
 """
-main.py the main module for QuestVRAutoInstaller
+main.py the main module for QuestCave
 """
 
 import asyncio
@@ -11,7 +11,7 @@ import lib.config as config
 from deluge.utils import start_deluge_daemon
 from adblib import adb_interface
 from lib.settings import Settings
-from q2gapp import Q2GApp
+from quest_cave_app import QuestCaveApp
 
 
 async def _main():
@@ -29,7 +29,7 @@ async def _main():
         # download and install deluge daemon
         sys.exit("Unable to locate the Deluge Daemon. Please reinstall Deluge Torrent")
     multiprocessing.freeze_support()
-    app = Q2GApp(args.debug)
+    app = QuestCaveApp(args.debug)
     # catch any unhandled exceptions in the event loop
     asyncio.get_event_loop().set_exception_handler(config.async_log_handler)
     # check for an internet connection, notify user to turn back on

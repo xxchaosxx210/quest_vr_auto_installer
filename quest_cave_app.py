@@ -31,7 +31,7 @@ import ui.dialogs.device_list_dialog as dld
 _Log = logging.getLogger()
 
 
-class Q2GApp(wxasync.WxAsyncApp):
+class QuestCaveApp(wxasync.WxAsyncApp):
     # global wxwindow instances
     magnets_listpanel: MagnetsListPanel | None = None
     install_listpanel: InstalledListPanel | None = None

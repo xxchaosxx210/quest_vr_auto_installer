@@ -33,8 +33,8 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
 
 [Files]
-Source: "C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer\dist\QuestVRAutoInstaller\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
-Source: "C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer\dist\QuestVRAutoInstaller\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
+Source: "C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer\dist\QuestCave\{#MyAppExeName}"; DestDir: "{app}"; Flags: ignoreversion
+Source: "C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer\dist\QuestCave\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 ; NOTE: Don't use "Flags: ignoreversion" on any shared system files
 
 [Icons]

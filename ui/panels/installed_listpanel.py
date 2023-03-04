@@ -15,9 +15,9 @@ _Log = logging.getLogger(__name__)
 
 class InstalledListPanel(ListPanel):
     def __init__(self, parent: wx.Window):
-        from q2gapp import Q2GApp
+        from q2gapp import QuestCaveApp
 
-        self.app: Q2GApp = wx.GetApp()
+        self.app: QuestCaveApp = wx.GetApp()
         columns: ColumnListType = [{"col": 0, "heading": "Name", "width": 100}]
         super().__init__(parent=parent, title="Installed Games", columns=columns)
 

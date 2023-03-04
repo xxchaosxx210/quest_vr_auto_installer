@@ -3,9 +3,9 @@ import wx
 
 class InstallProgressDialog(wx.Dialog):
     def __init__(self, parent: wx.Frame):
-        from q2gapp import Q2GApp
+        from q2gapp import QuestCaveApp
 
-        self.app: Q2GApp = wx.GetApp()
+        self.app: QuestCaveApp = wx.GetApp()
         super().__init__(
             parent,
             title="Installing",

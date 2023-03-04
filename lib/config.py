@@ -78,7 +78,7 @@ def parse_args() -> argparse.Namespace:
     Returns:
         argparse.Namespace:
     """
-    parser = argparse.ArgumentParser(description="QuestVRAutoInstaller Parser")
+    parser = argparse.ArgumentParser(description="QuestCave Parser")
     parser.add_argument("-d", "--debug", action="store_true", help="Debug mode")
     args = parser.parse_args()
     return args
