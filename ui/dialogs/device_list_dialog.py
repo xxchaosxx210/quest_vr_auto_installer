@@ -65,7 +65,7 @@ class DeviceListDialog(wx.Dialog):
         wxasync.AsyncBind(wx.EVT_SHOW, self._on_show, self)
 
     async def _on_show(self, evt: wx.ShowEvent) -> None:
-        wx.GetApp().monitoring_device_thread.reset_device_names()
+        wx.GetApp().monitoring_device_thread.refresh_device_list()
 
     async def _on_skip_clicked(self, evt: wx.CommandEvent) -> None:
         self.SetReturnCode(wx.OK)

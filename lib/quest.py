@@ -1,10 +1,10 @@
+import asyncio
 import logging
 import os
 import queue
 import shutil
 import threading
 from typing import Callable, List
-from dataclasses import dataclass
 
 import adblib.adb_interface as adb_interface
 import lib.config
@@ -15,13 +15,6 @@ import lib.debug as debug
 InstallStatusFunction = Callable[[str], None]
 
 _Log = logging.getLogger()
-
-
-@dataclass
-class InstallPackage:
-    apk_path: str
-    apk_sub_directories: List[str]
-    apk_filename: str
 
 
 class MonitorSelectedDevice(threading.Thread):
@@ -77,6 +70,9 @@ class MonitorSelectedDevice(threading.Thread):
             return False
 
     def run(self) -> None:
+        # start a new event loop for this thread
+        self._event_loop = asyncio.new_event_loop()
+
         self._prev_device_names: List[str] = []
         while self._stop_event.is_set() is False:
             try:
@@ -90,15 +86,7 @@ class MonitorSelectedDevice(threading.Thread):
                 # retrieved from get_device_names(). Also store a prev_device_names
                 # and compare prev_device_names to current_device_names using sets
                 device_names = self.get_device_names()
-                if device_names is not None and self._prev_device_names != device_names:
-                    self._prev_device_names = device_names
-                    self._callback(
-                        {
-                            "event": "device-names-changed",
-                            "device-names": device_names,
-                        }
-                    )
-
+                self._handle_device_names_changed(device_names)
                 if not self.get_selected_device():
                     continue
                 if (
@@ -108,6 +96,25 @@ class MonitorSelectedDevice(threading.Thread):
                     _Log.debug(f"{self.get_selected_device()} is not connected")
                     self.__set_selected_device("")
                     self._callback({"event": "device-disconnected"})
+        self._event_loop.close()
+        del self._event_loop
+
+    def _handle_device_names_changed(self, device_names: List[str]) -> bool:
+        """checks if the device_names match with self._prev_device_names if not then
+        a device-names-changed event is sent to the callback
+
+        Args:
+            device_names (List[str]): the list of the device names returned from the ADB daemon
+
+        Returns:
+            bool: returns True if the device_names have changed
+        """
+        if device_names is None or self._prev_device_names == device_names:
+            return False
+        _Log.info("device names have changed")
+        self._prev_device_names = device_names
+        self._callback({"event": "device-names-changed", "device-names": device_names})
+        return True
 
     def get_device_names(self) -> List[str] | None:
         """
@@ -166,10 +173,14 @@ class MonitorSelectedDevice(threading.Thread):
         self._queue.put({"request": "stop"})
         self.join()
 
-    def reset_device_names(self) -> None:
-        """resets the prev_device_names. This triggers a new device names changed event
-        I added this when a device list dialog is opened it gets called within the dialog __init__
-        a hackish way and I need to think of a better way less confusing
+    def refresh_device_list(self) -> None:
+        """resets the prev_device_names.
+
+        I added this when a device list dialog is opened it gets called within its EVT_SHOW event
+        in wxpython but can be called within any GUI framework.
+        a hackish way and I need to think of a better way less confusing.
+
+        This basically fires off another device names changed event to the callback handler
 
         """
         self._queue.put_nowait({"request": "device-names-reset"})
