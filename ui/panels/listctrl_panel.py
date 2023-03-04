@@ -9,15 +9,34 @@ ColumnListType = List[Dict[str, Union[int, str]]]
 class CustomListCtrl(wx.ListCtrl):
     _COLUMN_ASCENDING_DEFAULT_TOGGLE_STATE = False
 
-    def __init__(self, parent: wx.Window, id: int, columns: ColumnListType, style: int):
+    def __init__(
+        self,
+        parent: wx.Window,
+        id: int,
+        columns: ColumnListType,
+        toggle_col: bool,
+        style: int,
+    ):
+        """custom listctrl that allows for column resizing and column header toggle events
+
+        Args:
+            parent (wx.Window): the parent window
+            id (int): the id of the listctrl
+            columns (ColumnListType): the column headers to add to the listctrl
+            toggle_col (bool): if set to true then the list_col_click event will be bound and
+            toggling will be enabled
+            style (int): the style of the listctrl
+        """
         super().__init__(parent=parent, id=id, style=style)
+        self._toggle_col = toggle_col
         self._cols_toggle_state = []
         self._columns = columns
         self._bind_events()
 
     def _bind_events(self) -> None:
         self.Bind(wx.EVT_SIZE, self._on_size)
-        self.Bind(wx.EVT_LIST_COL_CLICK, self.on_col_left_click)
+        if self._toggle_col:
+            self.Bind(wx.EVT_LIST_COL_CLICK, self.on_col_left_click)
 
     def on_col_left_click(self, evt: wx.ListEvent) -> None:
         """flip the toggle state of the column when the column header has been pressed by the user
@@ -85,17 +104,31 @@ class ListCtrlPanel(wx.Panel):
         parent: wx.Window,
         title: str | None,
         columns: ColumnListType = [],
+        toggle_col: bool = True,
     ):
+        """contains a CustomListCtrl and a StaticBoxSizer (Optional)
+        CustomListCtrl has alphabetical sorting by default
+
+        Args:
+            parent (wx.Window): the parent window
+            title (str | None): the title of the label static box. If none, no static box is created
+            columns (ColumnListType, optional): the column headers. Defaults to [].
+            toggle_col (bool): if set to true then the list_col_click event will ...
+                    be bound and toggling will be enabled. Defaults to True.
+        """
         super().__init__(parent=parent)
 
         self.listctrl = CustomListCtrl(
-            parent=self, id=-1, columns=columns, style=wx.LC_REPORT
+            parent=self,
+            id=-1,
+            columns=columns,
+            toggle_col=toggle_col,
+            style=wx.LC_REPORT,
         )
         self.listctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_listitem_selected)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_double_click)
 
-        self._columns = columns
         self.bitmap_buttons: Dict[str, wx.BitmapButton] = {}
 
         if title is not None:

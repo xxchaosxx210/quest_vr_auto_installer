@@ -48,7 +48,10 @@ class AddGameDialog(wx.Dialog):
         )
 
         self.mag_list_pnl = ListCtrlPanel(
-            self, None, [{"col": 0, "heading": "Magnet", "width": 100}]
+            self,
+            None,
+            [{"col": 0, "heading": "Magnet", "width": 100}],
+            toggle_col=False,
         )
         wxasync.AsyncBind(
             wx.EVT_LIST_ITEM_ACTIVATED,
@@ -61,7 +64,10 @@ class AddGameDialog(wx.Dialog):
         )
 
         self.file_paths_lst_pnl = ListCtrlPanel(
-            self, "Torrent File Paths", [{"col": 0, "heading": "Path", "width": 100}]
+            self,
+            "Torrent File Paths",
+            [{"col": 0, "heading": "Path", "width": 100}],
+            toggle_col=False,
         )
 
         save_btn = wx.Button(self, wx.ID_SAVE, "Save")

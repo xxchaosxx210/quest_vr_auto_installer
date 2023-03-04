@@ -19,7 +19,9 @@ class InstalledListPanel(ListCtrlPanel):
 
         self.app: QuestCaveApp = wx.GetApp()
         columns: ColumnListType = [{"col": 0, "heading": "Name", "width": 100}]
-        super().__init__(parent=parent, title="Installed Games", columns=columns)
+        super().__init__(
+            parent=parent, title="Installed Games", columns=columns, toggle_col=False
+        )
 
         self.app.install_listpanel = self
 

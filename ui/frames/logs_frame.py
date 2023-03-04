@@ -32,7 +32,9 @@ class LogsListCtrlPanel(ListCtrlPanel):
 
         # store the logs
         self._logs: List[ErrorLog] = []
+        self._bind_events()
 
+    def _bind_events(self) -> None:
         self.Bind(
             wx.EVT_LIST_ITEM_ACTIVATED, self._on_list_item_activated, self.listctrl
         )

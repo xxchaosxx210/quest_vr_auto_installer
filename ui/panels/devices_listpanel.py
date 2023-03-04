@@ -41,7 +41,9 @@ class DevicesListPanel(ListCtrlPanel):
         self.app: QuestCaveApp = wx.GetApp()
         # the device that is currently selected in the listctrl
         columns: ColumnListType = [{"col": 0, "heading": "Name", "width": 200}]
-        super().__init__(parent=parent, title="Devices", columns=columns)
+        super().__init__(
+            parent=parent, title="Devices", columns=columns, toggle_col=False
+        )
         self.insert_button_panel(self._create_button_panel(), 0, flag=wx.ALIGN_RIGHT)
 
     def _create_button_panel(self) -> wx.Panel:
