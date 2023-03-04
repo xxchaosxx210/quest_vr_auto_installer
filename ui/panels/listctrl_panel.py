@@ -9,9 +9,41 @@ ColumnListType = List[Dict[str, Union[int, str]]]
 class CustomListCtrl(wx.ListCtrl):
     _COLUMN_ASCENDING_DEFAULT_TOGGLE_STATE = True
 
-    def __init__(self, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(self, parent: wx.Window, id: int, columns: ColumnListType, style: int):
+        super().__init__(parent=parent, id=id, style=style)
         self._cols_toggle_state = []
+        self._columns = columns
+        self._bind_events()
+
+    def _bind_events(self) -> None:
+        self.Bind(wx.EVT_SIZE, self._on_size)
+        self.Bind(wx.EVT_LIST_COL_CLICK, self.on_col_left_click)
+
+    def on_col_left_click(self, evt: wx.ListEvent) -> None:
+        """flip the toggle state of the column when the column header has been pressed by the user
+
+        Args:
+            evt (wx.ListEvent):
+        """
+        col_index = evt.GetColumn()
+        toggle_state = self.get_toggle_state(col_index)
+        toggle_state = not toggle_state
+        self.set_toggle_state(col_index, toggle_state)
+        evt.Skip()
+
+    def _on_size(self, evt: wx.SizeEvent):
+        # Get the width of the listctrl
+        width = self.GetSize()[0]
+
+        # Get the total width of all columns
+        total_width: int = sum(int(column["width"]) for column in self._columns)
+
+        # Set the width of each column based on the ratio of width to total width
+        for column in self._columns:
+            self.SetColumnWidth(
+                column["col"], int(width * column["width"] / total_width)
+            )
+        evt.Skip()
 
     def reset_ascending_toggle_states(self) -> None:
         """reset the cols toggle list back to default"""
@@ -56,11 +88,11 @@ class ListCtrlPanel(wx.Panel):
     ):
         super().__init__(parent=parent)
 
-        self.listctrl = CustomListCtrl(self, -1, style=wx.LC_REPORT)
+        self.listctrl = CustomListCtrl(
+            parent=self, id=-1, columns=columns, style=wx.LC_REPORT
+        )
         self.listctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_listitem_selected)
-        self.listctrl.Bind(wx.EVT_SIZE, self.on_size)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click)
-        self.listctrl.Bind(wx.EVT_LIST_COL_CLICK, self.on_col_left_click)
         self.listctrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_double_click)
 
         self._columns = columns
@@ -142,18 +174,6 @@ class ListCtrlPanel(wx.Panel):
             hbox_btns.AddSpacer(border)
         return hbox_btns
 
-    def on_col_left_click(self, evt: wx.ListEvent) -> None:
-        """flip the toggle state of the column when the column header has been pressed by the user
-
-        Args:
-            evt (wx.ListEvent):
-        """
-        col_index = evt.GetColumn()
-        toggle_state = self.listctrl.get_toggle_state(col_index)
-        toggle_state = not toggle_state
-        self.listctrl.set_toggle_state(col_index, toggle_state)
-        evt.Skip()
-
     def on_item_double_click(self, evt: wx.ListEvent) -> None:
         evt.Skip()
 
@@ -161,20 +181,6 @@ class ListCtrlPanel(wx.Panel):
         evt.Skip()
 
     def on_listitem_selected(self, evt: wx.ListEvent):
-        evt.Skip()
-
-    def on_size(self, evt: wx.SizeEvent):
-        # Get the width of the listctrl
-        width = self.listctrl.GetSize()[0]
-
-        # Get the total width of all columns
-        total_width: int = sum(int(column["width"]) for column in self._columns)
-
-        # Set the width of each column based on the ratio of width to total width
-        for column in self._columns:
-            self.listctrl.SetColumnWidth(
-                column["col"], int(width * column["width"] / total_width)
-            )
         evt.Skip()
 
     def reset(self) -> None:
