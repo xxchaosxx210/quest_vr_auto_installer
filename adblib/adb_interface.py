@@ -293,6 +293,27 @@ async def copy_path(device_name: str, local_path: str, destination_path: str) ->
     return stdout
 
 
+def get_device_model(device_name: str) -> str:
+    """gets the device model from the device name
+
+    Args:
+        device_name (str): the name of the device
+
+    Returns:
+        str: the model of the device
+    """
+    commands = [
+        ADB_PATH_DEFAULT,
+        "-s",
+        device_name,
+        "shell",
+        "getprop",
+        "ro.product.model",
+    ]
+    stdout = execute(commands)
+    return stdout
+
+
 def execute(commands: List[str]) -> str:
     """sends commands to the ADB, raises any errors and returns the stdout if successful
 

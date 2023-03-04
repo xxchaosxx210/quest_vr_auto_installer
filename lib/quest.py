@@ -118,7 +118,8 @@ class MonitorSelectedDevice(threading.Thread):
 
     def get_device_names(self) -> List[str] | None:
         """
-        this handles the debug and normal mode for getting the device names also handles any exceptions
+        this handles the debug and normal mode for getting the device names
+        also handles any exceptions
 
         Returns:
             List[str]: list of device names if exception then None
@@ -134,6 +135,11 @@ class MonitorSelectedDevice(threading.Thread):
             self._callback({"event": "error", "exception": err})
             device_names = None
         finally:
+            if device_names is not None and not self._debug_mode:
+                # filter out the non quest devices
+                quest_device_names = filter_quest_device_names(device_names)
+                return quest_device_names
+            # debug mode no need to filter
             return device_names
 
     def send_message_no_block(self, message: dict) -> None:
@@ -226,6 +232,35 @@ def create_obb_path(
         adb_interface.make_dir(device_name=device_name, path=obb_path)
         _Log.debug(f"{obb_path} created successfully")
     return not obb_path_exists
+
+
+def is_quest_device(device_name: str) -> bool:
+    """checks if the device is a quest device
+
+    Args:
+        device_name (str): the name of the device to check
+
+    Returns:
+        bool: True if the device is a quest device
+    """
+    model = adb_interface.get_device_model(device_name=device_name)
+    model = model.strip()
+    is_quest = model == "Quest 2"
+    if not is_quest:
+        pass
+    return is_quest
+
+
+def filter_quest_device_names(device_names: List[str]) -> List[str]:
+    """returns a new list of quest devices from the device_names list
+
+    Args:
+        device_names (List[str]): list of device names
+
+    Returns:
+        List[str]: list of quest devices
+    """
+    return [device for device in device_names if is_quest_device(device)]
 
 
 async def install_game(
