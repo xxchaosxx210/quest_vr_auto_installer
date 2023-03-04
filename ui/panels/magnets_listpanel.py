@@ -36,7 +36,7 @@ class MagnetsListPanel(ListPanel):
     magnet_data_list: List[MagnetData] = []
 
     def __init__(self, parent: wx.Window):
-        from q2gapp import QuestCaveApp
+        from quest_cave_app import QuestCaveApp
 
         self.app: QuestCaveApp = wx.GetApp()
         # store the magnet items state

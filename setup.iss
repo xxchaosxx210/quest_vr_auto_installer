@@ -20,7 +20,7 @@ LicenseFile=C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 OutputDir=C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer\setup_installer\
-OutputBaseFilename=questvrauto_setup
+OutputBaseFilename=questcave_setup
 SetupIconFile=C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer\images\icon.ico
 Compression=lzma
 SolidCompression=yes

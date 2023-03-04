@@ -36,7 +36,7 @@ class DeviceEvent(wx.PyCommandEvent):
 
 class DevicesListPanel(ListPanel):
     def __init__(self, parent: wx.Window):
-        from q2gapp import QuestCaveApp
+        from quest_cave_app import QuestCaveApp
 
         self.app: QuestCaveApp = wx.GetApp()
         # the device that is currently selected in the listctrl

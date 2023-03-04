@@ -7,7 +7,7 @@ __pycache__/
 *.so
 
 /deluge/bin/
-/setup-installer/
+/setup_installer/
 
 # Distribution / packaging
 .Python

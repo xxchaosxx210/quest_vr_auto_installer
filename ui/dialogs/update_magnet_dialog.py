@@ -33,7 +33,7 @@ class MagnetUpdateDialog(wx.Dialog):
         style: int,
         magnet: QuestMagnetWithKey,
     ):
-        from q2gapp import QuestCaveApp
+        from quest_cave_app import QuestCaveApp
 
         self.app: QuestCaveApp = wx.GetApp()
         super().__init__(parent=parent, title=title, size=size, style=style)
