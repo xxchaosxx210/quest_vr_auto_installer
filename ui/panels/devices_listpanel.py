@@ -8,7 +8,7 @@ import ui.utils
 import lib.tasks
 import lib.debug as debug
 from adblib import adb_interface
-from ui.panels.listpanel import ListPanel, ColumnListType
+from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
 from ui.dialogs.add_fake_device_dialog import AddFakeDeviceDialog
 
 
@@ -34,7 +34,7 @@ class DeviceEvent(wx.PyCommandEvent):
         return self._device_name
 
 
-class DevicesListPanel(ListPanel):
+class DevicesListPanel(ListCtrlPanel):
     def __init__(self, parent: wx.Window):
         from quest_cave_app import QuestCaveApp
 
@@ -67,7 +67,9 @@ class DevicesListPanel(ListPanel):
         )
         self.Bind(wx.EVT_BUTTON, self.on_refresh_click, self.bitmap_buttons["refresh"])
 
-        hbox_btns = ListPanel.create_bitmap_button_sizer(self.bitmap_buttons, border=10)
+        hbox_btns = ListCtrlPanel.create_bitmap_button_sizer(
+            self.bitmap_buttons, border=10
+        )
         button_panel.SetSizer(hbox_btns)
         return button_panel
 

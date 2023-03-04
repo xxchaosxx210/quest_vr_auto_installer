@@ -14,7 +14,7 @@ import ui.utils
 import lib.api_handler
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
-from ui.panels.listpanel import ListPanel, ColumnListType
+from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
 from ui.dialogs.update_magnet_dialog import load_dialog as load_update_magnet_dialog
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
@@ -32,7 +32,7 @@ COLUMN_SPEED = 5
 COLUMN_ETA = 6
 
 
-class MagnetsListPanel(ListPanel):
+class MagnetsListPanel(ListCtrlPanel):
     magnet_data_list: List[MagnetData] = []
 
     def __init__(self, parent: wx.Window):
@@ -63,7 +63,7 @@ class MagnetsListPanel(ListPanel):
         )
         self.Bind(wx.EVT_BUTTON, self.on_refresh_click, self.bitmap_buttons["refresh"])
 
-        hbox_btns = ListPanel.create_bitmap_button_sizer(self.bitmap_buttons)
+        hbox_btns = ListCtrlPanel.create_bitmap_button_sizer(self.bitmap_buttons)
         button_panel.SetSizer(hbox_btns)
         return button_panel
 

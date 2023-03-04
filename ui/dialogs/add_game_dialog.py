@@ -48,7 +48,7 @@ class AddGameDialog(wx.Dialog):
         )
 
         self.mag_list_pnl = ListCtrlPanel(
-            self, "Magnets found", [{"col": 0, "heading": "Magnet", "width": 100}]
+            self, None, [{"col": 0, "heading": "Magnet", "width": 100}]
         )
         wxasync.AsyncBind(
             wx.EVT_LIST_ITEM_ACTIVATED,

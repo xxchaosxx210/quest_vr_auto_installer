@@ -6,14 +6,14 @@ import lib.config
 import lib.tasks
 import ui.utils
 import lib.debug as debug
-from ui.panels.listpanel import ListPanel, ColumnListType
+from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
 from adblib import adb_interface
 
 
 _Log = logging.getLogger(__name__)
 
 
-class InstalledListPanel(ListPanel):
+class InstalledListPanel(ListCtrlPanel):
     def __init__(self, parent: wx.Window):
         from quest_cave_app import QuestCaveApp
 
@@ -40,7 +40,7 @@ class InstalledListPanel(ListPanel):
             wx.EVT_BUTTON, self.on_uninstall_click, self.bitmap_buttons["uninstall"]
         )
 
-        hbox_btns = ListPanel.create_bitmap_button_sizer(self.bitmap_buttons)
+        hbox_btns = ListCtrlPanel.create_bitmap_button_sizer(self.bitmap_buttons)
         button_panel.SetSizer(hbox_btns)
         return button_panel
 
