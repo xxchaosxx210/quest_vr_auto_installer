@@ -1,0 +1,4 @@
+1. load dialogs for IO and network tasks
+2. clean up the background thread code refactor
+3. help documentation
+4. pause task if user has disconnected device while installing
