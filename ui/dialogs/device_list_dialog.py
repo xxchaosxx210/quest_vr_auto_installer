@@ -33,16 +33,16 @@ class DeviceListDialog(wx.Dialog):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self._selected_device_name: str = ""
+        # store an instance of the dialog when it is created as this will be
+        # used in the App to see if the dialog is open
         DeviceListDialog.instance = self
-        try:
-            self.device_listpanel = devices_panel.DevicesListPanel(self)
-            wxasync.AsyncBind(
-                devices_panel.EVT_DEVICE_SELECTED,
-                self._on_device_selected,
-                self.device_listpanel,
-            )
-        except Exception as err:
-            raise err
+        self.device_listpanel = devices_panel.DevicesListPanel(self)
+        # custom event when a device name is selected
+        wxasync.AsyncBind(
+            devices_panel.EVT_DEVICE_SELECTED,
+            self._on_device_selected,
+            self.device_listpanel,
+        )
 
         skip_button = wx.Button(self, wx.ID_OK, "Skip")
         wxasync.AsyncBind(wx.EVT_BUTTON, self._on_skip_clicked, skip_button)
@@ -57,6 +57,10 @@ class DeviceListDialog(wx.Dialog):
         parent_width, parent_height = self.GetParent().GetSize()
         self.SetSize(int(parent_width * 0.6), int(parent_height * 0.6))
         self.CenterOnParent()
+
+        # hackish way at the moment. this resets the device names in the background
+        # thread which is monitoring for new devices and whether the user
+        # has disconnected their device
         wx.GetApp().monitoring_device_thread.reset_device_names()
 
     async def _on_skip_clicked(self, evt: wx.CommandEvent) -> None:
