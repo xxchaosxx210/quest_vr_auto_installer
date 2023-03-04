@@ -386,6 +386,15 @@ class MagnetsListPanel(ListCtrlPanel):
             Args:
                 uri (str): the magnet uri to get meta data from
             """
+
+            progress = wx.ProgressDialog(
+                "Fetching Game information",
+                "Please wait...",
+                100,
+                self.app.frame,
+                wx.PD_AUTO_HIDE,
+            )
+            progress.Pulse()
             try:
                 meta_data = await asyncio.wait_for(
                     deluge_utils.get_magnet_info(uri), timeout=5
@@ -395,7 +404,10 @@ class MagnetsListPanel(ListCtrlPanel):
             except Exception as err:
                 self.app.exception_handler(err)
             else:
+                progress.Hide()
                 load_info_dialog(meta_data)
+            finally:
+                progress.Destroy()
 
         def load_info_dialog(metadata: deluge_utils.MetaData) -> None:
             """displays the meta data about the requested magnet in the magnets listctrl
