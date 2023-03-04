@@ -6,6 +6,7 @@ import asyncio
 import multiprocessing
 import sys
 
+import wx
 
 import lib.config as config
 from deluge.utils import start_deluge_daemon
@@ -35,10 +36,20 @@ async def _main():
     # check for an internet connection, notify user to turn back on
     asyncio.get_event_loop().create_task(app.check_internet_and_notify())
     await app.MainLoop()
+
     # cleanup
+    progress = wx.ProgressDialog(
+        "QuestCave",
+        "Quiting QuestCave, Please wait...",
+        maximum=100,
+        parent=None,
+        style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
+    )
+    progress.Pulse()
     daemon.terminate()
     adb_interface.close_adb()
     app.monitoring_device_thread.stop()
+    progress.Destroy()
 
 
 if __name__ == "__main__":

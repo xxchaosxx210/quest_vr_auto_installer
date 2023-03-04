@@ -24,11 +24,6 @@ class InstallPackage:
     apk_filename: str
 
 
-"""I want a thread to monitor the selected device by calling the adb_interface.get_devices_names, every 3 seconds
- and seeing if the selected device is still connected. 
- If it is not connected then I want to notify the parent thread that it has been disconnect"""
-
-
 class MonitorSelectedDevice(threading.Thread):
     def __init__(self, callback: Callable[[dict], None], debug_mode: bool) -> None:
         """
@@ -46,37 +41,57 @@ class MonitorSelectedDevice(threading.Thread):
         self._stop_event = threading.Event()
         self._callback = callback
         self._debug_mode = debug_mode
-        self._selected_device = ""
-        self._lock = threading.Lock()
+        self.__selected_device = ""
+        # keep the device selection thread safe
+        self.__device_selection_lock = threading.Lock()
+
+    def __process_message_request(self, msg: dict) -> bool:
+        """handles the message request from the queue
+
+        Args:
+            msg (dict): should be a dict with a "request" key
+
+            request: "stop" - stops the thread,
+                     "selected-device" - sets the selected device,
+                     "device-names-reset" - resets the prev_device_names
+
+        Returns:
+            bool: True if the request was handled
+        """
+        if msg["request"] == "stop":
+            self._stop_event.set()
+            return True
+        elif msg["request"] == "selected-device":
+            self.__set_selected_device(msg["device-name"])
+            self._callback(
+                {
+                    "event": "device-selected",
+                    "device-name": self.get_selected_device(),
+                }
+            )
+            return True
+        elif msg["request"] == "device-names-reset":
+            self._prev_device_names = []
+            return True
+        else:
+            return False
 
     def run(self) -> None:
-        prev_device_names: List[str] = []
+        self._prev_device_names: List[str] = []
         while self._stop_event.is_set() is False:
             try:
                 msg: dict = self._queue.get(timeout=3, block=True)
             except queue.Empty:
                 pass
             else:
-                # process message
-                if msg["request"] == "stop":
-                    self._stop_event.set()
-                elif msg["request"] == "selected-device":
-                    self.set_selected_device(msg["device-name"])
-                    self._callback(
-                        {
-                            "event": "device-selected",
-                            "device-name": self.get_selected_device(),
-                        }
-                    )
-                elif msg["request"] == "device-names-reset":
-                    prev_device_names = []
+                self.__process_message_request(msg)
             finally:
                 # if selected_device is non empty string then check device is in list
                 # retrieved from get_device_names(). Also store a prev_device_names
                 # and compare prev_device_names to current_device_names using sets
                 device_names = self.get_device_names()
-                if device_names is not None and prev_device_names != device_names:
-                    prev_device_names = device_names
+                if device_names is not None and self._prev_device_names != device_names:
+                    self._prev_device_names = device_names
                     self._callback(
                         {
                             "event": "device-names-changed",
@@ -91,7 +106,7 @@ class MonitorSelectedDevice(threading.Thread):
                     and self.get_selected_device() not in device_names
                 ):
                     _Log.debug(f"{self.get_selected_device()} is not connected")
-                    self.set_selected_device("")
+                    self.__set_selected_device("")
                     self._callback({"event": "device-disconnected"})
 
     def get_device_names(self) -> List[str] | None:
@@ -106,7 +121,7 @@ class MonitorSelectedDevice(threading.Thread):
             device_names = debug.get_device_names(debug.fake_quests)
             return device_names
         try:
-            device_names = adb_interface.sync_get_device_names()
+            device_names = adb_interface.get_device_names()
         except Exception as err:
             _Log.error(err.__str__() + " - MonitorSelectedDevice.get_device_names()")
             self._callback({"event": "error", "exception": err})
@@ -139,23 +154,43 @@ class MonitorSelectedDevice(threading.Thread):
         self._queue.put(message)
 
     def get_selected_device(self) -> str:
-        with self._lock:
-            return self._selected_device
+        with self.__device_selection_lock:
+            return self.__selected_device
 
-    def set_selected_device(self, device_name: str) -> None:
-        with self._lock:
-            self._selected_device = device_name
+    def __set_selected_device(self, device_name: str) -> None:
+        with self.__device_selection_lock:
+            self.__selected_device = device_name
 
     def stop(self) -> None:
+        """stops the running thread"""
         self._queue.put({"request": "stop"})
         self.join()
 
     def reset_device_names(self) -> None:
+        """resets the prev_device_names. This triggers a new device names changed event
+        I added this when a device list dialog is opened it gets called within the dialog __init__
+        a hackish way and I need to think of a better way less confusing
+
+        """
         self._queue.put_nowait({"request": "device-names-reset"})
 
 
 def cleanup(path_to_remove: str, error_callback) -> None:
+    """removes a directory and all its contents
+
+    if any errors occur then the error_callback is called with the error string
+    """
+
     def on_error(func: Callable, path: str, exc_info: tuple) -> None:
+        """calls the callback by passing the string from the exception into the callback
+
+        Args:
+            func (Callable): the function callback to handle the error
+            path (str): the path to which the exception was raised
+            exc_info (tuple): information about the exception
+
+            read the shutil.rmtree docs for more info
+        """
         error_callback(exc_info[1].__str__())
 
     shutil.rmtree(path_to_remove, ignore_errors=False, onerror=on_error)
@@ -202,7 +237,7 @@ async def install_game(
     if not device_name:
         raise ValueError("No Device selected")
     try:
-        device_names = await adb_interface.get_device_names()
+        device_names = await adb_interface.async_get_device_names()
     except Exception as err:
         raise err
     if not device_name in device_names:

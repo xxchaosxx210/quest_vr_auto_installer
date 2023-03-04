@@ -58,9 +58,13 @@ class DeviceListDialog(wx.Dialog):
         self.SetSize(int(parent_width * 0.6), int(parent_height * 0.6))
         self.CenterOnParent()
 
+        # capture the dialog show event
         # hackish way at the moment. this resets the device names in the background
         # thread which is monitoring for new devices and whether the user
         # has disconnected their device
+        wxasync.AsyncBind(wx.EVT_SHOW, self._on_show, self)
+
+    async def _on_show(self, evt: wx.ShowEvent) -> None:
         wx.GetApp().monitoring_device_thread.reset_device_names()
 
     async def _on_skip_clicked(self, evt: wx.CommandEvent) -> None:

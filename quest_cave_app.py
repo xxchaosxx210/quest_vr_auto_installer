@@ -86,6 +86,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         elif event["event"] == "device-names-changed":
             dialog: dld.DeviceListDialog | None = dld.DeviceListDialog.instance
             if dialog is not None and dialog.IsShown():
+                _Log.info(event["device-names"])
                 dialog.device_listpanel.load_listctrl(event["device-names"])
 
     def set_selected_device(self, device_name: str) -> None:

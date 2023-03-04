@@ -107,7 +107,7 @@ class DevicesListPanel(ListPanel):
         if self.app.debug_mode:
             device_names = debug.get_device_names(debug.fake_quests)
         else:
-            device_names = await adb_interface.get_device_names()
+            device_names = await adb_interface.async_get_device_names()
         return device_names
 
     def load_listctrl(self, device_names: List[str]) -> None:
@@ -159,30 +159,6 @@ class DevicesListPanel(ListPanel):
         handler: wx.Window = self.GetEventHandler()
         if isinstance(handler, wx.Window):
             handler.ProcessEvent(event)
-
-        # async def create_obb_dir():
-        #     """create the data directory on the quest device"""
-        #     try:
-        #         quest.create_obb_path(device_name, config.QUEST_OBB_DIRECTORY)
-        #     except adblib.errors.RemoteDeviceError as err:
-        #         wx.CallAfter(self.app.exception_handler, err=err)
-        #     except Exception as err:
-        #         raise err
-        #     finally:
-        #         return
-
-        # try:
-        #   lib.tasks.check_task_and_create(create_obb_dir)
-        # except lib.tasks.TaskIsRunning:
-        #     pass
-        # # Load the installed apps into the install listctrl
-        # if self.app.install_listpanel is not None:
-        #     try:
-        #         lib.tasks.check_task_and_create(
-        #             self.app.install_listpanel.load, device_name=device_name
-        #         )
-        #     except lib.tasks.TaskIsRunning:
-        #         pass
 
     def get_selected_device_name(self) -> str | None:
         """gets the selected device name

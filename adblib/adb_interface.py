@@ -69,17 +69,17 @@ async def start_adb() -> str:
     return stdout
 
 
-async def get_device_names() -> List[str]:
-    """gets all Android devices found using ADB and returns a list of device names
+def get_device_names() -> List[str]:
+    """get a list of device names from the adb daemon
 
     Raises:
         RemoteDeviceError: will be raised if error is not None
 
     Returns:
-        List[str]: list of device names
+        List[str]: device names. empty list if no devices found
     """
     commands = [ADB_PATH_DEFAULT, "devices"]
-    output = await execute_subprocess(commands)
+    output = execute(commands)
     devices = output.strip().split("\n")[1:]
     connected_devices = []
     for device in devices:
@@ -89,9 +89,10 @@ async def get_device_names() -> List[str]:
     return connected_devices
 
 
-def sync_get_device_names() -> List[str]:
+async def async_get_device_names() -> List[str]:
+    """same as get_device_names but async"""
     commands = [ADB_PATH_DEFAULT, "devices"]
-    output = execute(commands)
+    output = await execute_subprocess(commands)
     devices = output.strip().split("\n")[1:]
     connected_devices = []
     for device in devices:
