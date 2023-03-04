@@ -52,6 +52,10 @@ class MagnetsListPanel(ListCtrlPanel):
         super().__init__(parent=parent, title="Games Availible", columns=columns)
         self.app.magnets_listpanel = self
         self.insert_button_panel(self._create_button_panel())
+        self._bind_events()
+
+    def _bind_events(self) -> None:
+        self.Bind(wx.EVT_LIST_COL_CLICK, self._on_col_left_click, self.listctrl)
 
     def _create_button_panel(self) -> wx.Panel:
         # create the button panel
@@ -125,7 +129,7 @@ class MagnetsListPanel(ListCtrlPanel):
             parent=self.app.frame, title="Update Game", magnet=magnets[0]
         )
 
-    def on_col_left_click(self, evt: wx.ListEvent) -> None:
+    def _on_col_left_click(self, evt: wx.ListEvent) -> None:
         """sort the magnets by alphabetical order.
 
         Note: in this current version the sort wont work if install task is running
@@ -143,11 +147,14 @@ class MagnetsListPanel(ListCtrlPanel):
         # check if install is running. I will change this later and send
         # a message to the install queue with the new index to update to
         # lib.tasks.is_task_running(lib.tasks.get_task())
-        if lib.tasks.is_task_running(
-            lib.tasks.get_task(self.app.start_download_process)
-        ):
+        try:
+            task = lib.tasks.get_task(self.app.start_download_process)
+        except KeyError:
+            task = None
+        if task is not None and lib.tasks.is_task_running(task):
             _Log.info("ListCtrl sort has been disabled while install is in progress")
             return
+        # no task is running so continue doing sort
         column = evt.GetColumn()
         if type(column) != int:
             return
@@ -157,7 +164,7 @@ class MagnetsListPanel(ListCtrlPanel):
         # rebuild the listctrl and magnet data list
         self.clear_list()
         self._rebuild_list(items)
-        return super().on_col_left_click(evt)
+        evt.Skip()
 
     def _get_list_items(self) -> List[dict]:
         """gets each item row from the listctrl and the magnet data associated with it

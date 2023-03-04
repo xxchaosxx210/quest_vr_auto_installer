@@ -7,7 +7,7 @@ ColumnListType = List[Dict[str, Union[int, str]]]
 
 
 class CustomListCtrl(wx.ListCtrl):
-    _COLUMN_ASCENDING_DEFAULT_TOGGLE_STATE = True
+    _COLUMN_ASCENDING_DEFAULT_TOGGLE_STATE = False
 
     def __init__(self, parent: wx.Window, id: int, columns: ColumnListType, style: int):
         super().__init__(parent=parent, id=id, style=style)

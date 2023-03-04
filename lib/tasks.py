@@ -23,6 +23,17 @@ GlobalThreads: Dict[str, threading.Thread] = {}
 
 
 def get_task(func: Callable) -> asyncio.Task:
+    """gets the task from the global dict. global dict uses function names as keys
+
+    Args:
+        func (Callable): the function that the task is running
+
+    Raises:
+        KeyError: if no key with function name found
+
+    Returns:
+        asyncio.Task: the task instance
+    """
     task = GlobalTasks.get(func.__name__)
     if task is None:
         raise KeyError(f"Task with function name: {func.__name__} could not be found")
