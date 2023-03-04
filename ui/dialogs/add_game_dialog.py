@@ -5,8 +5,9 @@ import aiohttp
 import wx
 import wxasync
 
-from ui.utils import TextCtrlStaticBox, show_error_message, ListCtrlPanel
 import lib.magnet_parser as mparser
+from ui.utils import TextCtrlStaticBox, show_error_message
+from ui.panels.listctrl_panel import ListCtrlPanel
 
 
 _Log = logging.getLogger()

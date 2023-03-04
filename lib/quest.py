@@ -64,7 +64,7 @@ class MonitorSelectedDevice(threading.Thread):
             )
             return True
         elif msg["request"] == "device-names-reset":
-            self._prev_device_names = []
+            self._prev_device_names.clear()
             return True
         else:
             return False
@@ -86,7 +86,8 @@ class MonitorSelectedDevice(threading.Thread):
                 # retrieved from get_device_names(). Also store a prev_device_names
                 # and compare prev_device_names to current_device_names using sets
                 device_names = self.get_device_names()
-                self._handle_device_names_changed(device_names)
+                if device_names is not None:
+                    self._handle_device_names_changed(device_names)
                 if not self.get_selected_device():
                     continue
                 if (

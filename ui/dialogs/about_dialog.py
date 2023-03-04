@@ -2,7 +2,7 @@ import wx
 
 import wxasync
 
-import lib.image_manager as img_mgr
+import ui.utils
 
 
 async def load_dialog(*args, **kwargs) -> bool:
@@ -27,7 +27,7 @@ class AboutDialog(wx.Dialog):
 
         self.panel = wx.Panel(self, -1)
 
-        self.bitmap = img_mgr.get_image("logo.png")
+        self.bitmap = ui.utils.get_image("logo.png")
         self.bitmap = wx.StaticBitmap(self.panel, -1, self.bitmap.ConvertToBitmap())
 
         self.app_name = wx.StaticText(self.panel, -1, app_name)

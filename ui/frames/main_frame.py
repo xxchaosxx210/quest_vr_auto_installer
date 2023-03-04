@@ -8,10 +8,10 @@ import wxasync
 
 import lib.config
 import lib.tasks as tasks
-import lib.image_manager as img_mgr
 import qvrapi.api as api
 import lib.debug
 import ui.utils
+import ui.paths
 from ui.panels.main_panel import MainPanel
 from ui.dialogs.install_progress_dialog import InstallProgressDialog
 from ui.dialogs.settings_dialog import SettingsDialog
@@ -50,7 +50,7 @@ class MainFrame(wx.Frame):
         self.statusbar.SetStatusWidths([-2, -1])
         self.SetStatusBar(self.statusbar)
         self._create_menubar()
-        self.SetIcon(wx.Icon(img_mgr.ICON_PATH))
+        self.SetIcon(wx.Icon(ui.paths.ICON_PATH))
 
     def __do_layout(self) -> None:
         """set up the layout for the main window"""

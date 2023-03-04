@@ -7,8 +7,9 @@ import wx
 from qvrapi.api import get_logs, ApiError, delete_logs
 from qvrapi.schemas import ErrorLog
 from lib.settings import Settings
-from ui.utils import ListCtrlPanel, show_error_message
+from ui.utils import show_error_message
 from ui.dialogs.log_info_dialog import LogInfoDialog
+from ui.panels.listctrl_panel import ListCtrlPanel
 from lib.utils import format_timestamp_to_str
 
 KEY_COLUMN = 0
