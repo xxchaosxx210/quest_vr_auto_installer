@@ -7,9 +7,13 @@ import wx
 import wxasync
 
 import lib.magnet_parser as mparser
+import lib.utils
+import deluge.utils as du
+import qvrapi.schemas as schemas
+import qvrapi.api as api
 from ui.utils import TextCtrlStaticBox, show_error_message
 from ui.panels.listctrl_panel import ListCtrlPanel
-import deluge.utils as du
+from lib.settings import Settings
 
 
 _Log = logging.getLogger()
@@ -171,6 +175,23 @@ class AddGameDlg(wx.Dialog):
             wx.EVT_BUTTON, self._on_magnet_get_click, self.mag_url_ctrl.button
         )
 
+    async def get_values_from_ui(self) -> schemas.Game:
+        """get the values from the ui and return them as a QuestMagnet object"""
+        b64str = lib.utils.encode_str2b64(self.magnet_url_box.get_text())
+        try:
+            game_request = schemas.Game(
+                name=self.torrent_name_box.get_text(),
+                display_name=self.display_name_box.get_text(),
+                magnet=b64str,
+                version=float(self.version_box.get_text()),
+                id=self.torrent_id_box.get_text(),
+                filesize=int(self.filesize_box.get_text()),
+                date_added=0.0,
+            )
+        except Exception as err:
+            pass
+        return game_request
+
     async def _on_magnet_get_click(self, evt: wx.CommandEvent) -> None:
         """
         user clicked on the get button in the magnet url control
@@ -237,12 +258,29 @@ class AddGameDlg(wx.Dialog):
 
     async def _on_save_button(self, evt: wx.CommandEvent) -> None:
         """user clicked on the save button"""
-        props = await self.get_values_from_ui()
-
-    async def get_values_from_ui(self) -> Dict[str, Any]:
-        """get the values from the UI controls and return them as a dict"""
-        props: Dict[str, Any] = {}
-        return props
+        magnet = await self.get_values_from_ui()
+        settings = Settings.load()
+        progress = wx.ProgressDialog(
+            "QuestCave Loading",
+            "Saving Magnet, Please wait...",
+            100,
+            self,
+            wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
+        )
+        progress.Pulse()
+        task = asyncio.create_task(api.add_game(settings.token, magnet))
+        try:
+            await asyncio.shield(task)
+        except asyncio.CancelledError:
+            pass
+        except api.ApiError as err:
+            show_error_message(err.__str__())
+        except Exception as err:
+            show_error_message("".join(err.args))
+        else:
+            wx.MessageBox("Magnet Saved", "QuestCave", wx.OK | wx.ICON_INFORMATION)
+        finally:
+            progress.Destroy()
 
     async def _on_weburlctrl_btn_click(self, evt: wx.CommandEvent) -> None:
         """

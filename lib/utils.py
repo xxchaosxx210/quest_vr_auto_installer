@@ -4,6 +4,7 @@ import ctypes
 import logging
 import platform
 import datetime
+import base64
 from typing import List, Generator
 from dataclasses import dataclass
 
@@ -204,3 +205,20 @@ def get_changed_properties(original: dict, new: dict) -> dict:
         if key in new and original[key] != new[key]:
             changed[key] = new[key]
     return changed
+
+
+def encode_str2b64(data: str) -> str:
+    """encode the string to base64 string
+
+    Args:
+        data (str): the string to encode
+
+    Returns:
+        str: the encoded string
+    """
+    # encode the decrpyted string back to bytes
+    byte_string = data.encode("utf-8")
+    # encode the encoded bytes back to base64 bytes
+    byte_b64string = base64.b64encode(byte_string)
+    # decode the base64 bytes back to a base64 readable str again
+    return byte_b64string.decode("utf-8")

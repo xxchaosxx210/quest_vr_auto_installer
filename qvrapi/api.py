@@ -46,6 +46,7 @@ URI_HOST = URI_LOCAL_HOST
 URI_GAMES = urljoin(URI_HOST, "/games")
 URI_SEARCH_GAME = URI_GAMES + "/search"
 URI_UPDATE_GAME = URI_GAMES + "/update"
+URI_ADD_GAME = URI_GAMES + "/add"
 URI_USERS = urljoin(URI_HOST, "/users")
 URI_LOGS = urljoin(URI_HOST, "/logs")
 URI_USERS_LOGIN = URI_USERS + "/token"
@@ -261,6 +262,28 @@ async def delete_logs(token: str, key: str) -> List[schemas.ErrorLog]:
             return error_logs
 
 
+async def add_game(token: str, data: schemas.QuestMagnet) -> None:
+    """adds a game to the database
+
+    Args:
+        token (str): admin token
+        magnet_data_request (schemas.QuestMagnet): the game data
+
+    Raises:
+        400 Bad Request: if game already exists
+    """
+    try:
+        await send_json_request(
+            uri=URI_ADD_GAME,
+            token=token,
+            _json=data.dict(),
+            request_type=RequestType.POST,
+        )
+    except Exception as err:
+        _Log.error(err.__str__())
+        raise err
+
+
 async def send_json_request(
     uri: str,
     token: str | None = None,
@@ -315,7 +338,7 @@ async def send_json_request(
                     status_code=response.status,
                     message=bytes_error_resp.decode("utf-8"),
                 )
-            if response.status != 200:
+            if response.status != 200 and response.status != 201:
                 json_error_data: Dict[str, str] = await response.json()
                 raise ApiError(
                     status_code=response.status, message=json_error_data["detail"]

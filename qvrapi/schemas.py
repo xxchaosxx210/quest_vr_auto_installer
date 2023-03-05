@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from uuid import UUID
 
 
-class QuestMagnet(BaseModel):
+class Game(BaseModel):
     name: str
     display_name: str
     magnet: str
@@ -13,6 +13,8 @@ class QuestMagnet(BaseModel):
     date_added: float
     id: str
 
+
+class QuestMagnet(Game):
     @property
     def uri(self) -> str:
         return self.magnet
