@@ -1,3 +1,4 @@
+import asyncio
 import logging
 from typing import List, Tuple
 
@@ -24,9 +25,7 @@ class ButtonTextCtrlStaticBox(TextCtrlStaticBox):
         btn_label: str,
     ):
         super().__init__(parent, texctrl_value, textctrl_style, label)
-
         self.button = wx.Button(self, -1, btn_label)
-
         self.sizer.Add(self.button, 0, wx.EXPAND | wx.ALL, 0)
 
 
@@ -41,6 +40,8 @@ class TorrentFilesStaticBox(wx.StaticBox):
 
 
 class AddGameDlg(wx.Dialog):
+    MAGNET_INFO_TIMEOUT: int = 10
+
     def __init__(
         self,
         parent: wx.Frame,
@@ -171,64 +172,61 @@ class AddGameDlg(wx.Dialog):
         )
 
     async def _on_magnet_get_click(self, evt: wx.CommandEvent) -> None:
-        """get the magnet link from the magnet url text control
+        """
+        user clicked on the get button in the magnet url control
 
         Args:
             evt (wx.CommandEvent): event is never used
         """
-        # get the url from the textctrl and check if it is a valid magnet link
         url = self.mag_url_ctrl.get_text()
+        # make sure the url is a valid magnet link
         match = mparser.MAG_LINK_PATTERN.match(url)
         if match is None:
             show_error_message("Invalid Magnet. Please a correct Magnet link")
             return
-        # get the magnet info
-        info_wait_timeout = 10
-        progress = wx.ProgressDialog(
-            "Getting Magnet Info",
-            f"Please wait...{info_wait_timeout} second timeout",
-            100,
-            self,
-            wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
-        )
-        progress.Pulse()
-        try:
-            meta_data = await du.get_magnet_info(url, info_wait_timeout)
-        except Exception as e:
-            estr = "".join(e.args)
-            show_error_message(estr)
-            progress.Destroy()
-            return
-        progress.Destroy()
-        try:
-            self.add_magnet_data_to_ui(url, meta_data)
-        except Exception as err:
-            pass
+        await self.process_metadata_from_magnet(magnet_link=url)
 
     async def _on_double_click_magnet(self, evt: wx.ListEvent) -> None:
-        # yet to be implemented
+        """user double clicked on a magnet link in the magnet list control"""
         index = evt.GetIndex()
         if index < 0:
             return
         magnet_link = self.mag_list_pnl.listctrl.GetItem(index, 0).GetText()
+        await self.process_metadata_from_magnet(magnet_link=magnet_link)
+
+    async def process_metadata_from_magnet(self, magnet_link: str) -> None:
+        """process the magnet link and get the metadata. Handle any errors
+
+        this function uses a shielded task to prevent the task from being cancelled.
+        so no timeout set. However the timeout is set in the get_magnet_info function
+
+        Args:
+            magnet_link (str): the magnet link to get the meta data from
+        """
         progress = wx.ProgressDialog(
-            "Getting Magnet Info",
-            "Please wait...5 second timeout",
+            "QuestCave Loading",
+            f"Getting Magnet Info, Please wait...{AddGameDlg.MAGNET_INFO_TIMEOUT} second timeout",
             100,
             self,
             wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
         )
         progress.Pulse()
+        task = asyncio.create_task(
+            du.get_magnet_info(magnet_link, AddGameDlg.MAGNET_INFO_TIMEOUT)
+        )
+        # wait for the task to complete
+        # handle any errors
         try:
-            meta_data = await du.get_magnet_info(magnet_link, 5)
-        except Exception as e:
-            estr = "".join(e.args)
-            show_error_message(estr)
+            meta_data = await asyncio.shield(task)
+        except asyncio.CancelledError:
+            pass
+        except Exception as err:
+            show_error_message("".join(err.args))
+        else:
+            self.mag_url_ctrl.set_text(magnet_link)
+            self.add_magnet_data_to_ui(magnet_link, meta_data)
+        finally:
             progress.Destroy()
-            return
-        self.mag_url_ctrl.set_text(magnet_link)
-        progress.Destroy()
-        self.add_magnet_data_to_ui(magnet_link, meta_data)
 
     async def _on_close_or_save_button(self, evt: wx.CommandEvent) -> None:
         btn_id = evt.GetId()

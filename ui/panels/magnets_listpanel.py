@@ -404,7 +404,6 @@ class MagnetsListPanel(ListCtrlPanel):
             except Exception as err:
                 self.app.exception_handler(err)
             else:
-                progress.Hide()
                 load_info_dialog(meta_data)
             finally:
                 progress.Destroy()
