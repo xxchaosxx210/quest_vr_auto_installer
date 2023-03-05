@@ -121,21 +121,11 @@ class MainFrame(wx.Frame):
     def _on_disconnect_device(self, evt: wx.MenuEvent) -> None:
         if not self.app.debug_mode:
             return
+        # get the selected device from the background thread
         device_name = self.app.monitoring_device_thread.get_selected_device()
-        if not device_name:
-            return
-        try:
-            index = lib.debug.get_index_by_device_name(
-                lib.debug.fake_quests, device_name
-            )
-            if index is None:
-                raise ValueError("No name matching")
-        except ValueError:
-            _Log.error(f"Device {device_name} not found in fake_quests")
-            return
-        else:
-            # this will cause the device to be disconnected
-            lib.debug.fake_quests.pop(index)
+        # check if the device is connected and remove it
+        if device_name and not lib.debug.FakeQuest.remove_device(device_name):
+            _Log.error(f"Failed to remove device {device_name}. Reason: Not found")
 
     def _create_user_menu(self) -> wx.Menu:
         settings = Settings.load()

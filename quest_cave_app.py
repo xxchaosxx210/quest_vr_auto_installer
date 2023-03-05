@@ -295,6 +295,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                 await debug.simulate_game_install(
                     callback=self.on_install_update,
                     device_name=self.monitoring_device_thread.get_selected_device(),
+                    fake_quests=debug.FakeQuest.devices,
                     apk_dir=apk_path,
                     raise_exception=None,
                 )

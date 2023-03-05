@@ -9,10 +9,23 @@ import lib.debug as debug
 class AddFakeDeviceDialog(wx.Dialog):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
+
+        self._do_properties()
+        self._create_controls()
+        self._do_layout()
+        self._bind_events()
+
+    def _do_properties(self) -> None:
         self.SetTitle("Add Fake Device")
         self.SetSize((300, 300))
 
-        # create the controls
+    def _bind_events(self) -> None:
+        self.Bind(wx.EVT_BUTTON, self.on_add_button_click, self.add_button)
+        self.Bind(wx.EVT_BUTTON, self.on_gen_quest_button_click, self.gen_quest_button)
+        self.Bind(wx.EVT_BUTTON, self.on_ok_button_click, self.ok_button)
+        self.Bind(wx.EVT_BUTTON, self.on_cancel_button_click, self.cancel_button)
+
+    def _create_controls(self) -> None:
         self.device_name_textctrl = wx.TextCtrl(self, -1, "")
         self.package_name_textctrl = wx.TextCtrl(self, -1, "")
         self.package_name_listbox = wx.ListBox(self, -1, size=(400, 100))
@@ -21,7 +34,7 @@ class AddFakeDeviceDialog(wx.Dialog):
         self.ok_button = wx.Button(self, -1, "OK")
         self.cancel_button = wx.Button(self, -1, "Cancel")
 
-        # create the sizers
+    def _do_layout(self) -> None:
         self.main_sizer = wx.BoxSizer(wx.VERTICAL)
         self.device_name_sizer = wx.StaticBoxSizer(
             wx.HORIZONTAL, self, label="Device Name"
@@ -52,12 +65,6 @@ class AddFakeDeviceDialog(wx.Dialog):
         # set the main sizer
         self.SetSizer(self.main_sizer)
 
-        # bind the controls
-        self.Bind(wx.EVT_BUTTON, self.on_add_button_click, self.add_button)
-        self.Bind(wx.EVT_BUTTON, self.on_gen_quest_button_click, self.gen_quest_button)
-        self.Bind(wx.EVT_BUTTON, self.on_ok_button_click, self.ok_button)
-        self.Bind(wx.EVT_BUTTON, self.on_cancel_button_click, self.cancel_button)
-
     def on_add_button_click(self, event: wx.CommandEvent) -> None:
         package_name = self.package_name_textctrl.GetValue()
         self.package_name_listbox.Append(package_name)
@@ -75,29 +82,16 @@ class AddFakeDeviceDialog(wx.Dialog):
         Args:
             event (wx.CommandEvent):
         """
-        prefix = 1
-        while True:
-            # append a number to the end of the device name if it already exists
-            device_name = f"QUEST{prefix}"
-            try:
-                debug.get_device(debug.fake_quests, device_name)
-            except LookupError:
-                break
-            prefix += 1
-
-        self.device_name_textctrl.SetValue(device_name)
+        # get the global fake quest list
+        quests = debug.FakeQuest.devices
+        # generate a random device name
+        name = debug.FakeQuest.generate_random_device_name(quests)
+        # generate a random list of package names
+        packages = debug.FakeQuest.generate_random_packages()
+        # set the values in the dialog
+        self.device_name_textctrl.SetValue(name)
         self.package_name_listbox.Clear()
-        self.package_name_listbox.AppendItems(
-            self.generate_random_package_names(random.randint(1, 10))
-        )
-        self.on_ok_button_click(event)
-
-    def generate_random_package_names(self, num: int) -> List[str]:
-        """generates a list of random package names"""
-        package_names = []
-        for i in range(num):
-            package_names.append(f"com.oculus.fakeapp{i}")
-        return package_names
+        self.package_name_listbox.AppendItems(packages)
 
     def get_values_from_dialog(self) -> Tuple[str, List[str]]:
         """gets the device_name and package_names list from the dialog

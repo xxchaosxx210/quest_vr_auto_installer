@@ -127,7 +127,7 @@ class MonitorSelectedDevice(threading.Thread):
         """
         device_names: List[str] | None = None
         if self._debug_mode:
-            device_names = debug.get_device_names(debug.fake_quests)
+            device_names = debug.get_device_names(debug.FakeQuest.devices)
             return device_names
         try:
             device_names = adb_interface.get_device_names()

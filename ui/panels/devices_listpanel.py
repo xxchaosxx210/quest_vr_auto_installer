@@ -55,19 +55,23 @@ class DevicesListPanel(ListCtrlPanel):
             self.bitmap_buttons["remove"] = ui.utils.create_bitmap_button(
                 "uninstall.png", "Remove Fake Device", button_panel, size=(24, 24)
             )
+            self.bitmap_buttons["random-generate"] = ui.utils.create_bitmap_button(
+                "random.png", "Random Generate", button_panel, size=(24, 24)
+            )
             self.bitmap_buttons["add"] = ui.utils.create_bitmap_button(
                 "add.png", "Add Fake Device", button_panel, size=(24, 24)
             )
             self.Bind(wx.EVT_BUTTON, self.dbg_add_device, self.bitmap_buttons["add"])
             self.Bind(
                 wx.EVT_BUTTON,
+                self.dbg_random_generate,
+                self.bitmap_buttons["random-generate"],
+            )
+            self.Bind(
+                wx.EVT_BUTTON,
                 self.dbg_remove_device,
                 self.bitmap_buttons["remove"],
             )
-        self.bitmap_buttons["refresh"] = ui.utils.create_bitmap_button(
-            "refresh.png", "Refresh Games List", button_panel, size=(24, 24)
-        )
-        self.Bind(wx.EVT_BUTTON, self.on_refresh_click, self.bitmap_buttons["refresh"])
 
         hbox_btns = ListCtrlPanel.create_bitmap_button_sizer(
             self.bitmap_buttons, border=10
@@ -75,16 +79,34 @@ class DevicesListPanel(ListCtrlPanel):
         button_panel.SetSizer(hbox_btns)
         return button_panel
 
+    def dbg_random_generate(self, evt: wx.CommandEvent) -> None:
+        """randomly generate a fake device and add it to the list
+
+        Args:
+            evt (wx.CommandEvent): not used
+        """
+        # get the fake quests from the debug module
+        quests = debug.FakeQuest.devices
+        # generate a random device name
+        name = debug.FakeQuest.generate_random_device_name(quests)
+        # generate a random list of packages
+        packages = debug.FakeQuest.generate_random_packages()
+        # add the device to the debug module
+        debug.FakeQuest.add_device(name, packages)
+        # reload the device list
+        lib.tasks.check_task_and_create(self.load)
+
     def dbg_remove_device(self, evt: wx.CommandEvent) -> None:
+        """remove a fake device from the list"""
         index = self.listctrl.GetFirstSelected()
         if index == -1:
             return
         device_name = self.listctrl.GetItem(index, 0).GetText()
-        index = debug.get_index_by_device_name(debug.fake_quests, device_name)
+        index = debug.get_index_by_device_name(debug.FakeQuest.devices, device_name)
         if index is None:
-            _Log.info("device not found in debug.fake_quests")
+            _Log.info("device not found in debug.FakeQuest.devices")
             return
-        debug.fake_quests.pop(index)
+        debug.FakeQuest.devices.pop(index)
 
     def dbg_add_device(self, evt: wx.CommandEvent) -> None:
         """add a fake device to the device list"""
@@ -93,12 +115,8 @@ class DevicesListPanel(ListCtrlPanel):
             result = dialog.ShowModal()
             if result == wx.ID_OK:
                 device_name, package_names = dialog.get_values_from_dialog()
-                debug.fake_quests.append(debug.FakeQuest(device_name, package_names))
+                debug.FakeQuest.add_device(device_name, package_names)
             lib.tasks.check_task_and_create(self.load)
-
-    def on_refresh_click(self, evt: wx.CommandEvent) -> None:
-        """reload the device list from ADB daemon"""
-        lib.tasks.check_task_and_create(self.load)
 
     async def _get_device_names(self) -> List[str]:
         """loads device names either from debug settings or ADB
@@ -109,7 +127,7 @@ class DevicesListPanel(ListCtrlPanel):
             List[str]: list of device names if found
         """
         if self.app.debug_mode:
-            device_names = debug.get_device_names(debug.fake_quests)
+            device_names = debug.get_device_names(debug.FakeQuest.devices)
         else:
             device_names = await adb_interface.async_get_device_names()
         return device_names

@@ -62,7 +62,7 @@ class InstalledListPanel(ListCtrlPanel):
             return
         if self.app.debug_mode:
             try:
-                fake_quest = debug.get_device(debug.fake_quests, device_name)
+                fake_quest = debug.get_device(debug.FakeQuest.devices, device_name)
             except LookupError:
                 _Log.error(f"No device found with name {device_name}")
                 return

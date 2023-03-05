@@ -14,6 +14,9 @@ MIN_DOWNLOAD_SPEED = 2500000.0
 
 
 class FakeQuest:
+    # global list of fake quests. Use it in the app
+    devices: List["FakeQuest"] = []
+
     def __init__(self, name: str, package_names: List[str]) -> None:
         """holds the name and package names of a fake quest2 device
 
@@ -24,16 +27,79 @@ class FakeQuest:
         self.name = name
         self.package_names = package_names
 
+    @staticmethod
+    def remove_device(name: str) -> bool:
+        """remove a fake quest device from the global list
 
-fake_quests: List[FakeQuest] = [
-    FakeQuest("QUEST1", ["com.fake.MarioKart"]),
-    FakeQuest("QUEST2", ["com.fake.Zelda", "org.com.F1"]),
-]
+        Args:
+            name (str): the name of the fake quest
+
+            Returns:
+                bool: True if the device was removed, False if it was not found
+        """
+        index = get_index_by_device_name(FakeQuest.devices, name)
+        if index is None:
+            return False
+        FakeQuest.devices.pop(index)
+        return True
+
+    @staticmethod
+    def add_device(name: str, packages: List[str]) -> None:
+        """add a fake quest device to the global list
+
+        Args:
+            name (str): the name of the fake quest
+            packages (List[str]): list of package names that will be on the fake quest
+        """
+        FakeQuest.devices.append(FakeQuest(name, packages))
+
+    @staticmethod
+    def generate_random_packages(max_packages: int = 50) -> List[str]:
+        """generates a list of random package names
+
+        Args:
+            max_packages (int): the max number of packages to generate. Defaults to 50.
+
+        Returns:
+            List[str]: list of randomly generated package names
+        """
+        package_names = list(
+            map(
+                lambda x: f"com.oculus.fakeapp{x}",
+                range(random.randint(1, max_packages)),
+            )
+        )
+        return package_names
+
+    @staticmethod
+    def generate_random_device_name(
+        fake_quests: List["FakeQuest"], suffix_name: str = "QUEST"
+    ) -> str:
+        """generates a random device name
+
+        Args:
+            fake_quests (List[FakeQuest]): list of fake quests to check against
+            suffix_name (str, optional): the suffix to append to the beginning of the device name. Defaults to "QUEST".
+
+        Returns:
+            str: the random device name
+        """
+        prefix = 1
+        while True:
+            # append a number to the end of the device name if it already exists
+            device_name = f"{suffix_name}-{prefix}"
+            try:
+                get_device(fake_quests, device_name)
+            except LookupError:
+                break
+            prefix += 1
+        return device_name
 
 
 async def simulate_game_install(
     callback: lib.quest.InstallStatusFunction,
     device_name: str,
+    fake_quests: List[FakeQuest],
     apk_dir: lib.utils.ApkPath,
     raise_exception: Exception | None = None,
 ) -> None:
@@ -42,6 +108,7 @@ async def simulate_game_install(
     Args:
         callback (InstallStatusFunction): the callback to recieve updates to
         device_name (str): the name of the selected to device to install to
+        fake_quests (List[FakeQuest]): list of fake quests to check against
         apk_dir (ApkPath): contains the apk file path, subpaths and subfiles to be pushed onto the remote device
         raise_exception (Exception, optional): if not None, will raise the exception. Defaults to None.
 
@@ -169,7 +236,7 @@ def get_device_names(quests: List[FakeQuest]) -> List[str]:
     return quest_names
 
 
-def get_index_by_device_name(quests: List[FakeQuest], name: str) -> int | None:
+def get_index_by_device_name(fake_quests: List[FakeQuest], name: str) -> int | None:
     """finds the index of the name in the list of fake_quests
 
     Args:

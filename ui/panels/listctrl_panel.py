@@ -29,7 +29,7 @@ class CustomListCtrl(wx.ListCtrl):
         """
         super().__init__(parent=parent, id=id, style=style)
         self._toggle_col = toggle_col
-        self._cols_toggle_state = []
+        self._cols_toggle_state: List[bool] = []
         self._columns = columns
         self._bind_events()
 
