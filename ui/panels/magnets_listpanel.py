@@ -13,9 +13,9 @@ import lib.tasks
 import ui.utils
 import lib.api_handler
 from deluge.handler import MagnetData, QueueRequest
-from ui.dialogs.extra_game_info_dialog import ExtraGameInfoDialog
+from ui.dialogs.extra_game_info import ExtraGameInfoDlg
 from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
-from ui.dialogs.update_magnet_dialog import load_dialog as load_update_magnet_dialog
+from ui.dialogs.update_magnet import load_dialog as load_update_magnet_dialog
 from qvrapi.schemas import QuestMagnet
 from lib.settings import Settings
 
@@ -415,7 +415,7 @@ class MagnetsListPanel(ListCtrlPanel):
             Args:
                 metadata (deluge_utils.MetaData): the meta data to display in the dialog box
             """
-            dlg = ExtraGameInfoDialog(self.app.frame, size=(640, 480))
+            dlg = ExtraGameInfoDlg(self.app.frame, size=(640, 480))
             dlg.set_name(metadata.name)
             dlg.set_paths(metadata.get_paths())
             dlg.ShowModal()

@@ -6,7 +6,7 @@ from lib.utils import format_timestamp_to_str
 from ui.utils import TextCtrlStaticBox
 
 
-class LogInfoDialog(wx.Dialog):
+class LogInfoDlg(wx.Dialog):
     def __init__(
         self, parent: wx.Frame, log: ErrorLog, size: Tuple[int, int], style: int
     ):

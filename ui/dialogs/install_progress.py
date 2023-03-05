@@ -1,7 +1,7 @@
 import wx
 
 
-class InstallProgressDialog(wx.Dialog):
+class InstallProgressDlg(wx.Dialog):
     def __init__(self, parent: wx.Frame):
         from quest_cave_app import QuestCaveApp
 

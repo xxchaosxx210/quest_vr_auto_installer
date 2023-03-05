@@ -23,9 +23,9 @@ from lib.settings import Settings
 from ui.frames.main_frame import MainFrame
 from ui.panels.installed_listpanel import InstalledListPanel
 from ui.panels.magnets_listpanel import MagnetsListPanel
-from ui.dialogs.error_dialog import ErrorDialog
-from ui.dialogs.install_progress_dialog import InstallProgressDialog
-import ui.dialogs.device_list_dialog as dld
+from ui.dialogs.error import ErrorDlg
+from ui.dialogs.install_progress import InstallProgressDlg
+import ui.dialogs.device_list as dld
 
 
 _Log = logging.getLogger()
@@ -35,7 +35,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
     # global wxwindow instances
     magnets_listpanel: MagnetsListPanel | None = None
     install_listpanel: InstalledListPanel | None = None
-    install_dialog: InstallProgressDialog | None = None
+    install_dialog: InstallProgressDlg | None = None
 
     # store the global settings
     settings: Settings | None = None
@@ -84,7 +84,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         elif event["event"] == "error":
             wx.CallAfter(self.exception_handler, err=event["exception"])
         elif event["event"] == "device-names-changed":
-            dialog: dld.DeviceListDialog | None = dld.DeviceListDialog.instance
+            dialog: dld.DeviceListDlg | None = dld.DeviceListDlg.instance
             if dialog is not None and dialog.IsShown():
                 _Log.info(event["device-names"])
                 dialog.device_listpanel.load_listctrl(event["device-names"])
@@ -168,14 +168,14 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             error_message = f"{err.message}\n\nCode: {err.status_code}"
         else:
             error_message = err.__str__()
-        dialog = ErrorDialog(
+        dialog = ErrorDlg(
             self.frame,
             "There was an error!!",
             error_message,
             err=err,
             disable_send=False,
         )
-        with ErrorDialog(
+        with ErrorDlg(
             parent=self.frame,
             title="There was an error!!",
             message=error_message,
@@ -282,7 +282,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
 
         # show the progress dialog. i might change this to a wx.ProgressDialog
 
-        self.install_dialog = InstallProgressDialog(self.frame)
+        self.install_dialog = InstallProgressDlg(self.frame)
         self.install_dialog.Show()
 
         if not self.monitoring_device_thread.get_selected_device():

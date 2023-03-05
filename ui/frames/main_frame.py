@@ -13,14 +13,14 @@ import lib.debug
 import ui.utils
 import ui.paths
 from ui.panels.main_panel import MainPanel
-from ui.dialogs.install_progress_dialog import InstallProgressDialog
-from ui.dialogs.settings_dialog import SettingsDialog
-from ui.dialogs.find_text_dialog import FindTextDialog
-from ui.dialogs.login_dialog import LoginDialog
-from ui.dialogs.user_info_dialog import UserInfoDialog
-from ui.dialogs.add_game_dialog import AddGameDialog
-from ui.dialogs.about_dialog import load_dialog as load_about_dialog
-from ui.dialogs.device_list_dialog import open_device_selection_dialog
+from ui.dialogs.install_progress import InstallProgressDlg
+from ui.dialogs.settings import SettingsDlg
+from ui.dialogs.find_text import FindTextDlg
+from ui.dialogs.login import LoginDlg
+from ui.dialogs.user_info import UserInfoDlg
+from ui.dialogs.add_game import AddGameDlg
+from ui.dialogs.about import load_dialog as load_about_dialog
+from ui.dialogs.device_list import open_device_selection_dialog
 from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
 
@@ -184,7 +184,7 @@ class MainFrame(wx.Frame):
             )
 
         async def open_dialog():
-            dlg = AddGameDialog(self, wx.ID_ANY, "Add Game", (640, 640))
+            dlg = AddGameDlg(self, wx.ID_ANY, "Add Game", (640, 640))
             result_code = await wxasync.AsyncShowDialog(dlg)
             if result_code == wx.ID_SAVE:
                 # save game to database
@@ -247,7 +247,7 @@ class MainFrame(wx.Frame):
             except ClientConnectionError as err:
                 self.app.exception_handler(err)
             else:
-                with UserInfoDialog(parent=self, size=(500, -1), user=user) as dlg:
+                with UserInfoDlg(parent=self, size=(500, -1), user=user) as dlg:
                     dlg.ShowModal()
             finally:
                 return
@@ -266,7 +266,7 @@ class MainFrame(wx.Frame):
             evt (wx.MenuEvent): Not used
         """
         settings = Settings.load()
-        with LoginDialog(
+        with LoginDlg(
             parent=self,
             title="Login",
             email_field=settings.get_user_email(),
@@ -290,7 +290,7 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.MenuEvent): Not used
         """
-        dlg = FindTextDialog(
+        dlg = FindTextDlg(
             parent=self,
             label="Enter name of Game",
             title="",
@@ -323,7 +323,7 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.MenuEvent): Not needed
         """
-        dlg = SettingsDialog(self, "Settings", (500, 600))
+        dlg = SettingsDlg(self, "Settings", (500, 600))
         if dlg.ShowModal() == wx.ID_OK:
             dlg.save_from_controls()
         dlg.Destroy()
@@ -334,7 +334,7 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.MenuEvent):
         """
-        dlg = InstallProgressDialog(self)
+        dlg = InstallProgressDlg(self)
         dlg.Show()
 
     def on_show(self, evt: wx.ShowEvent) -> None:

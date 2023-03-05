@@ -1,7 +1,7 @@
 import wx
 
 
-class ErrorDialog(wx.Dialog):
+class ErrorDlg(wx.Dialog):
     def __init__(
         self,
         parent: wx.Frame,

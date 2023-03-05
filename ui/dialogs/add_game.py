@@ -29,7 +29,7 @@ class ButtonTextCtrlStaticBox(TextCtrlStaticBox):
         self.sizer.Add(self.button, 0, wx.EXPAND | wx.ALL, 0)
 
 
-class AddGameDialog(wx.Dialog):
+class AddGameDlg(wx.Dialog):
     def __init__(
         self,
         parent: wx.Frame,

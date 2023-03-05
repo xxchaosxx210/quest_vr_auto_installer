@@ -16,7 +16,7 @@ class GridInfoPanel(wx.Panel):
         self.SetSizerAndFit(gs)
 
 
-class ExtraGameInfoDialog(wx.Dialog):
+class ExtraGameInfoDlg(wx.Dialog):
     def __init__(self, parent: wx.Window, size: Tuple[int, int]) -> None:
         super().__init__(parent, title="Extra Game Info", size=size)
 

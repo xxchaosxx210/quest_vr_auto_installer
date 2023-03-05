@@ -6,12 +6,12 @@ import ui.utils
 
 
 async def load_dialog(*args, **kwargs) -> bool:
-    dlg = AboutDialog(*args, **kwargs)
+    dlg = AboutDlg(*args, **kwargs)
     result = await wxasync.AsyncShowDialogModal(dlg)
     return result
 
 
-class AboutDialog(wx.Dialog):
+class AboutDlg(wx.Dialog):
     def __init__(
         self,
         parent: wx.Window,

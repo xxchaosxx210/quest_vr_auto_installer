@@ -13,7 +13,7 @@ from lib.utils import format_timestamp_to_str, get_changed_properties
 
 
 async def load_dialog(parent: wx.Frame, title: str, magnet: QuestMagnetWithKey) -> int:
-    dlg = MagnetUpdateDialog(
+    dlg = MagnetUpdateDlg(
         parent=parent,
         title=title,
         style=wx.RESIZE_BORDER | wx.MAXIMIZE_BOX | wx.MINIMIZE_BOX,
@@ -24,7 +24,7 @@ async def load_dialog(parent: wx.Frame, title: str, magnet: QuestMagnetWithKey) 
     return result
 
 
-class MagnetUpdateDialog(wx.Dialog):
+class MagnetUpdateDlg(wx.Dialog):
     def __init__(
         self,
         parent: wx.Frame,

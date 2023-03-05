@@ -13,7 +13,7 @@ from ui.utils import TextCtrlStaticBox
 _Log = logging.getLogger(__name__)
 
 
-class LoginDialog(wx.Dialog):
+class LoginDlg(wx.Dialog):
     def __init__(self, email_field: str, *args, **kw):
         super().__init__(*args, **kw)
 

@@ -9,7 +9,7 @@ import lib.tasks
 import lib.debug as debug
 from adblib import adb_interface
 from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
-from ui.dialogs.add_fake_device_dialog import AddFakeDeviceDialog
+from ui.dialogs.fake_device import FakeDeviceDlg
 
 
 _Log = logging.getLogger()
@@ -111,7 +111,7 @@ class DevicesListPanel(ListCtrlPanel):
     def dbg_add_device(self, evt: wx.CommandEvent) -> None:
         """add a fake device to the device list"""
 
-        with AddFakeDeviceDialog(self) as dialog:
+        with FakeDeviceDlg(self) as dialog:
             result = dialog.ShowModal()
             if result == wx.ID_OK:
                 device_name, package_names = dialog.get_values_from_dialog()

@@ -6,7 +6,7 @@ import wx
 import lib.debug as debug
 
 
-class AddFakeDeviceDialog(wx.Dialog):
+class FakeDeviceDlg(wx.Dialog):
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
 

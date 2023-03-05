@@ -43,7 +43,7 @@ class DownloadPathPanel(wx.Panel):
                 self.downloadctrl.SetValue(dlg.GetPath())
 
 
-class SettingsDialog(wx.Dialog):
+class SettingsDlg(wx.Dialog):
     def __init__(self, parent: wx.Frame, title: str, size: Tuple[int, int]):
         super().__init__(parent, title=title, size=size)
 

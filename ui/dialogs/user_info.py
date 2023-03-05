@@ -5,7 +5,7 @@ from lib.utils import format_timestamp_to_str
 from qvrapi.api import get_account_type
 
 
-class UserInfoDialog(wx.Dialog):
+class UserInfoDlg(wx.Dialog):
     def __init__(self, user: User, *args, **kw):
         super().__init__(*args, **kw)
 

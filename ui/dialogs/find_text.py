@@ -1,7 +1,7 @@
 import wx
 
 
-class FindTextDialog(wx.Dialog):
+class FindTextDlg(wx.Dialog):
     def __init__(self, label: str, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
