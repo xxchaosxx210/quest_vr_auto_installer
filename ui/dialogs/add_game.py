@@ -40,6 +40,14 @@ class AddGameDlg(wx.Dialog):
     ):
         super().__init__(parent=parent, id=id, title=title, style=style)
 
+        self._do_controls()
+        self._do_laylout()
+        self._do_events()
+        self.SetSize(size)
+        self.CenterOnParent()
+
+    def _do_controls(self) -> None:
+        # Random URL magnet link search textbox
         self.web_url_ctrl = ButtonTextCtrlStaticBox(
             self, "", wx.TE_NO_VSCROLL, "Search for Magnet Links from Web Url", "Search"
         )
@@ -47,6 +55,7 @@ class AddGameDlg(wx.Dialog):
             wx.EVT_BUTTON, self._on_weburlctrl_btn_click, self.web_url_ctrl.button
         )
 
+        # Magnet links list
         self.mag_list_pnl = ListCtrlPanel(
             self,
             None,
@@ -59,26 +68,25 @@ class AddGameDlg(wx.Dialog):
             self.mag_list_pnl.listctrl,
         )
 
+        # Add a magnet manually textctrl and button
         self.mag_url_ctrl = ButtonTextCtrlStaticBox(
             self, "", wx.TE_NO_VSCROLL, "Add Magnet", "Get"
         )
 
+        # Torrent files found from magnet link lookup
         self.file_paths_lst_pnl = ListCtrlPanel(
             self,
             "Torrent File Paths",
             [{"col": 0, "heading": "Path", "width": 100}],
             toggle_col=False,
         )
+        self.save_btn = wx.Button(self, wx.ID_SAVE, "Save")
+        self.close_btn = wx.Button(self, wx.ID_CLOSE, "Close")
 
-        save_btn = wx.Button(self, wx.ID_SAVE, "Save")
-        close_btn = wx.Button(self, wx.ID_CLOSE, "Close")
-
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_or_save_button, save_btn)
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_or_save_button, close_btn)
-
+    def _do_laylout(self) -> None:
         hbox_btns = wx.BoxSizer(wx.HORIZONTAL)
-        hbox_btns.Add(save_btn, 0, wx.EXPAND, 0)
-        hbox_btns.Add(close_btn, 0, wx.EXPAND, 0)
+        hbox_btns.Add(self.save_btn, 0, wx.EXPAND, 0)
+        hbox_btns.Add(self.close_btn, 0, wx.EXPAND, 0)
 
         hbox_mag_listpanel = wx.BoxSizer(wx.HORIZONTAL)
         hbox_mag_listpanel.Add(self.mag_list_pnl, 1, wx.ALL | wx.EXPAND, 0)
@@ -92,10 +100,12 @@ class AddGameDlg(wx.Dialog):
         vbox.AddSpacer(10)
         self.SetSizerAndFit(vbox)
 
-        self.SetSize(size)
-        self.CenterOnParent()
+    def _do_events(self) -> None:
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_or_save_button, self.save_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_or_save_button, self.close_btn)
 
     async def _on_double_click_magnet(self, evt: wx.ListEvent) -> None:
+        # yet to be implemented
         _Log.info("List Item Double Clicked")
 
     async def _on_close_or_save_button(self, evt: wx.CommandEvent) -> None:
@@ -106,6 +116,10 @@ class AddGameDlg(wx.Dialog):
             self.Destroy()
 
     async def _on_weburlctrl_btn_click(self, evt: wx.CommandEvent) -> None:
+        """
+        Search for magnet links from a web url
+        This is just a simple 1 page web scrape
+        """
         btn: wx.Button = evt.GetEventObject()
         wx.CallAfter(btn.Enable, enable=False)
         url = self.web_url_ctrl.get_text()
@@ -118,6 +132,17 @@ class AddGameDlg(wx.Dialog):
         wx.CallAfter(btn.Enable, enable=True)
 
     async def get_magnets(self, url: str) -> List[str]:
+        """simple web request and parse the HTML looking for magnet links
+
+        Args:
+            url (str): the url to search for magnet links
+
+        Raises:
+            Exception: any exception that is not handled
+
+        Returns:
+            List[str]: list of magnet links
+        """
         try:
             html = await mparser.MagnetParser.get_html(url)
             parser = mparser.MagnetParser()
