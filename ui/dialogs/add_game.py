@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import aiohttp
 import wx
@@ -157,8 +157,8 @@ class AddGameDlg(wx.Dialog):
         self.SetSizerAndFit(dialog_vbox)
 
     def _do_events(self) -> None:
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_or_save_button, self.save_btn)
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_or_save_button, self.close_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_save_button, self.save_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_button, self.close_btn)
         wxasync.AsyncBind(
             wx.EVT_BUTTON, self._on_weburlctrl_btn_click, self.web_url_ctrl.button
         )
@@ -228,12 +228,21 @@ class AddGameDlg(wx.Dialog):
         finally:
             progress.Destroy()
 
-    async def _on_close_or_save_button(self, evt: wx.CommandEvent) -> None:
+    async def _on_close_button(self, evt: wx.CommandEvent) -> None:
         btn_id = evt.GetId()
         if self.IsModal():
             self.EndModal(btn_id)
         else:
             self.Destroy()
+
+    async def _on_save_button(self, evt: wx.CommandEvent) -> None:
+        """user clicked on the save button"""
+        props = await self.get_values_from_ui()
+
+    async def get_values_from_ui(self) -> Dict[str, Any]:
+        """get the values from the UI controls and return them as a dict"""
+        props: Dict[str, Any] = {}
+        return props
 
     async def _on_weburlctrl_btn_click(self, evt: wx.CommandEvent) -> None:
         """
