@@ -43,21 +43,10 @@ class QuestCaveApp(wxasync.WxAsyncApp):
     # online mode flag
     online_mode: bool = False
 
-    # debug mode
+    # global debug mode flag
     debug_mode: bool = False
-
-    # skip loading daemons and loading dialogs. This is to test the admin controls
+    # gloabl skip flag
     skip: bool = False
-
-    def __init__(self, debug_mode: bool, skip: bool, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.debug_mode = debug_mode
-        self.skip = skip
-        if not self.skip:
-            self.monitoring_device_thread = lib.quest.MonitorSelectedDevice(
-                callback=self.on_device_event, debug_mode=self.debug_mode
-            )
-            self.monitoring_device_thread.start()
 
     def on_device_event(self, event: dict) -> None:
         """handles the device events. Update GUI
@@ -152,6 +141,12 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         """
         self.statusbar.SetStatusText(text=text)
 
+    @staticmethod
+    def init_global_options(debug: bool, skip: bool) -> None:
+        """sets the global debug and skip flags"""
+        QuestCaveApp.debug_mode = debug
+        QuestCaveApp.skip = skip
+
     def OnInit(self) -> bool:
         """app has loaded create the main frame
 
@@ -161,6 +156,11 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         self.title = f"{config.APP_NAME} - version {config.APP_VERSION}"
         self.frame: MainFrame = MainFrame(parent=None, id=-1, title=self.title)
         self.frame.Show()
+        if not self.skip:
+            self.monitoring_device_thread = lib.quest.MonitorSelectedDevice(
+                callback=self.on_device_event, debug_mode=self.debug_mode
+            )
+            self.monitoring_device_thread.start()
         return super().OnInit()
 
     def exception_handler(self, err: Exception) -> None:
@@ -436,9 +436,6 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         """
         Loads the games and starts the ADB daemon, then prompts the User to select a device
         """
-
-        if self.skip():
-            return
 
         progress = ui.utils.load_progress_dialog(
             self.frame, config.APP_NAME, "Loading, Please wait..."

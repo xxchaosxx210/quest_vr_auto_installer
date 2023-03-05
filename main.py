@@ -24,16 +24,15 @@ async def _main():
     config.create_data_paths(download_path=settings.download_path)
     # create the default logger
     config.initalize_logger()
-    if not args.skip:
-        try:
-            daemon = start_deluge_daemon()
-        except FileNotFoundError:
-            # download and install deluge daemon
-            sys.exit(
-                "Unable to locate the Deluge Daemon. Please reinstall Deluge Torrent"
-            )
+    try:
+        daemon = start_deluge_daemon()
+    except FileNotFoundError:
+        # download and install deluge daemon
+        sys.exit("Unable to locate the Deluge Daemon. Please reinstall Deluge Torrent")
     multiprocessing.freeze_support()
-    app = QuestCaveApp(args.debug, args.skip)
+    # initialize the apps global options before the App is created
+    QuestCaveApp.init_global_options(args.debug, args.skip)
+    app = QuestCaveApp()
     # catch any unhandled exceptions in the event loop
     asyncio.get_event_loop().set_exception_handler(config.async_log_handler)
     # check for an internet connection, notify user to turn back on

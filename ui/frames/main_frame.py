@@ -194,7 +194,8 @@ class MainFrame(wx.Frame):
                     # save game to database
                     pass
 
-        asyncio.get_event_loop().create_task(open_dialog())
+        if Settings.load().is_user_admin():
+            asyncio.get_event_loop().create_task(open_dialog())
 
     def _on_logs_frame(self, evt: wx.MenuEvent) -> None:
         dlg = LogsFrame(self, size=(500, 500))
@@ -348,5 +349,6 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.CommandEvent): not used
         """
-        tasks.check_task_and_create(self.app.load_resources)
+        if not self.app.skip:
+            tasks.check_task_and_create(self.app.load_resources)
         evt.Skip()

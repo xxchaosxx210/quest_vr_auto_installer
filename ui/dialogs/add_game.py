@@ -9,7 +9,6 @@ import lib.magnet_parser as mparser
 from ui.utils import TextCtrlStaticBox, show_error_message
 from ui.panels.listctrl_panel import ListCtrlPanel
 import deluge.utils as du
-import deluge.handler as dh
 
 
 _Log = logging.getLogger()
@@ -167,6 +166,44 @@ class AddGameDlg(wx.Dialog):
             self._on_double_click_magnet,
             self.mag_list_pnl.listctrl,
         )
+        wxasync.AsyncBind(
+            wx.EVT_BUTTON, self._on_magnet_get_click, self.mag_url_ctrl.button
+        )
+
+    async def _on_magnet_get_click(self, evt: wx.CommandEvent) -> None:
+        """get the magnet link from the magnet url text control
+
+        Args:
+            evt (wx.CommandEvent): event is never used
+        """
+        # get the url from the textctrl and check if it is a valid magnet link
+        url = self.mag_url_ctrl.get_text()
+        match = mparser.MAG_LINK_PATTERN.match(url)
+        if match is None:
+            show_error_message("Invalid Magnet. Please a correct Magnet link")
+            return
+        # get the magnet info
+        info_wait_timeout = 10
+        progress = wx.ProgressDialog(
+            "Getting Magnet Info",
+            f"Please wait...{info_wait_timeout} second timeout",
+            100,
+            self,
+            wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
+        )
+        progress.Pulse()
+        try:
+            meta_data = await du.get_magnet_info(url, info_wait_timeout)
+        except Exception as e:
+            estr = "".join(e.args)
+            show_error_message(estr)
+            progress.Destroy()
+            return
+        progress.Destroy()
+        try:
+            self.add_magnet_data_to_ui(url, meta_data)
+        except Exception as err:
+            pass
 
     async def _on_double_click_magnet(self, evt: wx.ListEvent) -> None:
         # yet to be implemented
@@ -185,7 +222,8 @@ class AddGameDlg(wx.Dialog):
         try:
             meta_data = await du.get_magnet_info(magnet_link, 5)
         except Exception as e:
-            show_error_message("Error", f"Error: {e}")
+            estr = "".join(e.args)
+            show_error_message(estr)
             progress.Destroy()
             return
         self.mag_url_ctrl.set_text(magnet_link)
@@ -240,6 +278,12 @@ class AddGameDlg(wx.Dialog):
             return parser.magnet_urls
 
     def add_magnet_data_to_ui(self, magnet_uri: str, meta: du.MetaData) -> None:
+        """add the magnet data to the UI controls
+
+        Args:
+            magnet_uri (str): the magnet uri
+            meta (du.MetaData): the magnet metadata
+        """
         self.torrent_name_box.set_text(meta.name)
         self.display_name_box.set_text("")
         self.magnet_url_box.set_text(magnet_uri)
@@ -249,7 +293,7 @@ class AddGameDlg(wx.Dialog):
         self.torrent_files_box.treectrl.DeleteAllItems()
         if meta.files is None:
             return
-        # insert the files into the list control
+        # insert the files into the TreeCtrl
         root_item_id = self.torrent_files_box.treectrl.AddRoot(meta.name)
         for index, root_item in enumerate(meta.files):
             path_item = root_item.path[0]
