@@ -83,6 +83,9 @@ class TextCtrlStaticBox(wx.StaticBox):
     def get_text(self) -> str:
         return self.textctrl.GetValue()
 
+    def set_text(self, text: str) -> None:
+        self.textctrl.SetValue(text)
+
 
 def get_image(filename: str) -> wx.Image:
     """loads an image from file and converts to bitmap
