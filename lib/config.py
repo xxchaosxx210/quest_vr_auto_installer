@@ -80,6 +80,7 @@ def parse_args() -> argparse.Namespace:
     """
     parser = argparse.ArgumentParser(description="QuestCave Parser")
     parser.add_argument("-d", "--debug", action="store_true", help="Debug mode")
+    parser.add_argument("-s", "--skip", action="store_true", help="Skip the loading")
     args = parser.parse_args()
     return args
 

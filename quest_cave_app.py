@@ -46,13 +46,18 @@ class QuestCaveApp(wxasync.WxAsyncApp):
     # debug mode
     debug_mode: bool = False
 
-    def __init__(self, debug_mode: bool, *args, **kwargs):
+    # skip loading daemons and loading dialogs. This is to test the admin controls
+    skip: bool = False
+
+    def __init__(self, debug_mode: bool, skip: bool, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.debug_mode = debug_mode
-        self.monitoring_device_thread = lib.quest.MonitorSelectedDevice(
-            callback=self.on_device_event, debug_mode=self.debug_mode
-        )
-        self.monitoring_device_thread.start()
+        self.skip = skip
+        if not self.skip:
+            self.monitoring_device_thread = lib.quest.MonitorSelectedDevice(
+                callback=self.on_device_event, debug_mode=self.debug_mode
+            )
+            self.monitoring_device_thread.start()
 
     def on_device_event(self, event: dict) -> None:
         """handles the device events. Update GUI
@@ -431,6 +436,10 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         """
         Loads the games and starts the ADB daemon, then prompts the User to select a device
         """
+
+        if self.skip():
+            return
+
         progress = ui.utils.load_progress_dialog(
             self.frame, config.APP_NAME, "Loading, Please wait..."
         )
@@ -456,7 +465,8 @@ class QuestCaveApp(wxasync.WxAsyncApp):
 
         progress.Destroy()
         await asyncio.sleep(0.5)
-        await self.prompt_user_for_device()
+        if not self.skip:
+            await self.prompt_user_for_device()
 
     async def load_games(self) -> None:
         """

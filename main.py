@@ -24,13 +24,16 @@ async def _main():
     config.create_data_paths(download_path=settings.download_path)
     # create the default logger
     config.initalize_logger()
-    try:
-        daemon = start_deluge_daemon()
-    except FileNotFoundError:
-        # download and install deluge daemon
-        sys.exit("Unable to locate the Deluge Daemon. Please reinstall Deluge Torrent")
+    if not args.skip:
+        try:
+            daemon = start_deluge_daemon()
+        except FileNotFoundError:
+            # download and install deluge daemon
+            sys.exit(
+                "Unable to locate the Deluge Daemon. Please reinstall Deluge Torrent"
+            )
     multiprocessing.freeze_support()
-    app = QuestCaveApp(args.debug)
+    app = QuestCaveApp(args.debug, args.skip)
     # catch any unhandled exceptions in the event loop
     asyncio.get_event_loop().set_exception_handler(config.async_log_handler)
     # check for an internet connection, notify user to turn back on
@@ -38,18 +41,19 @@ async def _main():
     await app.MainLoop()
 
     # cleanup
-    progress = wx.ProgressDialog(
-        "QuestCave",
-        "Quiting QuestCave, Please wait...",
-        maximum=100,
-        parent=None,
-        style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
-    )
-    progress.Pulse()
-    daemon.terminate()
-    adb_interface.close_adb()
-    app.monitoring_device_thread.stop()
-    progress.Destroy()
+    if not args.skip:
+        progress = wx.ProgressDialog(
+            "QuestCave",
+            "Quiting QuestCave, Please wait...",
+            maximum=100,
+            parent=None,
+            style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
+        )
+        progress.Pulse()
+        daemon.terminate()
+        adb_interface.close_adb()
+        app.monitoring_device_thread.stop()
+        progress.Destroy()
 
 
 if __name__ == "__main__":
