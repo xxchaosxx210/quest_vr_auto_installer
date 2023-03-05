@@ -56,18 +56,25 @@ class AddGameDlg(wx.Dialog):
         self._do_laylout()
         self._do_events()
         self.SetSize(size)
-        # self.scrolled_win.SetVirtualSize(self.GetSize())
-        # self.scrolled_win.SetScrollbars(
-        #     10, 10, self.GetSize()[0] / 10, self.GetSize()[1] / 10
-        # )
+        self._do_scrolled_properties()
         self.CenterOnParent()
 
+    def _do_scrolled_properties(self):
+        """set the scrolled window scrollbars and virtual size"""
+        panel_width, panel_height = self.panel.GetSize()
+        self.scrolled_win.SetVirtualSize(panel_width, panel_height)
+        self.scrolled_win.SetScrollbars(
+            10, 10, int(panel_width / 10), int(panel_height / 10)
+        )
+        self.scrolled_win.SetScrollRate(10, 10)
+
     def _do_controls(self) -> None:
+        # dialog->scrolled window->panel->controls
         self.scrolled_win = wx.ScrolledWindow(self, -1)
-        # self.scrolled_win.SetScrollRate(10, 10)
+        self.panel = wx.Panel(self.scrolled_win, -1)
         # Random URL magnet link search textbox
         self.web_url_ctrl = ButtonTextCtrlStaticBox(
-            self.scrolled_win,
+            self.panel,
             "",
             wx.TE_NO_VSCROLL,
             "Search for Magnet Links from Web Url",
@@ -76,7 +83,7 @@ class AddGameDlg(wx.Dialog):
 
         # Magnet links list
         self.mag_list_pnl = ListCtrlPanel(
-            self.scrolled_win,
+            self.panel,
             None,
             [{"col": 0, "heading": "Magnet", "width": 100}],
             toggle_col=False,
@@ -84,60 +91,62 @@ class AddGameDlg(wx.Dialog):
 
         # Add a magnet manually textctrl and button
         self.mag_url_ctrl = ButtonTextCtrlStaticBox(
-            self.scrolled_win, "", wx.TE_NO_VSCROLL, "Add Magnet", "Get"
+            self.panel, "", wx.TE_NO_VSCROLL, "Add Magnet", "Get"
         )
 
         # Torrent files found from magnet link lookup
-        self.torrent_files_box = TorrentFilesStaticBox(
-            self.scrolled_win, "Torrent Files"
-        )
+        self.torrent_files_box = TorrentFilesStaticBox(self.panel, "Torrent Files")
         self.torrent_name_box = TextCtrlStaticBox(
-            self.scrolled_win, "", wx.TE_NO_VSCROLL, "Torrent Name"
+            self.panel, "", wx.TE_NO_VSCROLL, "Torrent Name"
         )
         self.display_name_box = TextCtrlStaticBox(
-            self.scrolled_win, "", wx.TE_NO_VSCROLL, "Display Name"
+            self.panel, "", wx.TE_NO_VSCROLL, "Display Name"
         )
         self.magnet_url_box = TextCtrlStaticBox(
-            self.scrolled_win, "", wx.TE_NO_VSCROLL, "Magnet Link"
+            self.panel, "", wx.TE_NO_VSCROLL, "Magnet Link"
         )
         self.version_box = TextCtrlStaticBox(
-            self.scrolled_win, "1.0", wx.TE_NO_VSCROLL, "Version"
+            self.panel, "1.0", wx.TE_NO_VSCROLL, "Version"
         )
         self.filesize_box = TextCtrlStaticBox(
-            self.scrolled_win, "", wx.TE_NO_VSCROLL | wx.TE_READONLY, "File Size"
+            self.panel, "", wx.TE_NO_VSCROLL | wx.TE_READONLY, "File Size"
         )
         self.torrent_id_box = TextCtrlStaticBox(
-            self.scrolled_win, "", wx.TE_NO_VSCROLL | wx.TE_READONLY, "Torrent ID"
+            self.panel, "", wx.TE_NO_VSCROLL | wx.TE_READONLY, "Torrent ID"
         )
         self.save_btn = wx.Button(self, wx.ID_SAVE, "Save")
         self.close_btn = wx.Button(self, wx.ID_CLOSE, "Close")
 
     def _do_laylout(self) -> None:
-        hbox_btns = wx.BoxSizer(wx.HORIZONTAL)
-        hbox_btns.Add(self.save_btn, 0, wx.EXPAND, 0)
-        hbox_btns.Add(self.close_btn, 0, wx.EXPAND, 0)
-
-        # add panel controls to the panel vbox sizer
         ctrl_vbox = wx.BoxSizer(wx.VERTICAL)
-        ctrl_vbox.Add(self.web_url_ctrl.sizer, 0, wx.EXPAND, 0)
-        ctrl_vbox.Add(self.mag_url_ctrl.sizer, 0, wx.EXPAND, 0)
+        CTRL_VBOX_BORDER = 10
+        ctrl_vbox.Add(self.web_url_ctrl.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
+        ctrl_vbox.Add(self.mag_url_ctrl.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
 
         hbox_mag_listpanel = wx.BoxSizer(wx.HORIZONTAL)
         hbox_mag_listpanel.Add(self.mag_list_pnl, 1, wx.ALL | wx.EXPAND, 0)
 
-        ctrl_vbox.Add(hbox_mag_listpanel, 1, wx.EXPAND, 0)
+        ctrl_vbox.Add(hbox_mag_listpanel, 1, wx.EXPAND, CTRL_VBOX_BORDER)
         ctrl_vbox.Add(self.torrent_files_box.sizer, 1, wx.EXPAND | wx.ALL, 0)
-        ctrl_vbox.Add(self.torrent_name_box.sizer, 0, wx.EXPAND, 0)
-        ctrl_vbox.Add(self.display_name_box.sizer, 0, wx.EXPAND, 0)
-        ctrl_vbox.Add(self.magnet_url_box.sizer, 0, wx.EXPAND, 0)
-        ctrl_vbox.Add(self.version_box.sizer, 0, wx.EXPAND, 0)
-        ctrl_vbox.Add(self.filesize_box.sizer, 0, wx.EXPAND, 0)
-        ctrl_vbox.Add(self.torrent_id_box.sizer, 0, wx.EXPAND, 0)
+        ctrl_vbox.Add(self.torrent_name_box.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
+        ctrl_vbox.Add(self.display_name_box.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
+        ctrl_vbox.Add(self.magnet_url_box.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
+        ctrl_vbox.Add(self.version_box.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
+        ctrl_vbox.Add(self.filesize_box.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
+        ctrl_vbox.Add(self.torrent_id_box.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
+
+        panel_gs = wx.GridSizer(cols=1)
+        panel_gs.Add(ctrl_vbox, 1, wx.ALL | wx.EXPAND, 20)
+        self.panel.SetSizer(panel_gs)
 
         # # add the panel to the scrolled window sizer
         scrolled_win_gs = wx.GridSizer(cols=1)
-        scrolled_win_gs.Add(ctrl_vbox, 1, wx.ALL | wx.EXPAND, 0)
+        scrolled_win_gs.Add(self.panel, 1, wx.ALL | wx.EXPAND, 0)
         self.scrolled_win.SetSizer(scrolled_win_gs)
+
+        hbox_btns = wx.BoxSizer(wx.HORIZONTAL)
+        hbox_btns.Add(self.save_btn, 0, wx.EXPAND, 0)
+        hbox_btns.Add(self.close_btn, 0, wx.EXPAND, 0)
 
         # add the scrolled window and hbox button to the dialog sizer
         dialog_vbox = wx.BoxSizer(wx.VERTICAL)

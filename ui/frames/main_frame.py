@@ -184,12 +184,15 @@ class MainFrame(wx.Frame):
             )
 
         async def open_dialog():
-            dlg = AddGameDlg(self, wx.ID_ANY, "Add Game", (640, 640))
-            result_code = await wxasync.AsyncShowDialog(dlg)
-            if result_code == wx.ID_SAVE:
-                # save game to database
-                pass
-            dlg.Destroy()
+            try:
+                dlg = AddGameDlg(self, wx.ID_ANY, "Add Game", (640, 640))
+            except Exception as err:
+                self.app.exception_handler(err)
+            else:
+                result_code = await wxasync.AsyncShowDialog(dlg)
+                if result_code == wx.ID_SAVE:
+                    # save game to database
+                    pass
 
         asyncio.get_event_loop().create_task(open_dialog())
 
