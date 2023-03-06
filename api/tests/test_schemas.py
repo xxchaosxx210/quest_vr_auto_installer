@@ -1,6 +1,6 @@
 import binascii
 import pytest
-from qvrapi.schemas import QuestMagnet
+from api.schemas import QuestMagnet
 
 
 class TestQuestMagnet:

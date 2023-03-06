@@ -12,11 +12,11 @@ import lib.tasks
 import lib.debug as debug
 import lib.quest
 import ui.utils
-import qvrapi.api
+import api.client
 import deluge.handler
 import adblib.adb_interface as adb_interface
 from adblib.errors import RemoteDeviceError
-from qvrapi.schemas import LogErrorRequest
+from api.schemas import LogErrorRequest
 from lib.settings import Settings
 
 
@@ -169,7 +169,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         Args:
             err (Exception): exception error instance to be processed
         """
-        if isinstance(err, qvrapi.api.ApiError):
+        if isinstance(err, api.client.ApiError):
             error_message = f"{err.message}\n\nCode: {err.status_code}"
         else:
             error_message = err.__str__()
@@ -193,7 +193,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
 
         async def send_error(_error_request: LogErrorRequest) -> None:
             try:
-                await qvrapi.api.post_error(_error_request)
+                await api.client.post_error(_error_request)
             except Exception as _err:
                 wx.MessageBox(f"Unable to send. Reason: {str(_err)}", "Error!")
 
@@ -210,8 +210,11 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         )
         try:
             lib.tasks.check_task_and_create(send_error, _error_request=error_request)
-        except lib.tasks.TaskIsRunning as err:
-            self.exception_handler(err=err)
+        except lib.tasks.TaskIsRunning:
+            ui.utils.show_error_message(
+                "Unable to send error log as another Task is already running",
+                "Client Error",
+            )
 
     async def start_download_process(
         self,

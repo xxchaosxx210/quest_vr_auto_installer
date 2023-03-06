@@ -7,8 +7,8 @@ import wxasync
 
 from ui.utils import TextCtrlStaticBox, show_error_message
 from lib.settings import Settings
-from qvrapi.schemas import QuestMagnetWithKey
-from qvrapi.api import ApiError, update_game_magnet
+from api.schemas import QuestMagnetWithKey
+from api.client import ApiError, update_game_magnet
 from lib.utils import format_timestamp_to_str, get_changed_properties
 
 

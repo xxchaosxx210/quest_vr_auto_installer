@@ -9,8 +9,8 @@ import wxasync
 import lib.magnet_parser as mparser
 import lib.utils
 import deluge.utils as du
-import qvrapi.schemas as schemas
-import qvrapi.api as api
+import api.schemas as schemas
+import api.client as client
 from ui.utils import TextCtrlStaticBox, show_error_message
 from ui.panels.listctrl_panel import ListCtrlPanel
 from lib.settings import Settings
@@ -268,12 +268,12 @@ class AddGameDlg(wx.Dialog):
             wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
         )
         progress.Pulse()
-        task = asyncio.create_task(api.add_game(settings.token, magnet))
+        task = asyncio.create_task(client.add_game(settings.token, magnet))
         try:
             await asyncio.shield(task)
         except asyncio.CancelledError:
             pass
-        except api.ApiError as err:
+        except client.ApiError as err:
             show_error_message(err.__str__())
         except Exception as err:
             show_error_message("".join(err.args))

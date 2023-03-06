@@ -3,12 +3,12 @@
 
 import logging
 from typing import Any, Dict, Iterator, List
-from urllib.parse import urljoin
 from enum import Enum, auto as auto_enum
 
 import aiohttp
 
-import qvrapi.schemas as schemas
+import api.schemas as schemas
+import api.urls as apiurls
 
 
 _Log = logging.getLogger(__name__)
@@ -35,23 +35,6 @@ class ApiError(Exception):
 
     def __str__(self) -> str:
         return f"{self.message}. Status Code: {self.status_code}"
-
-
-URI_LOCAL_HOST = "http://127.0.0.1:8000"
-URI_DETA_MICRO = "https://6vppvi.deta.dev"
-
-# change this to one of the above hosts
-URI_HOST = URI_LOCAL_HOST
-# URI_HOST = URI_DETA_MICRO
-
-URI_GAMES = urljoin(URI_HOST, "/games")
-URI_SEARCH_GAME = URI_GAMES + "/search"
-URI_UPDATE_GAME = URI_GAMES + "/update"
-URI_ADD_GAME = URI_GAMES + "/add"
-URI_USERS = urljoin(URI_HOST, "/users")
-URI_LOGS = urljoin(URI_HOST, "/logs")
-URI_USERS_LOGIN = URI_USERS + "/token"
-URI_USER_INFO = URI_USERS + "/info"
 
 
 def get_account_type(user: schemas.User) -> str:
@@ -94,7 +77,7 @@ async def get_game_magnets() -> List[schemas.QuestMagnet]:
         List[QuestMagnet]: list of magnet objects
     """
     try:
-        response_data = await send_json_request(URI_GAMES)
+        response_data = await send_json_request(apiurls.URI_GAMES)
         if not isinstance(response_data, list):
             raise TypeError("Returned value was of not type List")
         magnets = list(
@@ -121,7 +104,9 @@ async def search_for_games(
         list: [schemas.QuestMagnetWithKey]
     """
     try:
-        data = await send_json_request(uri=URI_SEARCH_GAME, token=token, _json=params)
+        data = await send_json_request(
+            uri=apiurls.URI_SEARCH_GAME, token=token, _json=params
+        )
         if not isinstance(data, list):
             raise TypeError("data returned from game search is not a list")
         games = list(map(lambda game: schemas.QuestMagnetWithKey(**game), data))
@@ -134,7 +119,7 @@ async def update_game_magnet(
     token: str, key: str, params: dict
 ) -> schemas.QuestMagnetWithKey:
     try:
-        uri = URI_UPDATE_GAME + f"/{key}"
+        uri = apiurls.URI_UPDATE_GAME + f"/{key}"
         data = await send_json_request(
             uri, token, _json=params, request_type=RequestType.PUT
         )
@@ -159,7 +144,7 @@ async def post_error(error_request: schemas.LogErrorRequest) -> bool:
     """
     async with aiohttp.ClientSession() as session:
         async with session.post(
-            URI_LOGS,
+            apiurls.URI_LOGS,
             data=error_request.json(),
             headers={"Content-Type": "application/json"},
         ) as response:
@@ -186,7 +171,7 @@ async def login(email: str, password: str) -> dict:
         frm_data = aiohttp.FormData()
         frm_data.add_field("username", email)
         frm_data.add_field("password", password)
-        async with session.post(URI_USERS_LOGIN, data=frm_data) as response:
+        async with session.post(apiurls.URI_USERS_LOGIN, data=frm_data) as response:
             if response.status != 200:
                 err_message = await response.json()
                 raise ApiError(
@@ -209,7 +194,7 @@ async def get_user_info(token: str) -> schemas.User:
         User: the user information
     """
     try:
-        data = await send_json_request(URI_USER_INFO, token=token, params={})
+        data = await send_json_request(apiurls.URI_USER_INFO, token=token, params={})
         user = schemas.User(**data)
         return user
     except Exception as err:
@@ -231,7 +216,7 @@ async def get_logs(token: str, params: dict = {}) -> Iterator:
     """
 
     try:
-        data = await send_json_request(URI_LOGS, token=token, params=params)
+        data = await send_json_request(apiurls.URI_LOGS, token=token, params=params)
         err_logs = map(lambda _log: schemas.ErrorLog(**_log), data["logs"])
         return err_logs
     except Exception as err:
@@ -244,7 +229,9 @@ async def delete_logs(token: str, key: str) -> List[schemas.ErrorLog]:
     headers["Content-Type"] = "application/json"
     params = {"key": key}
     async with aiohttp.ClientSession() as session:
-        async with session.delete(URI_LOGS, params=params, headers=headers) as response:
+        async with session.delete(
+            apiurls.URI_LOGS, params=params, headers=headers
+        ) as response:
             if response.content_type == "text/plain":
                 byte_error_response = await response.content.read()
                 raise ApiError(
@@ -275,7 +262,7 @@ async def add_game(token: str, data: schemas.QuestMagnet) -> None:
     """
     try:
         await send_json_request(
-            uri=URI_ADD_GAME,
+            uri=apiurls.URI_ADD_GAME,
             token=token,
             _json=data.dict(),
             request_type=RequestType.POST,

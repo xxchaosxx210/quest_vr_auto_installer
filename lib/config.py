@@ -19,8 +19,8 @@ from typing import List
 
 from pathvalidate import sanitize_filename
 
-from qvrapi.schemas import QuestMagnet, LogErrorRequest
-from qvrapi.api import post_error
+from api.schemas import QuestMagnet, LogErrorRequest
+from api.client import post_error
 import lib.tasks
 
 

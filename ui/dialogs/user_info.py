@@ -1,8 +1,8 @@
 import wx
 
-from qvrapi.schemas import User
+from api.schemas import User
 from lib.utils import format_timestamp_to_str
-from qvrapi.api import get_account_type
+from api.client import get_account_type
 
 
 class UserInfoDlg(wx.Dialog):

@@ -4,8 +4,8 @@ from typing import Tuple, List
 import aiohttp
 import wx
 
-from qvrapi.api import get_logs, ApiError, delete_logs
-from qvrapi.schemas import ErrorLog
+from api.client import get_logs, ApiError, delete_logs
+from api.schemas import ErrorLog
 from lib.settings import Settings
 from ui.utils import show_error_message
 from ui.dialogs.log_info import LogInfoDlg

@@ -1,7 +1,7 @@
 from typing import Tuple
 import wx
 
-from qvrapi.schemas import ErrorLog
+from api.schemas import ErrorLog
 from lib.utils import format_timestamp_to_str
 from ui.utils import TextCtrlStaticBox
 

@@ -8,7 +8,7 @@ import wxasync
 
 import lib.config
 import lib.tasks as tasks
-import qvrapi.api as api
+import api.client as client
 import lib.debug
 import ui.utils
 import ui.paths
@@ -243,8 +243,8 @@ class MainFrame(wx.Frame):
                 token (str): the token belonging to the user
             """
             try:
-                user = await api.get_user_info(token)
-            except api.ApiError as err:
+                user = await client.get_user_info(token)
+            except client.ApiError as err:
                 wx.MessageBox(
                     err.message, f"Status: {err.status_code}", wx.OK | wx.ICON_ERROR
                 )

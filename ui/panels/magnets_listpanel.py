@@ -6,7 +6,7 @@ import wx
 import aiohttp
 
 import deluge.utils as deluge_utils
-import qvrapi.api as api
+import api.client as client
 import lib.config as config
 import lib.utils
 import lib.tasks
@@ -16,7 +16,7 @@ from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info import ExtraGameInfoDlg
 from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
 from ui.dialogs.update_magnet import load_dialog as load_update_magnet_dialog
-from qvrapi.schemas import QuestMagnet
+from api.schemas import QuestMagnet
 from lib.settings import Settings
 
 
@@ -263,13 +263,13 @@ class MagnetsListPanel(ListCtrlPanel):
         If successful then stores those links to a local json file
         """
         try:
-            magnets: List[QuestMagnet] = await api.get_game_magnets()
+            magnets: List[QuestMagnet] = await client.get_game_magnets()
             # everything went ok save locallly
             config.save_local_quest_magnets(config.QUEST_MAGNETS_PATH, magnets)
             # enable Online mode
             self.app.set_mode(True)
-        except (aiohttp.ClientConnectionError, api.ApiError) as err:
-            if isinstance(err, api.ApiError):
+        except (aiohttp.ClientConnectionError, client.ApiError) as err:
+            if isinstance(err, client.ApiError):
                 err.message = f"Error with status code: {err.status_code}. Reason: {err.message}.\n If this issue persits then send report"
                 self.app.exception_handler(err)
             # Connection issue, try and load from local json file
