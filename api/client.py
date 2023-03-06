@@ -1,4 +1,6 @@
-"""connecting to the magnet database API
+"""
+client.py version 1.0.0 06/03/2023.
+this module provides functions to interact with the API backend
 """
 
 import logging

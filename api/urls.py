@@ -1,3 +1,5 @@
+"""Url paths for the API Backend"""
+
 from urllib.parse import urljoin
 
 
