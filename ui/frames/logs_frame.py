@@ -4,7 +4,8 @@ from typing import Tuple, List
 import aiohttp
 import wx
 
-from api.client import get_logs, ApiError, delete_logs
+import api.client
+from api.exceptions import ApiError
 from api.schemas import ErrorLog
 from lib.settings import Settings
 from ui.utils import show_error_message
@@ -109,7 +110,7 @@ class LogsListCtrlPanel(ListCtrlPanel):
 
         async def delete_log(token: str, key: str) -> None:
             try:
-                await delete_logs(token=token, key=key)
+                await api.client.delete_logs(token=token, key=key)
             except (aiohttp.ClientConnectionError, ApiError) as err:
                 show_error_message(err.__str__())
             else:
@@ -191,7 +192,7 @@ class LogsFrame(wx.Frame):
         if settings.token is None:
             return
         try:
-            logs = await delete_logs(settings.token, "all")
+            logs = await api.client.delete_logs(settings.token, "all")
         except (ApiError, aiohttp.ClientConnectionError) as err:
             show_error_message(err.__str__())
         else:
@@ -209,7 +210,7 @@ class LogsFrame(wx.Frame):
         if settings.token is None:
             return
         try:
-            error_logs = await get_logs(
+            error_logs = await api.client.get_logs(
                 settings.token, params={"sort_by": "date_added", "order_by": "desc"}
             )
         except (aiohttp.ClientConnectionError, ApiError) as err:

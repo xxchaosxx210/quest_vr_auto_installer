@@ -18,6 +18,7 @@ from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
 from ui.dialogs.update_magnet import load_dialog as load_update_magnet_dialog
 from api.schemas import QuestMagnet
 from lib.settings import Settings
+from api.exceptions import ApiError
 
 
 _Log = logging.getLogger()
@@ -269,7 +270,7 @@ class MagnetsListPanel(ListCtrlPanel):
             # enable Online mode
             self.app.set_mode(True)
         except (aiohttp.ClientConnectionError, client.ApiError) as err:
-            if isinstance(err, client.ApiError):
+            if isinstance(err, ApiError):
                 err.message = f"Error with status code: {err.status_code}. Reason: {err.message}.\n If this issue persits then send report"
                 self.app.exception_handler(err)
             # Connection issue, try and load from local json file

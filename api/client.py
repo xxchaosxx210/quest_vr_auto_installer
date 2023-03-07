@@ -11,6 +11,7 @@ import aiohttp
 
 import api.schemas as schemas
 import api.urls as apiurls
+from api.exceptions import ApiError
 
 
 _Log = logging.getLogger(__name__)
@@ -21,22 +22,6 @@ class RequestType(Enum):
     POST = auto_enum()
     DELETE = auto_enum()
     PUT = auto_enum()
-
-
-class ApiError(Exception):
-    """basic API error
-
-    Args:
-        Exception (_type_): status_code and message
-    """
-
-    def __init__(self, status_code: int, message: str, *args: object) -> None:
-        self.status_code = status_code
-        self.message = message
-        super().__init__(*args)
-
-    def __str__(self) -> str:
-        return f"{self.message}. Status Code: {self.status_code}"
 
 
 def get_account_type(user: schemas.User) -> str:
@@ -252,7 +237,7 @@ async def delete_logs(token: str, key: str) -> List[schemas.ErrorLog]:
             return error_logs
 
 
-async def add_game(token: str, data: schemas.QuestMagnet) -> None:
+async def add_game(token: str, data: schemas.Game) -> None:
     """adds a game to the database
 
     Args:

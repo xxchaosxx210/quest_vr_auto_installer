@@ -6,7 +6,8 @@ import wx
 
 import lib.tasks as tasks
 
-from api.client import login, ApiError
+import api.client
+from api.exceptions import ApiError
 
 from ui.utils import TextCtrlStaticBox
 
@@ -65,7 +66,9 @@ class LoginDlg(wx.Dialog):
 
         async def authenticate() -> None:
             try:
-                self._login_data = await login(email=username, password=password)
+                self._login_data = await api.client.login(
+                    email=username, password=password
+                )
             except ApiError as err:
                 wx.CallAfter(
                     wx.MessageBox,

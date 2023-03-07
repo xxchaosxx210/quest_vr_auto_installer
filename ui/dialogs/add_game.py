@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from typing import Any, Dict, List, Tuple
+from typing import List, Tuple
 
 import aiohttp
 import wx
@@ -14,6 +14,7 @@ import api.client as client
 from ui.utils import TextCtrlStaticBox, show_error_message
 from ui.panels.listctrl_panel import ListCtrlPanel
 from lib.settings import Settings
+from api.exceptions import ApiError
 
 
 _Log = logging.getLogger()
@@ -189,7 +190,7 @@ class AddGameDlg(wx.Dialog):
                 date_added=0.0,
             )
         except Exception as err:
-            pass
+            _Log.error(err.__str__() + " - get_values_from_ui")
         return game_request
 
     async def _on_magnet_get_click(self, evt: wx.CommandEvent) -> None:
@@ -268,12 +269,15 @@ class AddGameDlg(wx.Dialog):
             wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
         )
         progress.Pulse()
+        if settings.token is None:
+            _Log.error("Token was not found. Exiting _on_save_button")
+            return
         task = asyncio.create_task(client.add_game(settings.token, magnet))
         try:
             await asyncio.shield(task)
         except asyncio.CancelledError:
             pass
-        except client.ApiError as err:
+        except ApiError as err:
             show_error_message(err.__str__())
         except Exception as err:
             show_error_message("".join(err.args))

@@ -5,10 +5,11 @@ import wx
 import aiohttp
 import wxasync
 
+import api.client
+from api.schemas import QuestMagnetWithKey
+from api.exceptions import ApiError
 from ui.utils import TextCtrlStaticBox, show_error_message
 from lib.settings import Settings
-from api.schemas import QuestMagnetWithKey
-from api.client import ApiError, update_game_magnet
 from lib.utils import format_timestamp_to_str, get_changed_properties
 
 
@@ -179,7 +180,7 @@ class MagnetUpdateDlg(wx.Dialog):
         if settings.token is None:
             return
         try:
-            updated_magnet = await update_game_magnet(
+            updated_magnet = await api.client.update_game_magnet(
                 settings.token, self.original_magnet_data.key, data_to_update
             )
         except ApiError as err:

@@ -23,6 +23,7 @@ from ui.dialogs.about import load_dialog as load_about_dialog
 from ui.dialogs.device_list import open_device_selection_dialog
 from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
+from api.exceptions import ApiError
 
 
 _Log = logging.getLogger()
@@ -244,7 +245,7 @@ class MainFrame(wx.Frame):
             """
             try:
                 user = await client.get_user_info(token)
-            except client.ApiError as err:
+            except ApiError as err:
                 wx.MessageBox(
                     err.message, f"Status: {err.status_code}", wx.OK | wx.ICON_ERROR
                 )

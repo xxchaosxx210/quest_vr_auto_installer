@@ -18,6 +18,7 @@ import adblib.adb_interface as adb_interface
 from adblib.errors import RemoteDeviceError
 from api.schemas import LogErrorRequest
 from lib.settings import Settings
+from api.exceptions import ApiError
 
 
 from ui.frames.main_frame import MainFrame
@@ -169,7 +170,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         Args:
             err (Exception): exception error instance to be processed
         """
-        if isinstance(err, api.client.ApiError):
+        if isinstance(err, ApiError):
             error_message = f"{err.message}\n\nCode: {err.status_code}"
         else:
             error_message = err.__str__()

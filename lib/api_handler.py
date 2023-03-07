@@ -4,6 +4,7 @@ import aiohttp
 
 import api.client as client
 import api.schemas as schemas
+from api.exceptions import ApiError
 
 
 async def get_magnets_from_torrent_id(
@@ -20,7 +21,7 @@ async def get_magnets_from_torrent_id(
     """
     try:
         magnets = await client.search_for_games(token, params={"id": torrent_id})
-    except (client.ApiError, aiohttp.ClientConnectionError) as err:
+    except (ApiError, aiohttp.ClientConnectionError) as err:
         exception_handler(err.__str__())
         return []
     else:
