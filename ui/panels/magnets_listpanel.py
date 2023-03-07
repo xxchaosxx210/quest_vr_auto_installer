@@ -33,10 +33,6 @@ COLUMN_SPEED = 5
 COLUMN_ETA = 6
 
 
-class Controller:
-    pass
-
-
 class MagnetsListPanel(ListCtrlPanel):
     magnet_data_list: List[MagnetData] = []
     game_data_list: List[Game] = []
