@@ -9,7 +9,7 @@ from api.exceptions import ApiError
 
 async def get_magnets_from_torrent_id(
     token: str, torrent_id: str, exception_handler: Callable[[str], None]
-) -> List[schemas.QuestMagnetWithKey]:
+) -> List[schemas.Game]:
     """gets the magnet using the torrent id and handles any exceptions
 
     Args:

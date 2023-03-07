@@ -2,7 +2,7 @@ import asyncio
 from datetime import timedelta
 import os
 import time
-from typing import Any, Dict, List, cast
+from typing import Any, Dict, List, Tuple, cast
 import random
 
 import deluge.handler as dh
@@ -17,7 +17,11 @@ class FakeQuest:
     # global list of fake quests. Use it in the app
     devices: List["FakeQuest"] = []
 
-    def __init__(self, name: str, package_names: List[str]) -> None:
+    def __init__(
+        self,
+        name: str,
+        package_names: List[str],
+    ) -> None:
         """holds the name and package names of a fake quest2 device
 
         Args:
@@ -102,6 +106,7 @@ async def simulate_game_install(
     fake_quests: List[FakeQuest],
     apk_dir: lib.utils.ApkPath,
     raise_exception: Exception | None = None,
+    total_time_range: Tuple[float, float] = (1.0, 5.0),
 ) -> None:
     """fake install game function. Simulates the install process
 
@@ -111,6 +116,7 @@ async def simulate_game_install(
         fake_quests (List[FakeQuest]): list of fake quests to check against
         apk_dir (ApkPath): contains the apk file path, subpaths and subfiles to be pushed onto the remote device
         raise_exception (Exception, optional): if not None, will raise the exception. Defaults to None.
+        total_time_range (Tuple[float, float], optional): the range of time to simulate the install process. Defaults to (1.0, 5.0).
 
     Raises:
         ValueError: if device_name is empty string
@@ -142,13 +148,13 @@ async def simulate_game_install(
     callback(
         "Installing game this may take several minutes. Please do not disconnect your device"
     )
-    await asyncio.sleep(random.uniform(1.0, 5.0))
+    await asyncio.sleep(random.uniform(*total_time_range))
     callback(
         "Moving files onto device. This may take a few minutes. Do not disconnect Device"
     )
     if raise_exception is not None:
         raise raise_exception
-    await asyncio.sleep(random.uniform(1.0, 5.0))
+    await asyncio.sleep(random.uniform(*total_time_range))
 
     elapsed_time = time.time() - start_time
     formatted_time = str(timedelta(seconds=elapsed_time))

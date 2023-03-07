@@ -52,7 +52,7 @@ def create_auth_token_header(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
-async def get_game_magnets() -> List[schemas.QuestMagnet]:
+async def get_games() -> List[schemas.Game]:
     """gets the Quest 2 magnet links from the q2g server
 
     Raises:
@@ -64,20 +64,16 @@ async def get_game_magnets() -> List[schemas.QuestMagnet]:
         List[QuestMagnet]: list of magnet objects
     """
     try:
-        response_data = await send_json_request(apiurls.URI_GAMES)
-        if not isinstance(response_data, list):
+        json_response = await send_json_request(apiurls.URI_GAMES)
+        if not isinstance(json_response, list):
             raise TypeError("Returned value was of not type List")
-        magnets = list(
-            map(lambda magnet_dict: schemas.QuestMagnet(**magnet_dict), response_data)
-        )
-        return magnets
+        games = list(map(lambda game_dict: schemas.Game(**game_dict), json_response))
+        return games
     except Exception as err:
         raise err
 
 
-async def search_for_games(
-    token: str, params: dict
-) -> List[schemas.QuestMagnetWithKey]:
+async def search_for_games(token: str, params: dict) -> List[schemas.Game]:
     """get the game including the key this is for admin use updating and deleting etc.
 
     Args:
@@ -96,21 +92,19 @@ async def search_for_games(
         )
         if not isinstance(data, list):
             raise TypeError("data returned from game search is not a list")
-        games = list(map(lambda game: schemas.QuestMagnetWithKey(**game), data))
+        games = list(map(lambda game: schemas.Game(**game), data))
         return games
     except Exception as err:
         raise err
 
 
-async def update_game_magnet(
-    token: str, key: str, params: dict
-) -> schemas.QuestMagnetWithKey:
+async def update_game_magnet(token: str, key: str, params: dict) -> schemas.Game:
     try:
         uri = apiurls.URI_UPDATE_GAME + f"/{key}"
         data = await send_json_request(
             uri, token, _json=params, request_type=RequestType.PUT
         )
-        gamewithkey = schemas.QuestMagnetWithKey(**data)
+        gamewithkey = schemas.Game(**data)
         return gamewithkey
     except Exception as err:
         raise err

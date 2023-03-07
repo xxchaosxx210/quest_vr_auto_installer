@@ -16,7 +16,7 @@ from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info import ExtraGameInfoDlg
 from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
 from ui.dialogs.update_magnet import load_dialog as load_update_magnet_dialog
-from api.schemas import QuestMagnet
+from api.schemas import Game
 from lib.settings import Settings
 from api.exceptions import ApiError
 
@@ -35,6 +35,7 @@ COLUMN_ETA = 6
 
 class MagnetsListPanel(ListCtrlPanel):
     magnet_data_list: List[MagnetData] = []
+    game_data_list: List[Game] = []
 
     def __init__(self, parent: wx.Window):
         from quest_cave_app import QuestCaveApp
@@ -264,7 +265,7 @@ class MagnetsListPanel(ListCtrlPanel):
         If successful then stores those links to a local json file
         """
         try:
-            magnets: List[QuestMagnet] = await client.get_game_magnets()
+            magnets: List[Game] = await client.get_games()
             # everything went ok save locallly
             config.save_local_quest_magnets(config.QUEST_MAGNETS_PATH, magnets)
             # enable Online mode
@@ -289,36 +290,36 @@ class MagnetsListPanel(ListCtrlPanel):
         finally:
             return
 
-    async def load_magnets_into_listctrl(self, magnets: List[QuestMagnet]) -> None:
+    async def load_magnets_into_listctrl(self, games: List[Game]) -> None:
         self.clear_list()
-        for index, magnet in enumerate(magnets):
+        for index, game in enumerate(games):
             magnet_data = MagnetData(
-                uri=magnet.decoded_uri,
+                uri=game.decoded_uri,
                 download_path="",
                 index=index,
                 queue=asyncio.Queue(),
                 timeout=1.0,
-                name=magnet.name,
-                torrent_id=magnet.id,
+                name=game.name,
+                torrent_id=game.id,
             )
             self.magnet_data_list.append(magnet_data)
             # set each item to the listctrl column
-            wx.CallAfter(self.set_items, index=index, magnet=magnet)
+            wx.CallAfter(self.set_items, index=index, game=game)
 
-    def set_items(self, index: int, magnet: QuestMagnet):
+    def set_items(self, index: int, game: Game):
         """sets the game data from the magnet object
 
         Args:
             index (int): the offset of the ListCtrl row
-            magnet (QuestMagnet): see QuestMagnet class for properties
+            game (Game): see QuestMagnet class for properties
         """
-        formatted_date_added = lib.utils.format_timestamp_to_str(magnet.date_added)
+        formatted_date_added = lib.utils.format_timestamp_to_str(game.date_added)
         if index == self.listctrl.GetItemCount():
-            self.listctrl.InsertItem(index, magnet.display_name)
+            self.listctrl.InsertItem(index, game.display_name)
         else:
-            self.listctrl.SetItem(index, COLUMN_NAME, magnet.display_name)
+            self.listctrl.SetItem(index, COLUMN_NAME, game.display_name)
         self.listctrl.SetItem(index, COLUMN_DATE_ADDED, formatted_date_added)
-        self.listctrl.SetItem(index, COLUMN_SIZE, str(magnet.filesize))
+        self.listctrl.SetItem(index, COLUMN_SIZE, str(game.filesize))
 
     def on_right_click(self, evt: wx.ListEvent) -> None:
         """creates a popup menu when user right clicks on item in listctrl
@@ -597,7 +598,7 @@ class MagnetsListPanel(ListCtrlPanel):
                 return row_index
         return -1
 
-    def update_row(self, index: int, quest_data: QuestMagnet) -> None:
+    def update_row(self, index: int, quest_data: Game) -> None:
         """Updates the row if any changes to the database. This is to prevent from reloading the
         entire list and listctrl. Called from The Admin Magnet Update Frame
 

@@ -6,14 +6,14 @@ import aiohttp
 import wxasync
 
 import api.client
-from api.schemas import QuestMagnetWithKey
+from api.schemas import Game
 from api.exceptions import ApiError
 from ui.utils import TextCtrlStaticBox, show_error_message
 from lib.settings import Settings
 from lib.utils import format_timestamp_to_str, get_changed_properties
 
 
-async def load_dialog(parent: wx.Frame, title: str, magnet: QuestMagnetWithKey) -> int:
+async def load_dialog(parent: wx.Frame, title: str, magnet: Game) -> int:
     dlg = MagnetUpdateDlg(
         parent=parent,
         title=title,
@@ -32,7 +32,7 @@ class MagnetUpdateDlg(wx.Dialog):
         title: str,
         size: Tuple[int, int],
         style: int,
-        magnet: QuestMagnetWithKey,
+        magnet: Game,
     ):
         from quest_cave_app import QuestCaveApp
 
@@ -73,9 +73,7 @@ class MagnetUpdateDlg(wx.Dialog):
         self.SetSize(size)
         self.CenterOnParent()
 
-    def _create_static_text_ctrls(
-        self, parent: wx.Panel, magnet: QuestMagnetWithKey
-    ) -> dict:
+    def _create_static_text_ctrls(self, parent: wx.Panel, magnet: Game) -> dict:
         """create the static text controls in a dict for iterating and sorting
 
         Args:

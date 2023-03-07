@@ -12,9 +12,8 @@ class Game(BaseModel):
     filesize: int
     date_added: float
     id: str
+    key: str
 
-
-class QuestMagnet(Game):
     @property
     def uri(self) -> str:
         return self.magnet
@@ -57,10 +56,6 @@ class QuestMagnet(Game):
             raise err
         else:
             return uri
-
-
-class QuestMagnetWithKey(QuestMagnet):
-    key: str
 
 
 class LogErrorRequest(BaseModel):

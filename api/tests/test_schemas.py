@@ -1,11 +1,11 @@
 import binascii
 import pytest
-from api.schemas import QuestMagnet
+from api.schemas import Game
 
 
 class TestQuestMagnet:
     def test_uri(self):
-        qm = QuestMagnet(
+        qm = Game(
             name="test",
             display_name="Test Magnet",
             magnet="bWFnbmV0Oj94dD11cm46YnRpaDoxMjM0NTY3ODkwYWJjZGVm",
@@ -17,7 +17,7 @@ class TestQuestMagnet:
         assert qm.uri == "bWFnbmV0Oj94dD11cm46YnRpaDoxMjM0NTY3ODkwYWJjZGVm"
 
     def test_decoded_uri(self):
-        qm1 = QuestMagnet(
+        qm1 = Game(
             name="test",
             display_name="Test Magnet",
             magnet="bWFnbmV0Oj94dD11cm46YnRpaDoxMjM0NTY3ODkwYWJjZGVm",
@@ -29,7 +29,7 @@ class TestQuestMagnet:
         assert qm1.decoded_uri == "magnet:?xt=urn:btih:1234567890abcdef"
 
     def test_encoded_uri(self):
-        qm = QuestMagnet(
+        qm = Game(
             name="test",
             display_name="Test Magnet",
             magnet="magnet:?xt=urn:btih:1234567890abcdef",
@@ -43,7 +43,7 @@ class TestQuestMagnet:
         assert result == "bWFnbmV0Oj94dD11cm46YnRpaDoxMjM0NTY3ODkwYWJjZGVm"
 
     def test_decoded_uri_with_invalid_magnet(self):
-        qm = QuestMagnet(
+        qm = Game(
             name="test",
             display_name="Test Magnet",
             magnet="invalid_base64_string",

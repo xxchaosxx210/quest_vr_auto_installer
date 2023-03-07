@@ -256,7 +256,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     callback=callback,
                     error_callback=error_callback,
                     magnet_data=magnet_data,
-                    total_time=2,
+                    total_time=10,
                 )
             except Exception as err:
                 self.exception_handler(err=err)

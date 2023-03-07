@@ -19,7 +19,7 @@ from typing import List
 
 from pathvalidate import sanitize_filename
 
-from api.schemas import QuestMagnet, LogErrorRequest
+from api.schemas import Game, LogErrorRequest
 from api.client import post_error
 import lib.tasks
 
@@ -159,7 +159,7 @@ def async_log_handler(loop: asyncio.ProactorEventLoop, context: dict) -> None:
     _Log.error(tb_str)
 
 
-def save_local_quest_magnets(path: str, qm_list: List[QuestMagnet]) -> bool:
+def save_local_quest_magnets(path: str, qm_list: List[Game]) -> bool:
     """converts and saves the QuestMagnets to json
 
     Args:
@@ -179,7 +179,7 @@ def save_local_quest_magnets(path: str, qm_list: List[QuestMagnet]) -> bool:
         return True
 
 
-def load_local_quest_magnets(path: str) -> List[QuestMagnet]:
+def load_local_quest_magnets(path: str) -> List[Game]:
     """loads QuestMagnets from json file
 
     Args:
@@ -192,7 +192,7 @@ def load_local_quest_magnets(path: str) -> List[QuestMagnet]:
         _Log.error(f"{path} does not exist")
         return []
     with open(path, "r") as fp:
-        return list(map(lambda item: QuestMagnet(**item), json.load(fp)))
+        return list(map(lambda item: Game(**item), json.load(fp)))
 
 
 def create_data_paths(
