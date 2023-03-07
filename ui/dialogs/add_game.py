@@ -250,14 +250,13 @@ class AddGameDlg(wx.Dialog):
             self.Destroy()
 
     @async_progress_dialog(
-        "Sending", "Adding Game Data to API server, Please wait...", 10
+        "Sending", "Adding Game Data to API server, Please wait...", 1000
     )
     async def add_game_to_database(self, game_request: schemas.AddGameRequest) -> None:
         settings = Settings.load()
         if settings.token is None:
             _Log.error("Token was not found. Exiting _on_save_button")
             return
-        await asyncio.sleep(3)
         task = asyncio.create_task(client.add_game(settings.token, game_request))
         try:
             await asyncio.shield(task)
@@ -319,6 +318,9 @@ class AddGameDlg(wx.Dialog):
             parser.feed(html)
         except (aiohttp.ClientConnectionError, mparser.ParserConnectionError) as err:
             show_error_message(err.__str__())
+            return []
+        except aiohttp.InvalidURL:
+            show_error_message("Url given was invalid")
             return []
         except Exception as err:
             raise err
