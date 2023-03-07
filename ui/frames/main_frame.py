@@ -206,7 +206,7 @@ class MainFrame(wx.Frame):
             except Exception as err:
                 self.app.exception_handler(err)
             else:
-                result_code = await wxasync.AsyncShowDialog(dlg)
+                result_code = await wxasync.AsyncShowDialogModal(dlg)
                 if result_code == wx.ID_SAVE:
                     # save game to database
                     pass

@@ -244,10 +244,8 @@ class AddGameDlg(wx.Dialog):
 
     async def _on_close_button(self, evt: wx.CommandEvent) -> None:
         btn_id = evt.GetId()
-        if self.IsModal():
-            self.EndModal(btn_id)
-        else:
-            self.Destroy()
+        self.SetReturnCode(btn_id)
+        self.Close()
 
     @async_progress_dialog(
         "Sending", "Adding Game Data to API server, Please wait...", 1000
