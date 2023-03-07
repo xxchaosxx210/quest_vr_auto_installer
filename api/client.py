@@ -231,12 +231,12 @@ async def delete_logs(token: str, key: str) -> List[schemas.ErrorLog]:
             return error_logs
 
 
-async def add_game(token: str, data: schemas.Game) -> None:
+async def add_game(token: str, game_request: schemas.AddGameRequest) -> None:
     """adds a game to the database
 
     Args:
         token (str): admin token
-        magnet_data_request (schemas.QuestMagnet): the game data
+        game_request (schemas.AddGameRequest): the game data
 
     Raises:
         400 Bad Request: if game already exists
@@ -245,7 +245,7 @@ async def add_game(token: str, data: schemas.Game) -> None:
         await send_json_request(
             uri=apiurls.URI_ADD_GAME,
             token=token,
-            _json=data.dict(),
+            _json=game_request.dict(),
             request_type=RequestType.POST,
         )
     except Exception as err:

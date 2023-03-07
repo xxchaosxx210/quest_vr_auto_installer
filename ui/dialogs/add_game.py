@@ -176,21 +176,19 @@ class AddGameDlg(wx.Dialog):
             wx.EVT_BUTTON, self._on_magnet_get_click, self.mag_url_ctrl.button
         )
 
-    async def get_values_from_ui(self) -> schemas.Game:
+    async def get_values_from_ui(self) -> schemas.AddGameRequest:
         """get the values from the ui and return them as a QuestMagnet object"""
         b64str = lib.utils.encode_str2b64(self.magnet_url_box.get_text())
-        try:
-            game_request = schemas.Game(
-                name=self.torrent_name_box.get_text(),
-                display_name=self.display_name_box.get_text(),
-                magnet=b64str,
-                version=float(self.version_box.get_text()),
-                id=self.torrent_id_box.get_text(),
-                filesize=int(self.filesize_box.get_text()),
-                date_added=0.0,
-            )
-        except Exception as err:
-            _Log.error(err.__str__() + " - get_values_from_ui")
+        game_request = schemas.AddGameRequest(
+            name=self.torrent_name_box.get_text(),
+            display_name=self.display_name_box.get_text(),
+            magnet=b64str,
+            version=float(self.version_box.get_float()),
+            id=self.torrent_id_box.get_text(),
+            filesize=int(self.filesize_box.get_int()),
+            date_added=0.0,
+            key="",
+        )
         return game_request
 
     async def _on_magnet_get_click(self, evt: wx.CommandEvent) -> None:
@@ -259,7 +257,17 @@ class AddGameDlg(wx.Dialog):
 
     async def _on_save_button(self, evt: wx.CommandEvent) -> None:
         """user clicked on the save button"""
-        magnet = await self.get_values_from_ui()
+        from pydantic.error_wrappers import ValidationError
+
+        try:
+            magnet = await self.get_values_from_ui()
+        except ValidationError as err:
+            errors = err.errors()
+            show_error_message(errors[-1]["msg"])
+            return
+        except TypeError as err:
+            show_error_message(err.__str__())
+            return
         settings = Settings.load()
         progress = wx.ProgressDialog(
             "QuestCave Loading",

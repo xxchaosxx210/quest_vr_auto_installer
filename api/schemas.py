@@ -1,6 +1,7 @@
 import base64
 
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
+from pydantic.fields import ModelField
 from uuid import UUID
 
 
@@ -56,6 +57,20 @@ class Game(BaseModel):
             raise err
         else:
             return uri
+
+
+class AddGameRequest(Game):
+    @validator("display_name")
+    def check_for_non_empty_string(
+        cls: "AddGameRequest",
+        value: str,
+        values: dict,
+        config: BaseModel.Config,
+        field: ModelField,
+    ) -> str:
+        if not value:
+            raise ValueError(f"{field.name} cannot be empty")
+        return value
 
 
 class LogErrorRequest(BaseModel):

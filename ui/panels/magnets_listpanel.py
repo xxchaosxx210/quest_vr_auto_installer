@@ -88,6 +88,7 @@ class MagnetsListPanel(ListCtrlPanel):
         Returns:
             None: returns None from the super class method
         """
+        # check if user is admin
         settings = Settings.load()
         magnet_data = self.get_selected_torrent_item()
         if not settings.is_user_admin() or not magnet_data:
@@ -101,7 +102,8 @@ class MagnetsListPanel(ListCtrlPanel):
             )
         except lib.tasks.TaskIsRunning as err:
             ui.utils.show_error_message(err.__str__())
-        return super().on_item_double_click(evt)
+        finally:
+            return super().on_item_double_click(evt)
 
     async def find_and_launch_magnet_update_dialog(
         self, settings: Settings, magnet_data: MagnetData
@@ -112,22 +114,16 @@ class MagnetsListPanel(ListCtrlPanel):
             settings (Settings): _description_
             magnet_data (MagnetData): _description_
         """
-
         if settings.token is None:
             ui.utils.show_error_message("No token was found. Unable to Authenticate")
             return
-
         # find the magnet in the database by torrent ID
-
         magnets = await lib.api_handler.get_magnets_from_torrent_id(
             settings.token, magnet_data.torrent_id, ui.utils.show_error_message
         )
-
         if len(magnets) < 1:
             return
-
         # open the magnet dialog with the first magnet
-
         await load_update_magnet_dialog(
             parent=self.app.frame, title="Update Game", magnet=magnets[0]
         )

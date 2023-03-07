@@ -86,6 +86,37 @@ class TextCtrlStaticBox(wx.StaticBox):
     def set_text(self, text: str) -> None:
         self.textctrl.SetValue(text)
 
+    def get_int(self) -> int:
+        """gets integer value from textctrl
+
+        Raises:
+            TypeError: if the value is not a integer
+
+        Returns:
+            int: the converted integer value
+        """
+        text: str = self.textctrl.GetValue()
+        if not text.isdigit():
+            raise TypeError(f"{self.GetLabel()} field must be a Numeric Value")
+        return int(text)
+
+    def get_float(self) -> float:
+        """gets float value from textctrl
+
+        Raises:
+            TypeError: if the value is not a float
+
+        Returns:
+            float: the converted float value
+        """
+        text = self.textctrl.GetValue()
+        try:
+            value = float(text)
+        except ValueError:
+            raise TypeError(f"{self.GetLabel()} field must a Float value")
+        else:
+            return value
+
 
 def get_image(filename: str) -> wx.Image:
     """loads an image from file and converts to bitmap
