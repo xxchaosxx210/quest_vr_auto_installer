@@ -1,25 +1,57 @@
 import asyncio
 import logging
-from typing import Any, Dict
+from typing import Any, Dict, Tuple
 
 import wx
 
 import lib.tasks as tasks
-
 import api.client
 from api.exceptions import ApiError
-
 from ui.utils import TextCtrlStaticBox
 
-_Log = logging.getLogger(__name__)
+_Log = logging.getLogger()
 
 
 class LoginDlg(wx.Dialog):
-    def __init__(self, email_field: str, *args, **kw):
-        super().__init__(*args, **kw)
+    def __init__(
+        self,
+        parent: wx.Window,
+        id: int,
+        title: str,
+        email_field: str,
+        size: Tuple[int, int],
+        style=wx.DEFAULT_DIALOG_STYLE,
+    ):
+        super().__init__(parent=parent, id=id, title=title, style=style)
 
         self._login_data: Dict[str, Any] | None = None
+        self._create_controls(email_field)
+        self._bind_events()
+        self._do_laylout()
+        self.SetSize(size)
+        self.CenterOnParent()
 
+    def _do_laylout(self) -> None:
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        gs = wx.GridSizer(cols=1)
+        # textctrls
+        gs.Add(self.username_sbox.sizer, 1, wx.EXPAND | wx.ALL, 10)
+        gs.Add(self.password_sbox.sizer, 1, wx.ALL | wx.EXPAND, 10)
+        vbox.Add(gs, 0, wx.EXPAND, 10)
+        # bottom buttons
+        gs = wx.GridSizer(cols=2)
+        gs.Add(self.submit_button, 1, wx.EXPAND | wx.ALL, 5)
+        gs.Add(self.cancel_button, 1, wx.EXPAND | wx.ALL, 5)
+        vbox.Add(gs, 0, wx.ALIGN_CENTER_HORIZONTAL, 10)
+        self.SetSizerAndFit(vbox)
+
+    def _bind_events(self) -> None:
+        self.Bind(wx.EVT_BUTTON, self._on_submit_button, self.submit_button)
+        self.Bind(
+            wx.EVT_BUTTON, lambda *args: self.EndModal(wx.ID_CANCEL), self.cancel_button
+        )
+
+    def _create_controls(self, email_field: str) -> None:
         self.username_sbox = TextCtrlStaticBox(
             self,
             email_field,
@@ -29,32 +61,8 @@ class LoginDlg(wx.Dialog):
         self.password_sbox = TextCtrlStaticBox(
             self, "", wx.TE_PASSWORD, label="Password"
         )
-
         self.submit_button = wx.Button(self, -1, "Submit")
-        self.Bind(wx.EVT_BUTTON, self._on_submit_button, self.submit_button)
-        cancel_button = wx.Button(self, wx.ID_CANCEL, "Cancel")
-        self.Bind(
-            wx.EVT_BUTTON, lambda *args: self.EndModal(wx.ID_CANCEL), cancel_button
-        )
-
-        gs = wx.GridSizer(cols=1)
-
-        gs.Add(self.username_sbox.sizer, 1, wx.EXPAND | wx.ALL, 10)
-        gs.Add(self.password_sbox.sizer, 1, wx.ALL | wx.EXPAND, 10)
-
-        vbox = wx.BoxSizer(wx.VERTICAL)
-
-        vbox.Add(gs, 0, wx.EXPAND, 10)
-
-        gs = wx.GridSizer(cols=2)
-        gs.Add(self.submit_button, 1, wx.EXPAND | wx.ALL, 5)
-        gs.Add(cancel_button, 1, wx.EXPAND | wx.ALL, 5)
-
-        vbox.Add(gs, 0, wx.ALIGN_CENTER_HORIZONTAL, 10)
-
-        self.SetSizerAndFit(vbox)
-        self.SetSize(kw["size"])
-        self.CenterOnParent()
+        self.cancel_button = wx.Button(self, wx.ID_CANCEL, "Cancel")
 
     def _on_submit_button(self, evt: wx.CommandEvent) -> None:
         """Creates a thread which then creates an eventful that authenticates

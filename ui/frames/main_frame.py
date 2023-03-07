@@ -289,6 +289,7 @@ class MainFrame(wx.Frame):
         settings = Settings.load()
         with LoginDlg(
             parent=self,
+            id=wx.ID_ANY,
             title="Login",
             email_field=settings.get_user_email(),
             size=(300, -1),
