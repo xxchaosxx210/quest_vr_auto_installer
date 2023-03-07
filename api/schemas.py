@@ -65,7 +65,7 @@ class AddGameRequest(Game):
         cls: "AddGameRequest",
         value: str,
         values: dict,
-        config: BaseModel.Config,
+        config: object,
         field: ModelField,
     ) -> str:
         if not value:

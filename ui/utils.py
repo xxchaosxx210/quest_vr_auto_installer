@@ -1,7 +1,42 @@
 import os
+import asyncio
 from typing import Tuple
+from functools import wraps
 
 import wx
+
+
+def async_progress_dialog(title: str, message: str, timeout: float | None):
+    """Async Decorator that displays a wxProgressDialog and closes once the function is finished
+    either when exception is caught or function completes
+
+    Args:
+        title (str): the title of the progress dialog
+        message (str): the message to display in the ProgressDialog
+        timeout (float | None): if set to None then will not close until the task is complete
+        else will quit once timeout in seconds has reached
+    """
+
+    def decorator(func):
+        @wraps(func)
+        async def wrapper(*args, **kwargs):
+            dlg = wx.ProgressDialog(
+                title, message, style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE
+            )
+            dlg.Pulse()
+            try:
+                task = asyncio.create_task(func(*args, **kwargs))
+                result = await asyncio.wait_for(task, timeout=timeout)
+            except Exception as e:
+                dlg.Destroy()
+                raise e
+            finally:
+                dlg.Destroy()
+                return result
+
+        return wrapper
+
+    return decorator
 
 
 def load_progress_dialog(

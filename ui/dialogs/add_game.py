@@ -5,13 +5,14 @@ from typing import List, Tuple
 import aiohttp
 import wx
 import wxasync
+from pydantic.error_wrappers import ValidationError
 
 import lib.magnet_parser as mparser
 import lib.utils
 import deluge.utils as du
 import api.schemas as schemas
 import api.client as client
-from ui.utils import TextCtrlStaticBox, show_error_message
+from ui.utils import TextCtrlStaticBox, show_error_message, async_progress_dialog
 from ui.panels.listctrl_panel import ListCtrlPanel
 from lib.settings import Settings
 from api.exceptions import ApiError
@@ -214,6 +215,9 @@ class AddGameDlg(wx.Dialog):
         magnet_link = self.mag_list_pnl.listctrl.GetItem(index, 0).GetText()
         await self.process_metadata_from_magnet(magnet_link=magnet_link)
 
+    @async_progress_dialog(
+        "QuestCave Loading", "Getting Magnet Info, Please wait...10 second timeout", 10
+    )
     async def process_metadata_from_magnet(self, magnet_link: str) -> None:
         """process the magnet link and get the metadata. Handle any errors
 
@@ -223,14 +227,6 @@ class AddGameDlg(wx.Dialog):
         Args:
             magnet_link (str): the magnet link to get the meta data from
         """
-        progress = wx.ProgressDialog(
-            "QuestCave Loading",
-            f"Getting Magnet Info, Please wait...{AddGameDlg.MAGNET_INFO_TIMEOUT} second timeout",
-            100,
-            self,
-            wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
-        )
-        progress.Pulse()
         task = asyncio.create_task(
             du.get_magnet_info(magnet_link, AddGameDlg.MAGNET_INFO_TIMEOUT)
         )
@@ -245,8 +241,6 @@ class AddGameDlg(wx.Dialog):
         else:
             self.mag_url_ctrl.set_text(magnet_link)
             self.add_magnet_data_to_ui(magnet_link, meta_data)
-        finally:
-            progress.Destroy()
 
     async def _on_close_button(self, evt: wx.CommandEvent) -> None:
         btn_id = evt.GetId()
@@ -255,32 +249,16 @@ class AddGameDlg(wx.Dialog):
         else:
             self.Destroy()
 
-    async def _on_save_button(self, evt: wx.CommandEvent) -> None:
-        """user clicked on the save button"""
-        from pydantic.error_wrappers import ValidationError
-
-        try:
-            magnet = await self.get_values_from_ui()
-        except ValidationError as err:
-            errors = err.errors()
-            show_error_message(errors[-1]["msg"])
-            return
-        except TypeError as err:
-            show_error_message(err.__str__())
-            return
+    @async_progress_dialog(
+        "Sending", "Adding Game Data to API server, Please wait...", 10
+    )
+    async def add_game_to_database(self, game_request: schemas.AddGameRequest) -> None:
         settings = Settings.load()
-        progress = wx.ProgressDialog(
-            "QuestCave Loading",
-            "Saving Magnet, Please wait...",
-            100,
-            self,
-            wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
-        )
-        progress.Pulse()
         if settings.token is None:
             _Log.error("Token was not found. Exiting _on_save_button")
             return
-        task = asyncio.create_task(client.add_game(settings.token, magnet))
+        await asyncio.sleep(3)
+        task = asyncio.create_task(client.add_game(settings.token, game_request))
         try:
             await asyncio.shield(task)
         except asyncio.CancelledError:
@@ -291,8 +269,21 @@ class AddGameDlg(wx.Dialog):
             show_error_message("".join(err.args))
         else:
             wx.MessageBox("Magnet Saved", "QuestCave", wx.OK | wx.ICON_INFORMATION)
-        finally:
-            progress.Destroy()
+
+    async def _on_save_button(self, evt: wx.CommandEvent) -> None:
+        """user clicked on the save button"""
+        # get the values from the controls and validate them before
+        # sending new game request to the api
+        try:
+            game_request = await self.get_values_from_ui()
+        except ValidationError as err:
+            errors = err.errors()
+            show_error_message(errors[-1]["msg"])
+            return
+        except TypeError as err:
+            show_error_message(err.__str__())
+            return
+        await self.add_game_to_database(game_request)
 
     async def _on_weburlctrl_btn_click(self, evt: wx.CommandEvent) -> None:
         """
