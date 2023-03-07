@@ -119,16 +119,12 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self._on_disconnect_device, disconnect_m_item)
         return menu
 
-    def _on_disconnect_device(self, evt: wx.MenuEvent) -> None:
-        if not self.app.debug_mode:
-            return
-        # get the selected device from the background thread
-        device_name = self.app.monitoring_device_thread.get_selected_device()
-        # check if the device is connected and remove it
-        if device_name and not lib.debug.FakeQuest.remove_device(device_name):
-            _Log.error(f"Failed to remove device {device_name}. Reason: Not found")
-
     def _create_user_menu(self) -> wx.Menu:
+        """create the user menu for the main window
+
+        Returns:
+            wx.Menu: the user menu
+        """
         settings = Settings.load()
         menu = wx.Menu()
         login_m_item = menu.Append(wx.ID_ANY, "Login")
@@ -145,6 +141,8 @@ class MainFrame(wx.Frame):
         self.Bind(wx.EVT_MENU, self._on_device_dialog, device_m_item)
         device_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("D")))
 
+        menu.AppendSeparator()
+
         # Create an Admin submenu
         self.admin_submenu = wx.Menu()
         admin_add_game_m_item = self.admin_submenu.Append(wx.ID_ANY, "Add Game")
@@ -159,7 +157,25 @@ class MainFrame(wx.Frame):
         settings_m_item = menu.Append(wx.ID_ANY, "Preferences\tCtrl+S")
         settings_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("S")))
         self.Bind(wx.EVT_MENU, self._on_settings_menu, settings_m_item)
+
+        menu.AppendSeparator()
+        exit_m_item = menu.Append(wx.ID_ANY, "Exit")
+        self.Bind(wx.EVT_MENU, lambda *args: self.Close(), exit_m_item)
         return menu
+
+    def _on_disconnect_device(self, evt: wx.MenuEvent) -> None:
+        """simulates a device being disconnected
+
+        Args:
+            evt (wx.MenuEvent):
+        """
+        if not self.app.debug_mode:
+            return
+        # get the selected device from the background thread
+        device_name = self.app.monitoring_device_thread.get_selected_device()
+        # check if the device is connected and remove it
+        if device_name and not lib.debug.FakeQuest.remove_device(device_name):
+            _Log.error(f"Failed to remove device {device_name}. Reason: Not found")
 
     def _on_device_dialog(self, evt: wx.MenuEvent) -> None:
         """opens a DeviceListDialog
