@@ -35,7 +35,6 @@ COLUMN_ETA = 6
 
 class MagnetsListPanel(ListCtrlPanel):
     magnet_data_list: List[MagnetData] = []
-    game_data_list: List[Game] = []
 
     def __init__(self, parent: wx.Window):
         from quest_cave_app import QuestCaveApp
