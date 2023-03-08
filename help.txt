@@ -1,0 +1,100 @@
+                 QuestCave Help
+
+                 Version 1.0.0
+
+Developed by the Lone Taxi driver aka Paul Millar
+
+-------------------------------------------------
+
+
+Description:
+
+QuestCave Downloads and Installs Quest 2 Games (Paid/Free) to a Meta Quest 2 device.
+
+
+What you need:
+
+1. A Windows based PC/Laptop
+2. USB C Cable
+3. Quest 2 VR Headset with developer mode enabled (see how to setup Quest 2 Device below)
+4. Meta Oculus App installed on Mobile phone
+
+
+Setup Quest 2 VR Headset:
+
+In order for QuestCave to detect your Quest VR Device, you will need to take a few steps
+if you have not already, so here we go...
+
+
+Step 1: 
+Go to the Meta Developer website and either login or create a new Account. It is basically
+your Facebook account. The link is provided below...
+
+https://dashboard.oculus.com/
+
+
+Step 2: 
+Now create a new Organization. Any random name will do. You're setting up a developer account
+for testing VR Apps, but in our case its side loading Quest 2 games. Don't worry this completly free!
+and reversible if you don't want to use thise feature anymore. However, you choose not to continue then you
+cannot get those great games for free.
+Anyway, if you're feeling brave, like me then continue and agree to the terms of service
+
+Note: If you're a Windows user and as the time of writing this I havent built a Mac or Linux
+version of this app so you will be a Windows user, you will need to download and install
+an extra windows driver so Windows can recognize the Quest 2 device. I have provided the link
+below for you...
+
+https://developer.oculus.com/downloads/package/oculus-adb-drivers/
+
+Download, Install and reboot the computer.
+
+
+Step 3: 
+As a Quest 2 user, you should already have the Oculus app installed on your mobile device. Turn on your
+Quest if it isn't already, open the Oculus app on you phone, go to 'Menu' section on the bottom right hand side,
+go to 'Settings'.
+
+Make sure your headset is marked as 'Connected' within the app, head into 'Developer Mode', 
+then simply toggle it on. Reboot your Quest now.
+
+
+Step 4: 
+You're at the home stretch! Plug your freshly rebooted Quest into your computer/Android device using a USB
+Type-C cable.Now physically put on your headset, and you should see a window (in VR) that says 'Allow USB debugging?' 
+at which point you simply click the check box 'Always allow from this computer'.
+
+Now you're all set!
+
+
+How to use:
+Download and Install the QuestCave app 
+
+https://questcave.com/get-the-app
+
+run it, Windows Firewall will ask that Deluge wants to connect to the internet
+allow it. This is perfectly fine as Deluge is a Bittorrent client and downloads
+the Games in the background.
+
+You should now be presented with a Device selection Dialog. Plugin your Quest 2 device
+via USB. Turn the VR headset on if it isnt already and Allow the PC to connect to the device
+take the Headset off and you should now see a device listed in the device selection
+dialog box of the QuestCave app. Double click on it.
+
+Well done, your device selected and you're ready to play some games. Simply select a Game
+in the list, right click on the mouse and select download and install. Let the download and install
+process run (may take a while depending on the size of the Game).
+
+Note: That currently, QuestCave doesnt support multiple Downloads yet. But will be added at a future release
+I just want to get a stable working version of this app first before adding new features
+
+
+take note this is an early release and will contain errors sometimes.
+A message box will appear and ask if you would like to send error information
+I would really appreciate it if you did as this helps improve the Application further
+
+Also, new Games will be added when they become availible, you will be notified. I do take requests
+send to the email below.
+
+
+any issues contact me at chaosad@hotmail.co.uk
