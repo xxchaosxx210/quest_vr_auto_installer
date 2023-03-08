@@ -158,7 +158,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         self.frame: MainFrame = MainFrame(parent=None, id=-1, title=self.title)
         self.frame.Show()
         if not self.skip:
-            self.monitoring_device_thread = lib.quest.MonitorSelectedDevice(
+            self.monitoring_device_thread = lib.quest.MonitorQuestDevices(
                 callback=self.on_device_event, debug_mode=self.debug_mode
             )
             self.monitoring_device_thread.start()

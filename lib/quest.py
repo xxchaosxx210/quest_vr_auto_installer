@@ -17,7 +17,7 @@ InstallStatusFunction = Callable[[str], None]
 _Log = logging.getLogger()
 
 
-class MonitorSelectedDevice(threading.Thread):
+class MonitorQuestDevices(threading.Thread):
     def __init__(self, callback: Callable[[dict], None], debug_mode: bool) -> None:
         """
         callback should take a dict properties:
