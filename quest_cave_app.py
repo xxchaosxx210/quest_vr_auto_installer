@@ -339,16 +339,13 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                 await self.install_listpanel.load(
                     self.monitoring_device_thread.get_selected_device()
                 )
-
+            self.install_dialog.complete()
             # close install dialog?
             if settings.close_dialog_after_install:
-                self.install_dialog.Destroy()
+                self.install_dialog.close()
             else:
                 # install went ok. Update statustext
                 self.on_install_update("Installation has completed. Enjoy!!")
-                wx.CallAfter(
-                    self.frame.SetStatusText, text="Installation has completed. Enjoy!"
-                )
         return True
 
     async def cleanup_files(self, path: str) -> None:
@@ -394,7 +391,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         """
         if not self.install_dialog:
             return
-        self.install_dialog.write(message)
+        self.install_dialog.writeline(message)
 
     async def remove_package(self, package_name: str) -> None:
         """communicates with the ADB daemon and uninstalls the package from package name

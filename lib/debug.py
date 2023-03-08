@@ -156,11 +156,10 @@ async def simulate_game_install(
         raise raise_exception
     await asyncio.sleep(random.uniform(*total_time_range))
 
-    elapsed_time = time.time() - start_time
-    formatted_time = str(timedelta(seconds=elapsed_time))
+    # elapsed_time = time.time() - start_time
+    # formatted_time = str(timedelta(seconds=elapsed_time))
 
-    callback("Install has completed successfully. Enjoy!")
-    callback(f"Install time: {formatted_time}")
+    callback(f"{apk_name} has been installed")
 
 
 async def simulate_game_download(
