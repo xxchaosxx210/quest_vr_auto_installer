@@ -21,6 +21,7 @@ from ui.dialogs.user_info import UserInfoDlg
 from ui.dialogs.add_game import AddGameDlg
 from ui.dialogs.about import load_dialog as load_about_dialog
 from ui.dialogs.device_list import open_device_selection_dialog
+from ui.dialogs.help import HtmlHelpDlg
 from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
 from api.exceptions import ApiError
@@ -86,9 +87,20 @@ class MainFrame(wx.Frame):
             evt.Skip()
 
         menu = wx.Menu()
+        help_m_item = menu.Append(wx.ID_ANY, "Help\tF1")
+        help_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_NORMAL, wx.WXK_F1))
+        self.Bind(wx.EVT_MENU, self._on_help, help_m_item)
         about_m_item = menu.Append(wx.ID_ANY, "About")
         self.Bind(wx.EVT_MENU, on_about_menu_item, about_m_item)
         return menu
+
+    def _on_help(self, evt: wx.MenuEvent) -> None:
+        dlg = HtmlHelpDlg(
+            parent=self, title="QuestCave Documentation", id=wx.ID_ANY, size=(800, 600)
+        )
+        dlg.ShowModal()
+        dlg.Destroy()
+        evt.Skip()
 
     def _create_search_menu(self) -> wx.Menu:
         menu = wx.Menu()
