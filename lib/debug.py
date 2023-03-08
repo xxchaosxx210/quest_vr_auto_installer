@@ -2,7 +2,7 @@ import asyncio
 from datetime import timedelta
 import os
 import time
-from typing import Any, Dict, List, Tuple, cast
+from typing import Any, Callable, Dict, List, Tuple, cast
 import random
 
 import deluge.handler as dh
@@ -199,6 +199,38 @@ async def simulate_game_download(
         finally:
             await cast(Any, callback)(torrent_status)
     return True
+
+
+async def simulate_cleanup(
+    path_to_remove: str,
+    error_callback: Callable[[str], None],
+    force_error: bool,
+    wait_time: float = 3.0,
+) -> None:
+    """simulate the cleanup function in the quest module
+
+    Args:
+        path_to_remove (str): the path to remove
+        error_callback (_type_): the callback to handle the error
+        force_error (bool): if True, will force an error to be raised
+        wait_time (float, optional): the time to wait to simulate the path removal. Defaults to 3.0.
+    """
+
+    def on_error(func: Callable[[str], None], path: str, exc_info: tuple) -> None:
+        """calls the callback by passing the string from the exception into the callback
+
+        Args:
+            func (Callable): the function callback to handle the error
+            path (str): the path to which the exception was raised
+            exc_info (tuple): information about the exception
+
+            read the shutil.rmtree docs for more info
+        """
+        func(f"Error removing path {path}, reason: {exc_info[1].__str__()})")
+
+    if force_error:
+        on_error(error_callback, path_to_remove, (None, OSError("forced error"), None))
+    await asyncio.sleep(3)
 
 
 def get_torrent_status(seconds: int, total_time: int) -> Dict[str, Any]:

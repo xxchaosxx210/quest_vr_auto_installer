@@ -193,7 +193,7 @@ class MonitorQuestDevices(threading.Thread):
         self._queue.put_nowait({"request": "device-names-reset"})
 
 
-def cleanup(path_to_remove: str, error_callback) -> None:
+async def cleanup(path_to_remove: str, error_callback) -> None:
     """removes a directory and all its contents
 
     if any errors occur then the error_callback is called with the error string

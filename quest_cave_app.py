@@ -324,22 +324,23 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             return False
         else:
             settings = Settings.load()
-            # check no debug mode and remove files after install
-            if not self.debug_mode and settings.remove_files_after_install:
-                # delete the torrent files on the local path
-                lib.quest.cleanup(
-                    path_to_remove=path, error_callback=self.on_install_update
-                )
+            # check if user wants to remove the files after install
+            if settings.remove_files_after_install:
+                self.on_install_update("Removing files...")
+                try:
+                    await self.cleanup_files(path)
+                except Exception as err:
+                    self.exception_handler(err)
+                else:
+                    self.on_install_update("Files removed")
 
             # check listpanel exists and reload the package listctrl
-
             if self.install_listpanel is not None:
                 await self.install_listpanel.load(
                     self.monitoring_device_thread.get_selected_device()
                 )
 
             # close install dialog?
-
             if settings.close_dialog_after_install:
                 self.install_dialog.Destroy()
             else:
@@ -349,6 +350,30 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     self.frame.SetStatusText, text="Installation has completed. Enjoy!"
                 )
         return True
+
+    async def cleanup_files(self, path: str) -> None:
+        """removes the torrent files from the path
+
+        Args:
+            path (str): the path to remove
+        """
+        if not self.debug_mode:
+            # delete the torrent files on the local path
+            task = asyncio.create_task(
+                lib.quest.cleanup(
+                    path_to_remove=path, error_callback=self.on_install_update
+                )
+            )
+        else:
+            # simulate the cleanup
+            task = asyncio.create_task(
+                debug.simulate_cleanup(
+                    path_to_remove=path,
+                    error_callback=self.on_install_update,
+                    force_error=False,
+                )
+            )
+        await asyncio.wait_for(task, timeout=None)
 
     async def on_torrent_update(self, torrent_status: dict) -> None:
         """passes the torrent status onto the update list item function in the magnet listpanel
