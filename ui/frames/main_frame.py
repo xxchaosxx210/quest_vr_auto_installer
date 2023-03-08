@@ -358,6 +358,9 @@ class MainFrame(wx.Frame):
         """
         dlg = InstallProgressDlg(self)
         dlg.Show()
+        dlg.write("If you can see this text")
+        dlg.write("then the dialog is working")
+        dlg.write("another new line")
 
     def on_show(self, evt: wx.ShowEvent) -> None:
         """
