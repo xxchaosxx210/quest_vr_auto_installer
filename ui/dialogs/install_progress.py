@@ -23,6 +23,7 @@ class InstallProgressDlg(wx.Dialog):
         self._do_properties()
         self._timer_setup()
         self._bind_events()
+        self.CenterOnParent()
 
     def _bind_events(self) -> None:
         self.Bind(wx.EVT_BUTTON, self._on_cancel_button, self.cancel_button)
@@ -34,7 +35,7 @@ class InstallProgressDlg(wx.Dialog):
         self._timer.Start(1000)
 
     def _on_timer(self, event: wx.TimerEvent) -> None:
-        """update the elapsed time
+        """update the elapsed time every second
 
         Args:
             event (wx.TimerEvent):
@@ -59,20 +60,26 @@ class InstallProgressDlg(wx.Dialog):
         dlg_vbox.Add(txtctrl_hbox, 1, wx.EXPAND | wx.ALL, BORDER)
         dlg_vbox.Add(button_hbox, 0, wx.ALIGN_CENTER_HORIZONTAL, BORDER)
         self.SetSizerAndFit(dlg_vbox)
+        # resize the dialog after the sizer is set
+        width, height = self.GetParent().GetSize()
+        self.SetSize((int(width * 0.8), int(height * 0.8)))
 
     def _do_properties(self) -> None:
+        """set the textctrl font, remove the dialog close box"""
         # make the font larger in the textctrl
         font = self.text_ctrl.GetFont()
         # increment the pointsize by 1
         font.SetPointSize(font.GetPointSize() + 1)
         self.text_ctrl.SetFont(font)
         self.SetWindowStyleFlag(self.GetWindowStyleFlag() & ~wx.CLOSE_BOX)
-        width, height = self.GetParent().GetSize()
-        self.SetSize((int(width * 0.8), int(height * 0.8)))
-        self.CenterOnParent()
 
     def writeline(self, text: str) -> None:
-        text += "\n\n"
+        """displays the text in the textctrl and adds a newline
+
+        Args:
+            text (str): the text to display
+        """
+        text += "\n"
         wx.CallAfter(self.text_ctrl.AppendText, text=text)
 
     def _on_cancel_button(self, evt: wx.CommandEvent) -> None:
@@ -89,14 +96,15 @@ class InstallProgressDlg(wx.Dialog):
         self.close()
 
     def complete(self) -> None:
+        """stops the timer and sets the title to install complete"""
         self._timer.Stop()
-        # set title to install complete and format the elapsed time
         self.SetTitle(
             f"Install Complete. Total Elapsed Time: ({time.strftime('%H:%M:%S', time.gmtime(self._elapsed_time))})"
         )
         self._elapsed_time = 0.0
 
     def close(self) -> None:
+        """check if dialog is modal and close or destroy the dialog"""
         if self.IsModal():
             self.Close()
         else:
