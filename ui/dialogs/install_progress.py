@@ -2,6 +2,8 @@ import time
 
 import wx
 
+import lib.tasks
+
 
 class InstallProgressDlg(wx.Dialog):
     def __init__(self, parent: wx.Frame):
@@ -27,6 +29,7 @@ class InstallProgressDlg(wx.Dialog):
 
     def _bind_events(self) -> None:
         self.Bind(wx.EVT_BUTTON, self._on_cancel_button, self.cancel_button)
+        self.Bind(wx.EVT_BUTTON, self._on_close_button, self.close_button)
 
     def _timer_setup(self) -> None:
         self._elapsed_time: float = 0.0
@@ -49,6 +52,7 @@ class InstallProgressDlg(wx.Dialog):
     def _create_controls(self) -> None:
         self.text_ctrl = wx.TextCtrl(self, style=wx.TE_MULTILINE | wx.TE_READONLY)
         self.cancel_button = wx.Button(self, id=wx.ID_CANCEL, label="Cancel")
+        self.close_button = wx.Button(self, id=wx.ID_CLOSE, label="Close")
 
     def _do_layout(self) -> None:
         BORDER = 10
@@ -57,6 +61,7 @@ class InstallProgressDlg(wx.Dialog):
         txtctrl_hbox.Add(self.text_ctrl, 1, wx.EXPAND | wx.ALL, BORDER)
         button_hbox = wx.BoxSizer(wx.HORIZONTAL)
         button_hbox.Add(self.cancel_button, 0, wx.ALL, BORDER)
+        button_hbox.Add(self.close_button, 0, wx.ALL, BORDER)
         dlg_vbox.Add(txtctrl_hbox, 1, wx.EXPAND | wx.ALL, BORDER)
         dlg_vbox.Add(button_hbox, 0, wx.ALIGN_CENTER_HORIZONTAL, BORDER)
         self.SetSizerAndFit(dlg_vbox)
@@ -83,16 +88,39 @@ class InstallProgressDlg(wx.Dialog):
         wx.CallAfter(self.text_ctrl.AppendText, text=text)
 
     def _on_cancel_button(self, evt: wx.CommandEvent) -> None:
-        """cancel the install and destroy the dialog
+        """cancel the install is an install task is running
 
         Args:
             evt (wx.CommandEvent):
         """
-        btn_id: int = evt.GetId()
-        self.app.install_dialog = None
-        if self._timer.IsRunning():
-            self._timer.Stop()
-        self.SetReturnCode(btn_id)
+        try:
+            lib.tasks.cancel_task(self.app.start_install_process)
+        except KeyError:
+            return
+        else:
+            # stop the timer
+            if self._timer.IsRunning():
+                self._timer.Stop()
+            self.writeline("Cancelling installation please wait...")
+
+    def _on_close_button(self, evt: wx.CommandEvent) -> None:
+        """check if the install is running if it isnt then close the dialog
+
+        Args:
+            evt (wx.CommandEvent):
+        """
+        try:
+            task = lib.tasks.get_task(self.app.start_install_process)
+        except KeyError:
+            # no task. ignore this exception and close dialog
+            pass
+        else:
+            # task exists. Check if it is running
+            if lib.tasks.is_task_running(task):
+                self.writeline(
+                    "Cannot Close while installing. You need to Cancel first."
+                )
+                return
         self.close()
 
     def complete(self) -> None:
@@ -105,6 +133,8 @@ class InstallProgressDlg(wx.Dialog):
 
     def close(self) -> None:
         """check if dialog is modal and close or destroy the dialog"""
+        self.app.install_dialog = None
+        self.SetReturnCode(self.close_button.GetId())
         if self.IsModal():
             self.Close()
         else:

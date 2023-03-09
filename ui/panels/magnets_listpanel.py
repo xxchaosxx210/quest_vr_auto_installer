@@ -364,7 +364,7 @@ class MagnetsListPanel(ListCtrlPanel):
         # if debugging enabled then create the debug sub menu
         if self.app.debug_mode:
             debug_menu = wx.Menu()
-            install_apk = debug_menu.Append(wx.ID_ANY, "Install APK")
+            install_apk = debug_menu.Append(wx.ID_ANY, "Fake Install")
             self.Bind(wx.EVT_MENU, self.on_install_apk, install_apk)
             menu.AppendSubMenu(debug_menu, "Debug")
 

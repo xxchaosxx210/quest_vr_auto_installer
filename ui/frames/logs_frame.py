@@ -213,7 +213,12 @@ class LogsFrame(wx.Frame):
             error_logs = await api.client.get_logs(
                 settings.token, params={"sort_by": "date_added", "order_by": "desc"}
             )
-        except (aiohttp.ClientConnectionError, ApiError) as err:
+        except aiohttp.ClientConnectionError as err:
+            show_error_message(err.__str__())
+        except ApiError as err:
+            if err.status_code == 401:
+                # invalid credentials remove any token and save the settings
+                settings.remove_auth()
             show_error_message(err.__str__())
         except Exception as err:
             raise err

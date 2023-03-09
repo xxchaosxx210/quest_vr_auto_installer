@@ -273,7 +273,13 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         # check if user wants to continue to install step and make sure that download went ok
 
         if not settings.download_only and ok_to_install:
-            await self.start_install_process(magnet_data.download_path)
+            install_task = lib.tasks.check_task_and_create(
+                self.start_install_process, path=magnet_data.download_path
+            )
+            try:
+                await asyncio.wait_for(install_task, timeout=None)
+            except asyncio.CancelledError:
+                _Log.info("Install task was cancelled")
 
     async def start_install_process(self, path: str) -> bool:
         """starts the install process communicates with ADB and pushes any data paths onto

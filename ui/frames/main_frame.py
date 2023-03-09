@@ -31,6 +31,12 @@ from api.exceptions import ApiError
 _Log = logging.getLogger()
 
 
+USER_MENU_LABEL = "User"
+SEARCH_MENU_LABEL = "Search"
+DEBUG_MENU_LABEL = "Debug"
+HELP_MENU_LABEL = "Help"
+
+
 class MainFrame(wx.Frame):
     def __init__(self, *args, **kw):
         # avoids circular import I need to fix this at some point
@@ -63,10 +69,10 @@ class MainFrame(wx.Frame):
 
     def _create_menubar(self) -> None:
         menubar = wx.MenuBar()
-        menubar.Append(self._create_user_menu(), "User")
-        menubar.Append(self._create_search_menu(), "Search")
-        menubar.Append(self._create_debug_menu(), "Debug")
-        menubar.Append(self._create_help_menu(), "Help")
+        menubar.Append(self._create_user_menu(), USER_MENU_LABEL)
+        menubar.Append(self._create_search_menu(), SEARCH_MENU_LABEL)
+        menubar.Append(self._create_debug_menu(), DEBUG_MENU_LABEL)
+        menubar.Append(self._create_help_menu(), HELP_MENU_LABEL)
 
         self.Bind(wx.EVT_MENU_OPEN, self._on_menu_open, menubar)
         self.SetMenuBar(menubar)
@@ -241,14 +247,14 @@ class MainFrame(wx.Frame):
         ui.utils.enable_menu_items(self.admin_submenu, False)
 
     def _on_menu_open(self, evt: wx.MenuEvent) -> None:
-        """check when the Account menu is opened and check if user is administrator to enable
+        """check when the User menu is opened and check if user is administrator to enable
         the admin sub menus
 
         Args:
             evt (wx.MenuEvent):
         """
         menu: wx.Menu = evt.GetMenu()
-        if menu.GetTitle() != "Account":
+        if menu.GetTitle() == USER_MENU_LABEL:
             settings = Settings.load()
             ui.utils.enable_menu_items(self.admin_submenu, settings.is_user_admin())
         evt.Skip()

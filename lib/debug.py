@@ -1,9 +1,8 @@
 import asyncio
-from datetime import timedelta
 import os
-import time
 from typing import Any, Callable, Dict, List, Tuple, cast
 import random
+
 
 import deluge.handler as dh
 import lib.utils
@@ -141,7 +140,7 @@ async def simulate_game_install(
     callback(message)
 
     # start install
-    start_time = time.time()
+    # start_time = time.time()
     callback(f"Installing {apk_name} onto {device_name}")
     callback(f"Total size: {formatted_size}")
     callback(f"Starting install of {apk_name} onto {device_name}")

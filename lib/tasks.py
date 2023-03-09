@@ -113,3 +113,20 @@ def is_thread_running(thread: threading.Thread | None) -> bool:
     if thread is None:
         return False
     return thread.is_alive()
+
+
+def cancel_task(func: Callable) -> bool:
+    """cancels the task and removes it from the global dict
+
+    Raises:
+        KeyError: if no task found with the function name
+
+    Args:
+        func (Callable): the function that the task is running
+
+    Returns:
+        bool: returns True if task was cancelled False if not
+    """
+    task = get_task(func)
+    scheduled_cancel = task.cancel()
+    return scheduled_cancel
