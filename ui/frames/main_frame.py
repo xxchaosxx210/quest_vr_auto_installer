@@ -2,12 +2,14 @@ import logging
 import wx
 import asyncio
 import random
+from webbrowser import Error as WebBrowserError
 
 from aiohttp import ClientConnectionError
 import wxasync
 
 import lib.config
 import lib.tasks as tasks
+import lib.help
 import api.client as client
 import lib.debug
 import ui.utils
@@ -21,7 +23,6 @@ from ui.dialogs.user_info import UserInfoDlg
 from ui.dialogs.add_game import AddGameDlg
 from ui.dialogs.about import load_dialog as load_about_dialog
 from ui.dialogs.device_list import open_device_selection_dialog
-from ui.dialogs.help import HtmlHelpDlg
 from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
 from api.exceptions import ApiError
@@ -95,12 +96,10 @@ class MainFrame(wx.Frame):
         return menu
 
     def _on_help(self, evt: wx.MenuEvent) -> None:
-        dlg = HtmlHelpDlg(
-            parent=self, title="QuestCave Documentation", id=wx.ID_ANY, size=(800, 600)
-        )
-        dlg.ShowModal()
-        dlg.Destroy()
-        evt.Skip()
+        try:
+            lib.help.load()
+        except (WebBrowserError, OSError, IOError) as err:
+            self.app.exception_handler(err)
 
     def _create_search_menu(self) -> wx.Menu:
         menu = wx.Menu()

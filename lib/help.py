@@ -1,17 +1,10 @@
-from typing import Tuple
+import webbrowser
+import os
 
-import wx
-import wx.html2 as html2
+import lib.config
 
 
-_HTML = """<!DOCTYPE html>
-<html lang="en">
-
-<head>
-    <meta charset="UTF-8">
-    <title>QuestCave Help</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Puritan&display=swap">
-    <style>
+STYLE = """<style>
         *,
         *::before,
         *::after {
@@ -86,15 +79,24 @@ _HTML = """<!DOCTYPE html>
             white-space: pre-wrap;
             margin-bottom: 20px;
         }
-    </style>
+    </style>"""
+
+HTML = f"""<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>{lib.config.APP_NAME} Help</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Puritan&display=swap">
+    {STYLE}
 </head>
 
 <body>
     <div class="container">
-        <h1>QuestCave Help</h1>
+        <h1>{lib.config.APP_NAME} Help</h1>
 
-        <p>Version 1.0.0</p>
-        <p>Developed by the Lone Taxi driver aka Paul Millar</p>
+        <p>Version {lib.config.APP_VERSION}</p>
+        <p>Developed by the Lone Taxi driver aka {lib.config.AUTHOR}</p>
 
         <hr>
 
@@ -118,7 +120,7 @@ _HTML = """<!DOCTYPE html>
             <li>
                 <p>Go to the Meta Developer website and either login or create a new Account. It is basically
                     your Facebook account. The link is provided below...</p>
-                <a href="https://dashboard.oculus.com/">https://dashboard.oculus.com/</a>
+                <a href="https://dashboard.oculus.com/" target="_blank">https://dashboard.oculus.com/</a>
             </li>
             <li>
                 <p>Now create a new Organization. Any random name will do. You're setting up a developer account
@@ -135,7 +137,7 @@ _HTML = """<!DOCTYPE html>
                     an extra windows driver so Windows can recognize the Quest 2 device. I have provided the link
                     below for you...</p>
                 <a
-                    href="https://developer.oculus.com/downloads/package/oculus-adb-drivers/">https://developer.oculus.com/downloads/package/oculus-adb-drivers/</a>
+                    href="https://developer.oculus.com/downloads/package/oculus-adb-drivers/" target="_blank">https://developer.oculus.com/downloads/package/oculus-adb-drivers/</a>
 
                 <p>Download, Install and reboot the computer.</p>
             </li>
@@ -208,46 +210,12 @@ _HTML = """<!DOCTYPE html>
 </body>"""
 
 
-def load_dialog(parent: wx.Window) -> None:
-    dlg = HtmlHelpDlg(parent, wx.ID_ANY, "QuestCave Help", (600, 400))
-    dlg.ShowModal()
-    dlg.Destroy()
-
-
-class HtmlHelpDlg(wx.Dialog):
-    def __init__(
-        self, parent: wx.Window, id: int, title: str, size: Tuple[int, int]
-    ) -> None:
-        super().__init__(
-            parent,
-            id,
-            title,
-            style=wx.DEFAULT_DIALOG_STYLE | wx.RESIZE_BORDER,
-        )
-
-        self._create_controls()
-        self._bind_events()
-        self._do_layout(size)
-
-    def _create_controls(self) -> None:
-        self.browser: html2.WebView = html2.WebView.New(self)
-        self.browser.SetPage(_HTML, "")
-        self.close_button = wx.Button(self, wx.ID_CLOSE, "Close")
-
-    def _bind_events(self) -> None:
-        self.Bind(wx.EVT_BUTTON, self._on_close_button, self.close_button)
-
-    def _do_layout(self, size: Tuple[int, int]) -> None:
-        BORDER = 5
-        vbox = wx.BoxSizer(wx.VERTICAL)
-        browser_hbox = wx.BoxSizer(wx.HORIZONTAL)
-        browser_hbox.Add(self.browser, 1, wx.EXPAND | wx.ALL, BORDER)
-        vbox.Add(browser_hbox, 1, wx.EXPAND | wx.ALL, BORDER)
-        button_hbox = wx.BoxSizer(wx.HORIZONTAL)
-        button_hbox.Add(self.close_button, 1, wx.ALL, BORDER)
-        vbox.Add(button_hbox, 0, wx.ALIGN_CENTER_HORIZONTAL, BORDER)
-        self.SetSizerAndFit(vbox)
-        self.SetSize(size)
-
-    def _on_close_button(self, event: wx.CommandEvent) -> None:
-        self.EndModal(event.GetId())
+def load() -> None:
+    """checks if help.html exists, if not creates it and opens it in the default browser"""
+    if not os.path.exists(lib.config.APP_DATA_PATH):
+        os.makedirs(lib.config.APP_DATA_PATH)
+    html_path = os.path.join(lib.config.APP_DATA_PATH, "help.html")
+    if not os.path.exists(html_path):
+        with open(html_path, "w") as f:
+            f.write(HTML)
+    webbrowser.open(html_path, new=0, autoraise=True)
