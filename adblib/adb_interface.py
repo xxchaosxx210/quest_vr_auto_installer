@@ -8,7 +8,7 @@ import subprocess
 import asyncio
 from typing import AsyncGenerator, List
 
-from adblib.errors import RemoteDeviceError
+from adblib.errors import RemoteDeviceError, UnInstallError
 
 # global adb path to use
 ADB_PATH_DEFAULT: str = ""
@@ -115,6 +115,7 @@ def path_exists(device_name: str, path: str) -> bool:
     Returns:
         bool: true if path exists
     """
+    "adb -s 1WMHHB62832202 shell test -d /sdcard/Android/obb/com.fitxr.boxvr"
     result: subprocess.CompletedProcess = subprocess.run(
         [ADB_PATH_DEFAULT, "-s", device_name, "shell", "test", "-d", path],
         capture_output=True,
@@ -190,15 +191,18 @@ async def uninstall(
 
     Raises:
         RemoteDeviceError: raises if return code is not 0
+        UninstallError: raises if the package is not uninstalled
     """
     commands = [ADB_PATH_DEFAULT, "-s", device_name, "uninstall"]
     if options:
         commands.extend(options)
     commands.append(package_name)
     try:
-        await execute_subprocess(commands)
+        result = await execute_subprocess(commands)
     except Exception as err:
         raise err
+    if "Success" not in result:
+        raise UnInstallError(package_name, result.strip())
 
 
 async def get_installed_packages(
@@ -291,6 +295,24 @@ async def copy_path(device_name: str, local_path: str, destination_path: str) ->
     ]
     stdout = await execute_subprocess(command)
     return stdout
+
+
+async def async_remove_path(device_name: str, path: str) -> str:
+    """removes a path from the device
+
+    Args:
+        device_name (str): name of the device
+        path (str): the path to remove
+
+    Raises:
+        RemoteDeviceError: raises if return code is not 0
+
+    Returns:
+        str: utf-8 encoded stdout string
+    """
+    commands = [ADB_PATH_DEFAULT, "-s", device_name, "shell", "rm", "-r", path]
+    result = await execute_subprocess(commands)
+    return result
 
 
 def get_device_model(device_name: str) -> str:

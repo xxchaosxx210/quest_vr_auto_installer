@@ -28,3 +28,13 @@ class RemoteDeviceError(Exception):
 
     def __str__(self) -> str:
         return f"RemoteDeviceError: message={self.message}, code={self.code}"
+
+
+class UnInstallError(Exception):
+    def __init__(self, package_name: str, result: str, *args: object) -> None:
+        super().__init__(*args)
+        self.result = result
+        self.package_name = package_name
+
+    def __str__(self) -> str:
+        return f"{self.package_name} could not be uninstalled. {self.result}"

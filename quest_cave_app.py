@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import traceback
+from typing import List
 
 import wx
 import wxasync
@@ -15,7 +16,7 @@ import ui.utils
 import api.client
 import deluge.handler
 import adblib.adb_interface as adb_interface
-from adblib.errors import RemoteDeviceError
+from adblib.errors import RemoteDeviceError, UnInstallError
 from api.schemas import LogErrorRequest
 from lib.settings import Settings
 from api.exceptions import ApiError
@@ -237,10 +238,8 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         """
 
         # check that a device is selected
-        if (
-            not self.debug_mode
-            and not self.monitoring_device_thread.get_selected_device()
-        ):
+        selected_device = self.monitoring_device_thread.get_selected_device()
+        if not self.debug_mode and not selected_device:
             wx.MessageBox(
                 "No device selected. Please connect your Quest Headset into the PC and select it from the Devices List",
                 "No Device selected",
@@ -273,13 +272,50 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         # check if user wants to continue to install step and make sure that download went ok
 
         if not settings.download_only and ok_to_install:
+            # take a snap shot of the packages before the install
+            quest_packages = await adb_interface.get_installed_packages(selected_device)
             install_task = lib.tasks.check_task_and_create(
                 self.start_install_process, path=magnet_data.download_path
             )
             try:
                 await asyncio.wait_for(install_task, timeout=None)
             except asyncio.CancelledError:
-                _Log.info("Install task was cancelled")
+                self.on_install_update("Installation Cancelled")
+                self.on_install_update("Removing Packages...")
+                try:
+                    await self.cleanup_from_cancel_installation(
+                        selected_device, magnet_data.download_path, quest_packages
+                    )
+                except Exception as err:
+                    self.exception_handler(err=err)
+                    return
+
+    async def cleanup_from_cancel_installation(
+        self, device_name: str, download_path: str, quest_packages: List[str]
+    ) -> None:
+        """finds any new installed packages and removes them, then removes the data files
+        from the device_name
+
+        Args:
+            device_name (str): the selected device
+            download_path (str): the path where the files were downloaded to
+            quest_packages (List[str]): the original list of package names before the install
+
+        """
+        # get the Device name to remove the files and packages from
+        if not self.debug_mode:
+            # remove the packages first
+            packages_to_remove = await lib.quest.async_get_newly_installed_packages(
+                device_name, quest_packages
+            )
+            for package_to_remove in packages_to_remove:
+                self.on_install_update(f"Removing {package_to_remove}")
+                try:
+                    await adb_interface.uninstall(device_name, package_to_remove)
+                except (RemoteDeviceError, UnInstallError) as err:
+                    self.on_install_update(f"Error uninstalling: {err.__str__()}")
+                else:
+                    self.on_install_update(f"Removed {package_to_remove}")
 
     async def start_install_process(self, path: str) -> bool:
         """starts the install process communicates with ADB and pushes any data paths onto
@@ -295,7 +331,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             bool: True if install was successful. False is no install
         """
 
-        # show the progress dialog. i might change this to a wx.ProgressDialog
+        # show the progress dialog. I might change this to a wx.ProgressDialog
 
         self.install_dialog = InstallProgressDlg(self.frame)
         self.install_dialog.Show()
@@ -427,7 +463,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             await adb_interface.uninstall(
                 self.monitoring_device_thread.get_selected_device(), package_name
             )
-        except RemoteDeviceError as err:
+        except (RemoteDeviceError, UnInstallError) as err:
             self.exception_handler(err)
         except Exception as err:
             asyncio.get_event_loop().call_exception_handler(

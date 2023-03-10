@@ -168,6 +168,11 @@ class MonitorQuestDevices(threading.Thread):
         self._queue.put(message)
 
     def get_selected_device(self) -> str:
+        """gets the selected device
+
+        Returns:
+            str: if a device is selected then the return value will be a non empty string
+        """
         with self.__device_selection_lock:
             return self.__selected_device
 
@@ -317,3 +322,23 @@ async def install_game(
             destination_path=lib.config.QUEST_OBB_DIRECTORY,
         )
     callback(f"{apk_name} has been installed.\n")
+
+
+async def async_get_newly_installed_packages(
+    device_name: str, original_packages: List[str]
+) -> List[str]:
+    """compares original list of packages with most recent and returns the difference
+    hackish way of finding recently installed package names
+
+    Args:
+        device_name (str): the name of the Quest device
+        original_packages (List[str]): the list of packages before the new packages were installed
+
+    Returns:
+        Set[str]: returns a set of newly installed packages
+    """
+    new_packages = await adb_interface.get_installed_packages(device_name)
+    original_set = set(original_packages)
+    new_set = set(new_packages)
+    packages = new_set - original_set
+    return list(packages)
