@@ -2,7 +2,14 @@ import wx
 
 
 class FindTextDlg(wx.Dialog):
+    """Dialog for finding text in a textctrl."""
+
     def __init__(self, label: str, *args, **kwargs):
+        """returns wx.ID_OK if the user clicks OK, wx.ID_CANCEL if the user clicks Cancel
+
+        Args:
+            label (str): label for the textctrl
+        """
         super().__init__(*args, **kwargs)
         self._create_controls(label)
         self._do_layout()

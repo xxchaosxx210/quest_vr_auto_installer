@@ -220,7 +220,10 @@ class ListCtrlPanel(wx.Panel):
         self.listctrl.reset_ascending_toggle_states()
 
     def find_item(self, column: int, pattern: str) -> int:
-        """looks for a pattern in each wx.ListItem
+        """iterates through each row in the listctrl and compares the
+        string contained within the column index given
+        Note: (No MatchCasing) finds the first match and returns the index
+        of that listitem row
 
         Args:
             column (int): the column index to search for

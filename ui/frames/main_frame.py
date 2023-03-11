@@ -340,7 +340,11 @@ class MainFrame(wx.Frame):
             if dlg.ShowModal() == wx.ID_CANCEL:
                 return
             text = dlg.get_text()
-            _Log.info(f"Searching for {text}")
+            if self.app.install_listpanel is not None and len(text) > 2:
+                # self.app.install_listpanel.search_game(text)
+                pass
+            else:
+                ui.utils.show_error_message("Text must be atleast 3 characters long")
 
     def _on_find_magnet(self, evt: wx.MenuEvent) -> None:
         """loads the find dialog box and searches for the magnet name in the games list
@@ -355,13 +359,13 @@ class MainFrame(wx.Frame):
             title="",
             size=(300, -1),
         ) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                text = dlg.get_text()
+            if dlg.ShowModal() == wx.ID_CANCEL:
+                return
+            text = dlg.get_text()
+            if self.app.magnets_listpanel is not None and len(text) > 2:
+                self.app.magnets_listpanel.search_game(text)
             else:
-                text = None
-            if isinstance(text, str) and len(text) > 0:
-                if self.app.magnets_listpanel is not None:
-                    self.app.magnets_listpanel.search_game(text)
+                ui.utils.show_error_message("Text must be at least 3 characters long")
 
     def _on_raise_unhandled(self, evt: wx.MenuEvent) -> None:
         """simulate an unhandled exception. This is to test the exception handler
