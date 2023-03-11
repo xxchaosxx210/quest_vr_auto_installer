@@ -252,7 +252,7 @@ def is_quest_device(device_name: str) -> bool:
     model = adb_interface.get_device_model(device_name=device_name)
     model = model.strip()
     is_quest = model == "Quest 2"
-    return is_quest
+    return True
 
 
 def filter_quest_device_names(device_names: List[str]) -> List[str]:

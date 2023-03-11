@@ -27,14 +27,14 @@ async def open_device_selection_dialog(
 
 
 class DeviceListDlg(wx.Dialog):
-    instance: "DeviceListDlg | None" = None
+    __instance: "DeviceListDlg | None" = None
 
     def __init__(self, *args, **kw):
         super().__init__(*args, **kw)
         self._selected_device_name: str = ""
         # store an instance of the dialog when it is created as this will be
         # used in the App to see if the dialog is open
-        DeviceListDlg.instance = self
+        DeviceListDlg.set_global_instance(self)
         self.device_listpanel = devices_panel.DevicesListPanel(self)
         # custom event when a device name is selected
         wxasync.AsyncBind(
@@ -80,5 +80,13 @@ class DeviceListDlg(wx.Dialog):
         return self._selected_device_name
 
     def Close(self, force=False):
-        self.instance = None
+        DeviceListDlg.set_global_instance(None)
         return super().Close(force)
+
+    @staticmethod
+    def set_global_instance(instance: "DeviceListDlg | None") -> None:
+        DeviceListDlg.__instance = instance
+
+    @staticmethod
+    def get_global_instance() -> "DeviceListDlg | None":
+        return DeviceListDlg.__instance

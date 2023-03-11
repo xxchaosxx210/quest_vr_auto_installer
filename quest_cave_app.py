@@ -56,34 +56,47 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         Args:
             event (dict): the event message
         """
-        if event["event"] == "device-selected":
-            device_name = event["device-name"]
-            message = "Device: "
-            if not device_name:
-                message += "Not Selected"
-            else:
-                message += device_name
-            wx.CallAfter(
-                self.frame.SetStatusText,
-                text=message,
-                number=1,
-            )
-        elif event["event"] == "device-disconnected":
-            wx.MessageBox("Device Disconnected", "", wx.OK | wx.ICON_INFORMATION)
-            # update and notify user
-            wx.CallAfter(
-                self.frame.SetStatusText, text="Device: Disconnected", number=1
-            )
-            # clear the package list
-            if self.install_listpanel is not None:
-                wx.CallAfter(self.install_listpanel.listctrl.DeleteAllItems)
-        elif event["event"] == "error":
-            wx.CallAfter(self.exception_handler, err=event["exception"])
-        elif event["event"] == "device-names-changed":
-            dialog: dld.DeviceListDlg | None = dld.DeviceListDlg.instance
-            if dialog is not None and dialog.IsShown():
-                _Log.info(event["device-names"])
-                dialog.device_listpanel.load_listctrl(event["device-names"])
+        try:
+            if event["event"] == "device-selected":
+                device_name = event["device-name"]
+                message = "Device: "
+                if not device_name:
+                    message += "Not Selected"
+                else:
+                    message += device_name
+                wx.CallAfter(
+                    self.frame.SetStatusText,
+                    text=message,
+                    number=1,
+                )
+            elif event["event"] == "device-disconnected":
+                wx.MessageBox("Device Disconnected", "", wx.OK | wx.ICON_INFORMATION)
+                # update and notify user
+                wx.CallAfter(
+                    self.frame.SetStatusText, text="Device: Disconnected", number=1
+                )
+                # clear the package list
+                if self.install_listpanel is not None:
+                    wx.CallAfter(self.install_listpanel.listctrl.DeleteAllItems)
+            elif event["event"] == "error":
+                wx.CallAfter(self.exception_handler, err=event["exception"])
+            elif event["event"] == "device-names-changed":
+                dialog: dld.DeviceListDlg | None = (
+                    dld.DeviceListDlg.get_global_instance()
+                )
+                if dialog is not None and dialog.IsShown():
+                    _Log.info(event["device-names"])
+                    wx.CallAfter(
+                        dialog.device_listpanel.load_listctrl,
+                        device_names=event["device-names"],
+                    )
+        except RuntimeError as err:
+            # weird things happen within threads. output the error
+            _Log.error(err.__str__())
+        except Exception as err:
+            wx.CallAfter(self.exception_handler, err=err)
+        finally:
+            return
 
     def set_selected_device(self, device_name: str) -> None:
         """set the selected device name and load the device packages
