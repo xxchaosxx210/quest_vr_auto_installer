@@ -109,6 +109,9 @@ class MainFrame(wx.Frame):
 
     def _create_search_menu(self) -> wx.Menu:
         menu = wx.Menu()
+        find_installed_item: wx.MenuItem = menu.Append(wx.ID_ANY, "Installed\tCtrl+I")
+        find_installed_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("I")))
+        self.Bind(wx.EVT_MENU, self._on_find_installed, find_installed_item)
         find_magnet_m_item: wx.MenuItem = menu.Append(wx.ID_ANY, "Game\tCtrl+G")
         find_magnet_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("G")))
         self.Bind(wx.EVT_MENU, self._on_find_magnet, find_magnet_m_item)
@@ -322,6 +325,23 @@ class MainFrame(wx.Frame):
             menu=self.admin_submenu, enable=settings.is_user_admin()
         )
 
+    def _on_find_installed(self, evt: wx.MenuEvent) -> None:
+        """Launch the FindText Dialog and prompt for Installed Game search
+
+        Args:
+            evt (wx.MenuEvent): not used
+        """
+        with FindTextDlg(
+            parent=self,
+            label="Enter name of Installed Game",
+            title="",
+            size=(300, -1),
+        ) as dlg:
+            if dlg.ShowModal() == wx.ID_CANCEL:
+                return
+            text = dlg.get_text()
+            _Log.info(f"Searching for {text}")
+
     def _on_find_magnet(self, evt: wx.MenuEvent) -> None:
         """loads the find dialog box and searches for the magnet name in the games list
         highlights first match in the listctrl
@@ -329,20 +349,19 @@ class MainFrame(wx.Frame):
         Args:
             evt (wx.MenuEvent): Not used
         """
-        dlg = FindTextDlg(
+        with FindTextDlg(
             parent=self,
             label="Enter name of Game",
             title="",
             size=(300, -1),
-        )
-        if dlg.ShowModal() == wx.ID_OK:
-            text = dlg.get_text()
-        else:
-            text = None
-        dlg.Destroy()
-        if isinstance(text, str) and len(text) > 0:
-            if self.app.magnets_listpanel is not None:
-                self.app.magnets_listpanel.search_game(text)
+        ) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                text = dlg.get_text()
+            else:
+                text = None
+            if isinstance(text, str) and len(text) > 0:
+                if self.app.magnets_listpanel is not None:
+                    self.app.magnets_listpanel.search_game(text)
 
     def _on_raise_unhandled(self, evt: wx.MenuEvent) -> None:
         """simulate an unhandled exception. This is to test the exception handler
