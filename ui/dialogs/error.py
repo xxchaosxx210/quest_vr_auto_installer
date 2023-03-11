@@ -24,10 +24,10 @@ class ErrorDlg(wx.Dialog):
 
         # Two buttons
         send_error_button = wx.Button(self, id=wx.ID_OK, label="Send Error")
-        # self.Bind(wx.EVT_BUTTON, lambda *args: self.EndModal(wx.OK), send_error_button)
         send_error_button.Enable(not disable_send)
+        self.Bind(wx.EVT_BUTTON, self._on_close, send_error_button)
         close_button = wx.Button(self, id=wx.ID_CLOSE, label="Close")
-        close_button.Bind(wx.EVT_BUTTON, lambda evt: self.EndModal(wx.CLOSE))
+        self.Bind(wx.EVT_BUTTON, self._on_close, close_button)
 
         # Sizer for buttons
         button_sizer = wx.BoxSizer(wx.HORIZONTAL)
@@ -43,3 +43,11 @@ class ErrorDlg(wx.Dialog):
         self.SetSizer(main_sizer)
 
         self.CenterOnParent()
+
+    def _on_close(self, evt: wx.CommandEvent) -> None:
+        if self.IsModal():
+            self.EndModal(evt.GetId())
+        else:
+            self.SetReturnCode(evt.GetId())
+            self.Close()
+        evt.Skip()

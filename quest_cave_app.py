@@ -184,17 +184,8 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         Args:
             err (Exception): exception error instance to be processed
         """
-        if isinstance(err, ApiError):
-            error_message = f"{err.message}\n\nCode: {err.status_code}"
-        else:
-            error_message = err.__str__()
-        dialog = ErrorDlg(
-            self.frame,
-            "There was an error!!",
-            error_message,
-            err=err,
-            disable_send=False,
-        )
+        # get the error text and show the basic message to the user in a dialog box
+        error_message = err.__str__()
         with ErrorDlg(
             parent=self.frame,
             title="There was an error!!",
@@ -202,15 +193,10 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             err=err,
             disable_send=False,
         ) as dialog:
-            dialog.ShowModal()
+            if dialog.ShowModal() == wx.ID_CLOSE:
+                return
 
-        # User clicked the send error button. Send exception to the database
-
-        async def send_error(_error_request: LogErrorRequest) -> None:
-            try:
-                await api.client.post_error(_error_request)
-            except Exception as _err:
-                wx.MessageBox(f"Unable to send. Reason: {str(_err)}", "Error!")
+        # User clicked the send error button. Send exception to the server
 
         uuid = Settings.load().uuid
         if hasattr(err, "args"):
@@ -224,12 +210,20 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             type=str(err), uuid=uuid, exception=exception, traceback=tb_string
         )
         try:
-            lib.tasks.check_task_and_create(send_error, _error_request=error_request)
+            lib.tasks.check_task_and_create(
+                self.send_error, error_request=error_request
+            )
         except lib.tasks.TaskIsRunning:
             ui.utils.show_error_message(
                 "Unable to send error log as another Task is already running",
                 "Client Error",
             )
+
+    async def send_error(self, error_request: LogErrorRequest) -> None:
+        try:
+            await api.client.post_error(error_request)
+        except Exception as _err:
+            wx.MessageBox(f"Unable to send. Reason: {str(_err)}", "Error!")
 
     async def start_download_process(
         self,
