@@ -336,7 +336,7 @@ class MainFrame(wx.Frame):
             size=(300, -1),
         )
         if dlg.ShowModal() == wx.ID_OK:
-            text = dlg.GetText()
+            text = dlg.get_text()
         else:
             text = None
         dlg.Destroy()
