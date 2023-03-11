@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import traceback
 from typing import List
 
 import wx
@@ -16,18 +15,16 @@ import ui.utils
 import api.client
 import deluge.handler
 import adblib.adb_interface as adb_interface
+from lib.settings import Settings
 from adblib.errors import RemoteDeviceError, UnInstallError
 from api.schemas import LogErrorRequest
-from lib.settings import Settings
-from api.exceptions import ApiError
 
-
+import ui.dialogs.device_list as dld
 from ui.frames.main_frame import MainFrame
 from ui.panels.installed_listpanel import InstalledListPanel
 from ui.panels.magnets_listpanel import MagnetsListPanel
 from ui.dialogs.error import ErrorDlg
 from ui.dialogs.install_progress import InstallProgressDlg
-import ui.dialogs.device_list as dld
 
 
 _Log = logging.getLogger()
@@ -196,19 +193,8 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             if dialog.ShowModal() == wx.ID_CLOSE:
                 return
 
-        # User clicked the send error button. Send exception to the server
-
-        uuid = Settings.load().uuid
-        if hasattr(err, "args"):
-            exception = "".join(err.args)
-        elif hasattr(err, "message"):
-            exception = err.message
-        else:
-            exception = str(err)
-        tb_string = "\n".join(traceback.format_exception(err))
-        error_request = LogErrorRequest(
-            type=str(err), uuid=uuid, exception=exception, traceback=tb_string
-        )
+        # User clicked the send error button. Format and send the error to the server
+        error_request = LogErrorRequest.format_error(err, Settings.load().uuid)
         try:
             lib.tasks.check_task_and_create(
                 self.send_error, error_request=error_request

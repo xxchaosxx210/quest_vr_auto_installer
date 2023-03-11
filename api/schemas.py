@@ -1,4 +1,5 @@
 import base64
+import traceback
 
 from pydantic import BaseModel, validator
 from pydantic.fields import ModelField
@@ -78,6 +79,29 @@ class LogErrorRequest(BaseModel):
     uuid: UUID
     exception: str
     traceback: str
+
+    @staticmethod
+    def format_error(err: Exception, _uuid: UUID) -> "LogErrorRequest":
+        """format the exception into a LogErrorRequest
+
+        Args:
+            err (Exception): the exception that was raised and handled
+            _uuid (UUID): the UUID of the user that raised the exception. This will be used to identify the user in the logs. Will change when user accounts impemented
+
+        Returns:
+            LogErrorRequest: the formatted log error request
+        """
+        if hasattr(err, "args"):
+            exception = "".join(err.args)
+        elif hasattr(err, "message"):
+            exception = err.message
+        else:
+            exception = str(err)
+        tb_string = "\n".join(traceback.format_exception(err))
+        error_request = LogErrorRequest(
+            type=str(err), uuid=_uuid, exception=exception, traceback=tb_string
+        )
+        return error_request
 
 
 class User(BaseModel):
