@@ -108,11 +108,22 @@ class MainFrame(wx.Frame):
             self.app.exception_handler(err)
 
     def _create_search_menu(self) -> wx.Menu:
+        """Creates the search menu for the main window
+
+        Returns:
+            wx.Menu: the search menu
+        """
         menu = wx.Menu()
-        find_installed_item: wx.MenuItem = menu.Append(wx.ID_ANY, "Installed\tCtrl+I")
+        find_installed_item: wx.MenuItem = menu.Append(
+            wx.ID_ANY,
+            "Installed Game\tCtrl+I",
+            helpString="Find a Game that is currently installed on your QuestVR",
+        )
         find_installed_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("I")))
         self.Bind(wx.EVT_MENU, self._on_find_installed, find_installed_item)
-        find_magnet_m_item: wx.MenuItem = menu.Append(wx.ID_ANY, "Game\tCtrl+G")
+        find_magnet_m_item: wx.MenuItem = menu.Append(
+            wx.ID_ANY, "Game\tCtrl+G", helpString="Find a game in the games list"
+        )
         find_magnet_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_CTRL, ord("G")))
         self.Bind(wx.EVT_MENU, self._on_find_magnet, find_magnet_m_item)
         return menu
@@ -250,7 +261,8 @@ class MainFrame(wx.Frame):
         ui.utils.enable_menu_items(self.admin_submenu, False)
 
     def _on_menu_open(self, evt: wx.MenuEvent) -> None:
-        """check when the User menu is opened and check if user is administrator to enable
+        """
+        check when the User menu is opened and check if user is administrator to enable
         the admin sub menus
 
         Args:
@@ -341,8 +353,7 @@ class MainFrame(wx.Frame):
                 return
             text = dlg.get_text()
             if self.app.install_listpanel is not None and len(text) > 2:
-                # self.app.install_listpanel.search_game(text)
-                pass
+                self.app.install_listpanel.search_installed_games(text)
             else:
                 ui.utils.show_error_message("Text must be atleast 3 characters long")
 

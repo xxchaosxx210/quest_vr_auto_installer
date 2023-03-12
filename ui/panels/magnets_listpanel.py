@@ -538,10 +538,16 @@ class MagnetsListPanel(ListCtrlPanel):
         pass
 
     def update_list_item(self, torrent_status: dict) -> None:
-        """updates the columns on the magnet that is being installed
+        """updates the list items from the torrent status update
 
         Args:
-            torrent_status (dict): contains progress: float, state: str, eta: int, download_payload_rate: float
+            torrent_status (dict): the torrent status update from deluge client
+
+                index: int - the index of the item in the listctrl
+                progress: float - the progress of the download in percentage
+                state: str - the state of the download (Downloading, Seeding, etc)
+                eta: int - the estimated time of arrival in seconds
+                download_payload_rate: float - the download speed in bytes per second
         """
         index = torrent_status["index"]
         progress = deluge_utils.format_progress(torrent_status.get("progress", 0.0))
@@ -551,6 +557,7 @@ class MagnetsListPanel(ListCtrlPanel):
             torrent_status.get("download_payload_rate", 0)
         )
         self.listctrl.SetItem(index, 5, formatted_speed)
+        # format the eta into a human readable format (hh:mm:ss)
         formatted_eta = deluge_utils.format_eta(torrent_status.get("eta", 0))
         self.listctrl.SetItem(index, 6, formatted_eta)
 
@@ -561,23 +568,15 @@ class MagnetsListPanel(ListCtrlPanel):
         Args:
             text (str): text to find in the listctrl
         """
+        self.find_text_and_select_column(COLUMN_NAME, text)
         # basic search in the name column. Match with text value
-        item_index = self.find_item(COLUMN_NAME, text)
-        if item_index == -1:
-            return
-        # item_index found. Loop through each item and set each Item to zero. This deselects
-        for i in range(self.listctrl.GetItemCount()):
-            if (
-                self.listctrl.GetItemState(i, wx.LIST_STATE_SELECTED)
-                == wx.LIST_STATE_SELECTED
-            ):
-                self.listctrl.SetItemState(i, 0, wx.LIST_STATE_SELECTED)
-        # now set the item in the index to a selected state
-        self.listctrl.SetItemState(
-            item_index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED
-        )
-        # scroll the window down to the selected list item
-        self.listctrl.EnsureVisible(item_index)
+        # item_index = self.find_item(COLUMN_NAME, text)
+        # if item_index == -1:
+        #     return
+        # # item_index found, iterate the rows in the listctrl and deselect
+        # self.deselect_each_row()
+        # # now set the item in the index to a selected state
+        # self.select_row(item_index, True)
 
     def find_row_by_torrent_id(self, torrent_id: str) -> int:
         """loops through the magnet_data list and compares for torrent ID

@@ -239,3 +239,45 @@ class ListCtrlPanel(wx.Panel):
                 found_index = index
                 break
         return found_index
+
+    def deselect_each_row(self) -> None:
+        """
+        loops through each row in the listctrl and checks for LIST_STATE_SELECTED
+        if matches then sets the row state to 0
+        """
+        for i in range(self.listctrl.GetItemCount()):
+            if (
+                self.listctrl.GetItemState(i, wx.LIST_STATE_SELECTED)
+                == wx.LIST_STATE_SELECTED
+            ):
+                self.listctrl.SetItemState(i, 0, wx.LIST_STATE_SELECTED)
+
+    def select_row(self, index: int, ensure_visible: bool) -> None:
+        """sets the row state to wx.LIST_STATE_SELECTED
+
+        Args:
+            index (int): the index of the listctrl to select
+            ensure_visible (bool): if set to True then the listctrl will scroll to the selected row
+        """
+        self.listctrl.SetItemState(
+            index, wx.LIST_STATE_SELECTED, wx.LIST_STATE_SELECTED
+        )
+        if ensure_visible:
+            self.listctrl.EnsureVisible(index)
+
+    def find_text_and_select_column(self, column: int, text: str) -> bool:
+        """selects the row that contains the text in the column index given
+
+        Args:
+            column (int): the column index to search for
+            text (str): the text to search for (Non MatchCasing)
+
+        Returns:
+            bool: True if found, False if not found
+        """
+        index = self.find_item(column, text)
+        if index == -1:
+            return False
+        self.deselect_each_row()
+        self.select_row(index, True)
+        return True

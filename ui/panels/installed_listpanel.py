@@ -116,3 +116,12 @@ class InstalledListPanel(ListCtrlPanel):
         listitem: wx.ListItem = self.listctrl.GetItem(index, 0)
         package_name: str = listitem.GetText()
         return package_name
+
+    def search_installed_games(self, text: str) -> None:
+        """search the installed games for the text string
+        and select the row if it is found
+
+        Args:
+            text (str): the text to search
+        """
+        self.find_text_and_select_column(0, text)
