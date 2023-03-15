@@ -11,6 +11,7 @@ import lib.config
 import lib.tasks as tasks
 import lib.help
 import api.client as client
+import api.urls
 import lib.debug
 import ui.utils
 import ui.paths
@@ -94,16 +95,28 @@ class MainFrame(wx.Frame):
             evt.Skip()
 
         menu = wx.Menu()
-        help_m_item = menu.Append(wx.ID_ANY, "Help\tF1")
-        help_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_NORMAL, wx.WXK_F1))
+        # website link
+        website_m_item = menu.Append(wx.ID_ANY, "Website")
+        self.Bind(wx.EVT_MENU, self._on_website_item, website_m_item)
+        # Help Link
+        help_m_item = menu.Append(wx.ID_ANY, "Help")
+        # help_m_item.SetAccel(wx.AcceleratorEntry(wx.ACCEL_NORMAL, wx.WXK_F1))
         self.Bind(wx.EVT_MENU, self._on_help, help_m_item)
+        # About
+        menu.AppendSeparator()
         about_m_item = menu.Append(wx.ID_ANY, "About")
         self.Bind(wx.EVT_MENU, on_about_menu_item, about_m_item)
         return menu
 
+    def _on_website_item(self, evt: wx.MenuEvent) -> None:
+        try:
+            lib.help.load(api.urls.URI_INDEX)
+        except (WebBrowserError, OSError, IOError) as err:
+            self.app.exception_handler(err)
+
     def _on_help(self, evt: wx.MenuEvent) -> None:
         try:
-            lib.help.load()
+            lib.help.load(api.urls.URI_HELP)
         except (WebBrowserError, OSError, IOError) as err:
             self.app.exception_handler(err)
 

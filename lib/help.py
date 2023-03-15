@@ -1,5 +1,4 @@
 import webbrowser
-import os
 
 import lib.config
 
@@ -210,12 +209,6 @@ HTML = f"""<!DOCTYPE html>
 </body>"""
 
 
-def load() -> None:
+def load(url: str) -> None:
     """checks if help.html exists, if not creates it and opens it in the default browser"""
-    if not os.path.exists(lib.config.APP_DATA_PATH):
-        os.makedirs(lib.config.APP_DATA_PATH)
-    html_path = os.path.join(lib.config.APP_DATA_PATH, "help.html")
-    if not os.path.exists(html_path):
-        with open(html_path, "w") as f:
-            f.write(HTML)
-    webbrowser.open(html_path, new=0, autoraise=True)
+    webbrowser.open(url, new=0, autoraise=True)
