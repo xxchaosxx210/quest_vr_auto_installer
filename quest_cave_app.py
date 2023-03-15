@@ -248,7 +248,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     callback=callback,
                     error_callback=error_callback,
                     magnet_data=magnet_data,
-                    total_time=10,
+                    total_time=5,
                 )
             except Exception as err:
                 self.exception_handler(err=err)
@@ -266,7 +266,14 @@ class QuestCaveApp(wxasync.WxAsyncApp):
 
         if not settings.download_only and ok_to_install:
             # take a snap shot of the packages before the install
-            quest_packages = await adb_interface.get_installed_packages(selected_device)
+            if not self.debug_mode:
+                quest_packages = await adb_interface.get_installed_packages(
+                    selected_device
+                )
+            else:
+                quest_packages = debug.get_device(
+                    debug.FakeQuest.devices, selected_device
+                ).package_names
             install_task = lib.tasks.check_task_and_create(
                 self.start_install_process, path=magnet_data.download_path
             )
@@ -295,20 +302,22 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             quest_packages (List[str]): the original list of package names before the install
 
         """
+        if self.debug_mode:
+            self.on_install_update("Skipping cleanup as running Debug Mode")
+            return
         # get the Device name to remove the files and packages from
-        if not self.debug_mode:
-            # remove the packages first
-            packages_to_remove = await lib.quest.async_get_newly_installed_packages(
-                device_name, quest_packages
-            )
-            for package_to_remove in packages_to_remove:
-                self.on_install_update(f"Removing {package_to_remove}")
-                try:
-                    await adb_interface.uninstall(device_name, package_to_remove)
-                except (RemoteDeviceError, UnInstallError) as err:
-                    self.on_install_update(f"Error uninstalling: {err.__str__()}")
-                else:
-                    self.on_install_update(f"Removed {package_to_remove}")
+        # remove the packages first
+        packages_to_remove = await lib.quest.async_get_newly_installed_packages(
+            device_name, quest_packages
+        )
+        for package_to_remove in packages_to_remove:
+            self.on_install_update(f"Removing {package_to_remove}")
+            try:
+                await adb_interface.uninstall(device_name, package_to_remove)
+            except (RemoteDeviceError, UnInstallError) as err:
+                self.on_install_update(f"Error uninstalling: {err.__str__()}")
+            else:
+                self.on_install_update(f"Removed {package_to_remove}")
 
     async def start_install_process(self, path: str) -> bool:
         """starts the install process communicates with ADB and pushes any data paths onto
