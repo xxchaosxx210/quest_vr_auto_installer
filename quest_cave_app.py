@@ -248,7 +248,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     callback=callback,
                     error_callback=error_callback,
                     magnet_data=magnet_data,
-                    total_time=5,
+                    total_time=10,
                 )
             except Exception as err:
                 self.exception_handler(err=err)
@@ -274,12 +274,15 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                 quest_packages = debug.get_device(
                     debug.FakeQuest.devices, selected_device
                 ).package_names
+
+            # run the install step
             install_task = lib.tasks.check_task_and_create(
                 self.start_install_process, path=magnet_data.download_path
             )
             try:
                 await asyncio.wait_for(install_task, timeout=None)
             except asyncio.CancelledError:
+                # User pressed the cancel button
                 self.on_install_update("Installation Cancelled")
                 self.on_install_update("Removing Packages...")
                 try:
