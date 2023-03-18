@@ -72,7 +72,8 @@ class MainFrame(wx.Frame):
         menubar = wx.MenuBar()
         menubar.Append(self._create_user_menu(), USER_MENU_LABEL)
         menubar.Append(self._create_search_menu(), SEARCH_MENU_LABEL)
-        menubar.Append(self._create_debug_menu(), DEBUG_MENU_LABEL)
+        if self.app.debug_mode:
+            menubar.Append(self._create_debug_menu(), DEBUG_MENU_LABEL)
         menubar.Append(self._create_help_menu(), HELP_MENU_LABEL)
 
         self.Bind(wx.EVT_MENU_OPEN, self._on_menu_open, menubar)
