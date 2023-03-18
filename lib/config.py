@@ -48,7 +48,6 @@ APP_DOWNLOADS_PATH: str = os.path.join(APP_BASE_PATH, "Games")
 # Path to save log data, local magnet json file and the APP settings
 APP_DATA_PATH = os.path.join(APP_BASE_PATH, "Data")
 APP_LOG_PATH = os.path.join(APP_DATA_PATH, "log.txt")
-APP_HELP_HTML_PATH = os.path.join(APP_DATA_PATH, "help.html")
 APP_SETTINGS_PATH = os.path.join(APP_DATA_PATH, "settings.json")
 
 

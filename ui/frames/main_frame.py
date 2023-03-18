@@ -2,14 +2,13 @@ import logging
 import wx
 import asyncio
 import random
-from webbrowser import Error as WebBrowserError
+import webbrowser
 
 from aiohttp import ClientConnectionError
 import wxasync
 
 import lib.config
 import lib.tasks as tasks
-import lib.help
 import api.client as client
 import api.urls
 import lib.debug
@@ -110,15 +109,17 @@ class MainFrame(wx.Frame):
         return menu
 
     def _on_website_item(self, evt: wx.MenuEvent) -> None:
+        """loads the index page in the default browser"""
         try:
-            lib.help.load(api.urls.URI_INDEX)
-        except (WebBrowserError, OSError, IOError) as err:
+            webbrowser.open(api.urls.URI_INDEX, new=0, autoraise=True)
+        except (webbrowser.Error, OSError, IOError) as err:
             self.app.exception_handler(err)
 
     def _on_help(self, evt: wx.MenuEvent) -> None:
+        """loads the help page in the default browser"""
         try:
-            lib.help.load(api.urls.URI_HELP)
-        except (WebBrowserError, OSError, IOError) as err:
+            webbrowser.open(api.urls.URI_HELP, new=0, autoraise=True)
+        except (webbrowser.Error, OSError, IOError) as err:
             self.app.exception_handler(err)
 
     def _create_search_menu(self) -> wx.Menu:
