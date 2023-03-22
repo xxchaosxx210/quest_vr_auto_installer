@@ -89,7 +89,7 @@ class MainFrame(wx.Frame):
                     app_name=lib.config.APP_NAME,
                     version=lib.config.APP_VERSION,
                     description="QuestCave is a tool for downloading and installing Quest 2 games for free\nI take no responsibility for the abuse of this program. Enjoy :)",
-                    author=lib.config.AUTHOR,
+                    author=f"{lib.config.AUTHOR}",
                 )
             )
             evt.Skip()

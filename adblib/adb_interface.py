@@ -77,7 +77,7 @@ def check_port_avalibility(port: int = ADB_DEFAULT_PORT) -> bool:
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
             sock.bind(("localhost", port))
             return True
-    except Exception as err:
+    except Exception:
         return False
 
 

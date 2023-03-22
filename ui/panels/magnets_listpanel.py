@@ -92,7 +92,7 @@ class MagnetsListPanel(ListCtrlPanel):
 
         try:
             lib.tasks.check_task_and_create(_reload_magnets)
-        except lib.tasks.TaskIsRunning as err:
+        except lib.tasks.TaskIsRunning:
             ui.utils.show_error_message("Already getting Game List. Please wait...")
 
     def _on_col_left_click(self, evt: wx.ListEvent) -> None:

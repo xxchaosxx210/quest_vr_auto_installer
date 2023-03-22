@@ -4,7 +4,6 @@ import ctypes
 import logging
 import platform
 import datetime
-import webbrowser
 import base64
 from typing import List, Generator
 from dataclasses import dataclass
