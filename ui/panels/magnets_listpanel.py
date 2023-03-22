@@ -75,7 +75,14 @@ class MagnetsListPanel(ListCtrlPanel):
         return button_panel
 
     def on_refresh_click(self, evt: wx.CommandEvent) -> None:
-        _Log.info("Hello from the Magnet ListPanel")
+        if self.app.magnets_listpanel is None:
+            return
+        try:
+            lib.tasks.check_task_and_create(
+                self.app.magnets_listpanel.load_magnets_from_api
+            )
+        except lib.tasks.TaskIsRunning as err:
+            ui.utils.show_error_message("Already getting Game List. Please wait...")
 
     def on_item_double_click(self, evt: wx.ListEvent) -> None:
         """when the user double clicks on a game in the list then
