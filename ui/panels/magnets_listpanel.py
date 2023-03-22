@@ -68,72 +68,24 @@ class MagnetsListPanel(ListCtrlPanel):
         self.bitmap_buttons["refresh"] = ui.utils.create_bitmap_button(
             "refresh.png", "Refresh Games List", button_panel, size=(24, 24)
         )
-        self.Bind(wx.EVT_BUTTON, self.on_refresh_click, self.bitmap_buttons["refresh"])
+        self.Bind(wx.EVT_BUTTON, self.on_reload_magnets, self.bitmap_buttons["refresh"])
 
         hbox_btns = ListCtrlPanel.create_bitmap_button_sizer(self.bitmap_buttons)
         button_panel.SetSizer(hbox_btns)
         return button_panel
 
-    def on_refresh_click(self, evt: wx.CommandEvent) -> None:
-        if self.app.magnets_listpanel is None:
-            return
+    # Event Handler Functions
+
+    def on_reload_magnets(self, evt: wx.CommandEvent | wx.MenuEvent) -> None:
+        """triggered by either menu item event or Command Button event
+
+        Args:
+            evt (wx.CommandEvent | wx.MenuEvent):
+        """
         try:
-            lib.tasks.check_task_and_create(
-                self.app.magnets_listpanel.load_magnets_from_api
-            )
+            lib.tasks.check_task_and_create(self.app.load_games)
         except lib.tasks.TaskIsRunning as err:
             ui.utils.show_error_message("Already getting Game List. Please wait...")
-
-    def on_item_double_click(self, evt: wx.ListEvent) -> None:
-        """when the user double clicks on a game in the list then
-        check if user is admin before getting extra information on the game and loading the
-        game edit dialog
-
-        Args:
-            evt (wx.ListEvent): not used
-
-        Returns:
-            None: returns None from the super class method
-        """
-        # check if user is admin
-        settings = Settings.load()
-        magnet_data = self.get_selected_torrent_item()
-        if not settings.is_user_admin() or not magnet_data:
-            return super().on_item_double_click(evt)
-
-        try:
-            lib.tasks.check_task_and_create(
-                self.find_and_launch_magnet_update_dialog,
-                settings=settings,
-                magnet_data=magnet_data,
-            )
-        except lib.tasks.TaskIsRunning as err:
-            ui.utils.show_error_message(err.__str__())
-        finally:
-            return super().on_item_double_click(evt)
-
-    async def find_and_launch_magnet_update_dialog(
-        self, settings: Settings, magnet_data: MagnetData
-    ) -> None:
-        """async function for launching the update magnet frame with the magnet to update
-
-        Args:
-            settings (Settings): _description_
-            magnet_data (MagnetData): _description_
-        """
-        if settings.token is None:
-            ui.utils.show_error_message("No token was found. Unable to Authenticate")
-            return
-        # find the magnet in the database by torrent ID
-        magnets = await lib.api_handler.get_magnets_from_torrent_id(
-            settings.token, magnet_data.torrent_id, ui.utils.show_error_message
-        )
-        if len(magnets) < 1:
-            return
-        # open the magnet dialog with the first magnet
-        await load_update_magnet_dialog(
-            parent=self.app.frame, title="Update Game", magnet=magnets[0]
-        )
 
     def _on_col_left_click(self, evt: wx.ListEvent) -> None:
         """sort the magnets by alphabetical order.
@@ -171,6 +123,275 @@ class MagnetsListPanel(ListCtrlPanel):
         self.clear_list()
         self._rebuild_list(items)
         evt.Skip()
+
+    def on_install_apk(self, evt: wx.MenuEvent):
+        """debug menu item: skips download process and starts the install from local apk
+        Note: that the files need to be downloaded first before install can work
+        used for testing
+
+        Args:
+            evt (wx.MenuEvent):
+        """
+
+        magnet_data = self.get_selected_torrent_item()
+        if not magnet_data:
+            return
+        try:
+            lib.tasks.check_task_and_create(
+                self.app.start_install_process, path=magnet_data.download_path
+            )
+        except lib.tasks.TaskIsRunning as err:
+            wx.MessageBox(err.__str__(), "Cannot install")
+
+    def on_pause_item_selected(self, evt: wx.MenuEvent) -> None:
+        """puts a pause flag on the selected items queue
+
+        Args:
+            evt (wx.MenuEvent): _description_
+        """
+        item = self.get_selected_torrent_item()
+        if not item:
+            return
+        if item.queue is not None:
+            item.queue.put_nowait({"request": QueueRequest.PAUSE})
+
+    def on_resume_item_selected(self, evt: wx.MenuEvent):
+        """puts a resume flag on the selected items queue
+
+        Args:
+            evt (wx.MenuEvent): _description_
+        """
+        item = self.get_selected_torrent_item()
+        if not item:
+            return
+        if item.queue is not None:
+            item.queue.put_nowait({"request": QueueRequest.RESUME})
+
+    def on_cancel_item_selected(self, evt: wx.MenuEvent):
+        """puts a cancel flag on the running tasks queue
+
+        Args:
+            evt (wx.MenuEvent):
+        """
+        item = self.get_selected_torrent_item()
+        if not item:
+            return
+        dlg = wx.MessageDialog(
+            self,
+            "Are you sure you want to cancel install?",
+            "",
+            wx.OK | wx.CANCEL | wx.ICON_STOP,
+        )
+        dlg.CenterOnParent()
+        result = dlg.ShowModal()
+        dlg.Destroy()
+        if result == wx.ID_CANCEL:
+            return
+        if item.queue is not None:
+            item.queue.put_nowait({"request": QueueRequest.CANCEL})
+
+    def _on_extra_info_item(self, evt: wx.MenuEvent) -> None:
+        """get extra information on the torrent meta data. Show a dialog box with the meta data
+
+        Args:
+            evt (wx.MenuEvent): Not used
+        """
+
+        async def _get_extra_meta_data(uri: str) -> None:
+            """retrieve the meta data from the deluge daemon
+
+            Args:
+                uri (str): the magnet uri to get meta data from
+            """
+
+            progress = wx.ProgressDialog(
+                "Fetching Game information",
+                "Please wait...",
+                100,
+                self.app.frame,
+                wx.PD_AUTO_HIDE,
+            )
+            progress.Pulse()
+            try:
+                meta_data = await asyncio.wait_for(
+                    deluge_utils.get_magnet_info(uri), timeout=5
+                )
+            except asyncio.TimeoutError:
+                ui.utils.show_error_message("Fetching Game information took too long")
+            except Exception as err:
+                self.app.exception_handler(err)
+            else:
+                load_info_dialog(meta_data)
+            finally:
+                progress.Destroy()
+
+        def load_info_dialog(metadata: deluge_utils.MetaData) -> None:
+            """displays the meta data about the requested magnet in the magnets listctrl
+
+            Args:
+                metadata (deluge_utils.MetaData): the meta data to display in the dialog box
+            """
+            dlg = ExtraGameInfoDlg(self.app.frame, size=(640, 480))
+            dlg.set_name(metadata.name)
+            dlg.set_paths(metadata.get_paths())
+            dlg.ShowModal()
+            dlg.Destroy()
+
+        magnet_data = self.get_selected_torrent_item()
+        if not magnet_data:
+            return
+        try:
+            lib.tasks.check_task_and_create(_get_extra_meta_data, uri=magnet_data.uri)
+        except lib.tasks.TaskIsRunning:
+            pass
+
+    def on_dld_and_install_item(self, evt: wx.MenuEvent):
+        """gets the selected magnet in the list and starts the install process
+
+        Args:
+            evt (wx.MenuEvent):
+        """
+        # get the app instance and check if there is already
+        # an installation task running in the background
+
+        index: int = self.listctrl.GetFirstSelected()
+        if index == -1:
+            return
+
+        # create a new download path name using the display_name as a prefix
+
+        display_name = self.listctrl.GetItem(index, 0).GetText()
+        magnet_data = self.magnet_data_list[index]
+        magnet_data.download_path = config.create_path_from_name(
+            Settings.load().download_path, display_name
+        )
+        self.app.create_download_task(magnet_data)
+
+    def on_install_only_item(self, evt: wx.MenuEvent) -> None:
+        """starts the install process and skips downloading
+        if apk exists in game download directory
+
+        Args:
+            evt (wx.MenuEvent): not used
+        """
+        item = self.get_selected_torrent_item()
+        if not item:
+            return
+        pass
+
+    def on_item_double_click(self, evt: wx.ListEvent) -> None:
+        """when the user double clicks on a game in the list then
+        check if user is admin before getting extra information on the game and loading the
+        game edit dialog
+
+        Args:
+            evt (wx.ListEvent): not used
+
+        Returns:
+            None: returns None from the super class method
+        """
+        # check if user is admin
+        settings = Settings.load()
+        magnet_data = self.get_selected_torrent_item()
+        if not settings.is_user_admin() or not magnet_data:
+            return super().on_item_double_click(evt)
+
+        try:
+            lib.tasks.check_task_and_create(
+                self.find_and_launch_magnet_update_dialog,
+                settings=settings,
+                magnet_data=magnet_data,
+            )
+        except lib.tasks.TaskIsRunning as err:
+            ui.utils.show_error_message(err.__str__())
+        finally:
+            return super().on_item_double_click(evt)
+
+    def on_right_click(self, evt: wx.ListEvent) -> None:
+        """creates a popup menu when user right clicks on item in listctrl
+
+        Args:
+            evt (wx.ListEvent): _description_
+        """
+        magnet_data = self.get_selected_torrent_item()
+        if not magnet_data:
+            return
+
+        menu = wx.Menu()
+
+        # create the download and install menuitem
+
+        dld_install_item = menu.Append(wx.ID_ANY, "Download and Install")
+        self.Bind(wx.EVT_MENU, self.on_dld_and_install_item, dld_install_item)
+        menu.AppendSeparator()
+
+        # create the get extra games info menuitem
+
+        extra_info_item = menu.Append(wx.ID_ANY, "Game Info")
+        self.Bind(wx.EVT_MENU, self._on_extra_info_item, extra_info_item)
+        menu.AppendSeparator()
+
+        # check if there is an apk file already in the download directory
+
+        if lib.utils.apk_exists(magnet_data) is not None:
+            # create an install menuitem
+
+            install_only_item = menu.Append(wx.ID_ANY, "Install")
+            self.Bind(wx.EVT_MENU, self.on_install_only_item, install_only_item)
+            menu.AppendSeparator()
+
+        # download menu item options
+
+        pause_item = menu.Append(wx.ID_ANY, "Pause")
+        self.Bind(wx.EVT_MENU, self.on_pause_item_selected, pause_item)
+        resume_item = menu.Append(wx.ID_ANY, "Resume")
+        self.Bind(wx.EVT_MENU, self.on_resume_item_selected, resume_item)
+        menu.AppendSeparator()
+        cancel_item = menu.Append(wx.ID_ANY, "Cancel")
+        self.Bind(wx.EVT_MENU, self.on_cancel_item_selected, cancel_item)
+
+        menu.AppendSeparator()
+
+        # refresh magnets listctrl
+        refresh_m_item = menu.Append(wx.ID_ANY, "Reload (CTRL+SHIFT+R)")
+        # bind a ctrl+shift+r to refresh the list
+        refresh_m_item.SetAccel(
+            wx.AcceleratorEntry(wx.ACCEL_CTRL | wx.ACCEL_SHIFT, ord("R"))
+        )
+        self.Bind(wx.EVT_MENU, self.on_reload_magnets, refresh_m_item)
+
+        # if debugging enabled then create the debug sub menu
+        if self.app.debug_mode:
+            menu.AppendSeparator()
+            debug_menu = wx.Menu()
+            install_apk = debug_menu.Append(wx.ID_ANY, "Fake Install")
+            self.Bind(wx.EVT_MENU, self.on_install_apk, install_apk)
+            menu.AppendSubMenu(debug_menu, "Debug")
+
+        self.listctrl.PopupMenu(menu)
+
+    async def find_and_launch_magnet_update_dialog(
+        self, settings: Settings, magnet_data: MagnetData
+    ) -> None:
+        """async function for launching the update magnet frame with the magnet to update
+
+        Args:
+            settings (Settings): _description_
+            magnet_data (MagnetData): _description_
+        """
+        if settings.token is None:
+            ui.utils.show_error_message("No token was found. Unable to Authenticate")
+            return
+        # find the magnet in the database by torrent ID
+        magnets = await lib.api_handler.get_magnets_from_torrent_id(
+            settings.token, magnet_data.torrent_id, ui.utils.show_error_message
+        )
+        if len(magnets) < 1:
+            return
+        # open the magnet dialog with the first magnet
+        await load_update_magnet_dialog(
+            parent=self.app.frame, title="Update Game", magnet=magnets[0]
+        )
 
     def _get_list_items(self) -> List[dict]:
         """gets each item row from the listctrl and the magnet data associated with it
@@ -323,181 +544,6 @@ class MagnetsListPanel(ListCtrlPanel):
         self.listctrl.SetItem(index, COLUMN_DATE_ADDED, formatted_date_added)
         self.listctrl.SetItem(index, COLUMN_SIZE, str(game.filesize))
 
-    def on_right_click(self, evt: wx.ListEvent) -> None:
-        """creates a popup menu when user right clicks on item in listctrl
-
-        Args:
-            evt (wx.ListEvent): _description_
-        """
-        magnet_data = self.get_selected_torrent_item()
-        if not magnet_data:
-            return
-
-        menu = wx.Menu()
-
-        # create the download and install menuitem
-
-        dld_install_item = menu.Append(wx.ID_ANY, "Download and Install")
-        self.Bind(wx.EVT_MENU, self.on_dld_and_install_item, dld_install_item)
-        menu.AppendSeparator()
-
-        # create the get extra games info menuitem
-
-        extra_info_item = menu.Append(wx.ID_ANY, "Game Info")
-        self.Bind(wx.EVT_MENU, self._on_extra_info_item, extra_info_item)
-        menu.AppendSeparator()
-
-        # check if there is an apk file already in the download directory
-
-        if lib.utils.apk_exists(magnet_data) is not None:
-            # create an install menuitem
-
-            install_only_item = menu.Append(wx.ID_ANY, "Install")
-            self.Bind(wx.EVT_MENU, self.on_install_only_item, install_only_item)
-            menu.AppendSeparator()
-
-        # download menu item options
-
-        pause_item = menu.Append(wx.ID_ANY, "Pause")
-        self.Bind(wx.EVT_MENU, self.on_pause_item_selected, pause_item)
-        resume_item = menu.Append(wx.ID_ANY, "Resume")
-        self.Bind(wx.EVT_MENU, self.on_resume_item_selected, resume_item)
-        menu.AppendSeparator()
-        cancel_item = menu.Append(wx.ID_ANY, "Cancel")
-        self.Bind(wx.EVT_MENU, self.on_cancel_item_selected, cancel_item)
-
-        menu.AppendSeparator()
-
-        # if debugging enabled then create the debug sub menu
-        if self.app.debug_mode:
-            debug_menu = wx.Menu()
-            install_apk = debug_menu.Append(wx.ID_ANY, "Fake Install")
-            self.Bind(wx.EVT_MENU, self.on_install_apk, install_apk)
-            menu.AppendSubMenu(debug_menu, "Debug")
-
-        self.listctrl.PopupMenu(menu)
-
-    def _on_extra_info_item(self, evt: wx.MenuEvent) -> None:
-        """get extra information on the torrent meta data. Show a dialog box with the meta data
-
-        Args:
-            evt (wx.MenuEvent): Not used
-        """
-
-        async def _get_extra_meta_data(uri: str) -> None:
-            """retrieve the meta data from the deluge daemon
-
-            Args:
-                uri (str): the magnet uri to get meta data from
-            """
-
-            progress = wx.ProgressDialog(
-                "Fetching Game information",
-                "Please wait...",
-                100,
-                self.app.frame,
-                wx.PD_AUTO_HIDE,
-            )
-            progress.Pulse()
-            try:
-                meta_data = await asyncio.wait_for(
-                    deluge_utils.get_magnet_info(uri), timeout=5
-                )
-            except asyncio.TimeoutError:
-                ui.utils.show_error_message("Fetching Game information took too long")
-            except Exception as err:
-                self.app.exception_handler(err)
-            else:
-                load_info_dialog(meta_data)
-            finally:
-                progress.Destroy()
-
-        def load_info_dialog(metadata: deluge_utils.MetaData) -> None:
-            """displays the meta data about the requested magnet in the magnets listctrl
-
-            Args:
-                metadata (deluge_utils.MetaData): the meta data to display in the dialog box
-            """
-            dlg = ExtraGameInfoDlg(self.app.frame, size=(640, 480))
-            dlg.set_name(metadata.name)
-            dlg.set_paths(metadata.get_paths())
-            dlg.ShowModal()
-            dlg.Destroy()
-
-        magnet_data = self.get_selected_torrent_item()
-        if not magnet_data:
-            return
-        try:
-            lib.tasks.check_task_and_create(_get_extra_meta_data, uri=magnet_data.uri)
-        except lib.tasks.TaskIsRunning:
-            pass
-
-    def on_install_apk(self, evt: wx.MenuEvent):
-        """debug menu item: skips download process and starts the install from local apk
-        Note: that the files need to be downloaded first before install can work
-        used for testing
-
-        Args:
-            evt (wx.MenuEvent):
-        """
-
-        magnet_data = self.get_selected_torrent_item()
-        if not magnet_data:
-            return
-        try:
-            lib.tasks.check_task_and_create(
-                self.app.start_install_process, path=magnet_data.download_path
-            )
-        except lib.tasks.TaskIsRunning as err:
-            wx.MessageBox(err.__str__(), "Cannot install")
-
-    def on_pause_item_selected(self, evt: wx.MenuEvent) -> None:
-        """puts a pause flag on the selected items queue
-
-        Args:
-            evt (wx.MenuEvent): _description_
-        """
-        item = self.get_selected_torrent_item()
-        if not item:
-            return
-        if item.queue is not None:
-            item.queue.put_nowait({"request": QueueRequest.PAUSE})
-
-    def on_resume_item_selected(self, evt: wx.MenuEvent):
-        """puts a resume flag on the selected items queue
-
-        Args:
-            evt (wx.MenuEvent): _description_
-        """
-        item = self.get_selected_torrent_item()
-        if not item:
-            return
-        if item.queue is not None:
-            item.queue.put_nowait({"request": QueueRequest.RESUME})
-
-    def on_cancel_item_selected(self, evt: wx.MenuEvent):
-        """puts a cancel flag on the running tasks queue
-
-        Args:
-            evt (wx.MenuEvent):
-        """
-        item = self.get_selected_torrent_item()
-        if not item:
-            return
-        dlg = wx.MessageDialog(
-            self,
-            "Are you sure you want to cancel install?",
-            "",
-            wx.OK | wx.CANCEL | wx.ICON_STOP,
-        )
-        dlg.CenterOnParent()
-        result = dlg.ShowModal()
-        dlg.Destroy()
-        if result == wx.ID_CANCEL:
-            return
-        if item.queue is not None:
-            item.queue.put_nowait({"request": QueueRequest.CANCEL})
-
     def get_selected_torrent_item(self) -> MagnetData | None:
         """gets the magnet data connected to the selected item in the listctrl
 
@@ -509,40 +555,6 @@ class MagnetsListPanel(ListCtrlPanel):
             return None
         item = self.magnet_data_list[index]
         return item
-
-    def on_dld_and_install_item(self, evt: wx.MenuEvent):
-        """gets the selected magnet in the list and starts the install process
-
-        Args:
-            evt (wx.MenuEvent):
-        """
-        # get the app instance and check if there is already
-        # an installation task running in the background
-
-        index: int = self.listctrl.GetFirstSelected()
-        if index == -1:
-            return
-
-        # create a new download path name using the display_name as a prefix
-
-        display_name = self.listctrl.GetItem(index, 0).GetText()
-        magnet_data = self.magnet_data_list[index]
-        magnet_data.download_path = config.create_path_from_name(
-            Settings.load().download_path, display_name
-        )
-        self.app.create_download_task(magnet_data)
-
-    def on_install_only_item(self, evt: wx.MenuEvent) -> None:
-        """starts the install process and skips downloading
-        if apk exists in game download directory
-
-        Args:
-            evt (wx.MenuEvent): not used
-        """
-        item = self.get_selected_torrent_item()
-        if not item:
-            return
-        pass
 
     def update_list_item(self, torrent_status: dict) -> None:
         """updates the list items from the torrent status update
