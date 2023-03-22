@@ -3,7 +3,7 @@ adb_interface.py
 
 interfaces with the Android Debugging Bridge
 """
-
+import socket
 import subprocess
 import asyncio
 from typing import AsyncGenerator, List
@@ -14,6 +14,8 @@ from adblib.errors import RemoteDeviceError, UnInstallError
 ADB_PATH_DEFAULT: str = ""
 
 ADB_DEFAULT_PORT: int = 5037
+
+adb_port: int = 0
 
 
 class Code:
@@ -52,22 +54,50 @@ def _remove_showwindow_flag() -> subprocess.STARTUPINFO:
 
 
 def close_adb() -> str:
-    """kills the adb daemon
+    """kills the adb daemon on the global port
 
     Returns:
         str: stdout from the process
     """
-    stdout = execute([ADB_PATH_DEFAULT, "kill-server"])
+    global adb_port
+    stdout = execute([ADB_PATH_DEFAULT, "-P", f"{adb_port}", "kill-server"])
     return stdout
 
 
+def check_port_avalibility(port: int = ADB_DEFAULT_PORT) -> bool:
+    """checks if the port is available
+
+    Args:
+        port (int, optional): port to check. Defaults to ADB_DEFAULT_PORT.
+
+    Returns:
+        bool: true if port is available
+    """
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+            sock.bind(("localhost", port))
+            return True
+    except Exception as err:
+        return False
+
+
 async def start_adb() -> str:
-    """starts the adb daemon
+    """
+    checks for port availability and starts the adb daemon on the first available port
+
+    if another process has the default port then unexpected behavior may occur
 
     Returns:
         str: decoded string from the stdout stream
     """
-    stdout = await execute_subprocess([ADB_PATH_DEFAULT, "start-server"])
+    global adb_port
+    for port in range(ADB_DEFAULT_PORT, 65534):
+        if check_port_avalibility(port=port):
+            adb_port = port
+            break
+    stdout = await execute_subprocess(
+        [ADB_PATH_DEFAULT, "-P", f"{port}", "start-server"]
+    )
     return stdout
 
 
@@ -373,7 +403,7 @@ async def execute_subprocess_by_line(
         *commands,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        startupinfo=_remove_showwindow_flag()
+        startupinfo=_remove_showwindow_flag(),
     )
     while True:
         if process.stdout is None:
@@ -413,7 +443,7 @@ async def execute_subprocess(commands: List[str]) -> str:
         *commands,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
-        startupinfo=_remove_showwindow_flag()
+        startupinfo=_remove_showwindow_flag(),
     )
     stdout, stderr = await process.communicate()
     await process.wait()
