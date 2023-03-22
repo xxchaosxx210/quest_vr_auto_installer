@@ -82,8 +82,16 @@ class MagnetsListPanel(ListCtrlPanel):
         Args:
             evt (wx.CommandEvent | wx.MenuEvent):
         """
+
+        @ui.utils.async_progress_dialog(
+            "Loading Games List", "Loading the Games, Please wait...", 10
+        )
+        async def _reload_magnets():
+            await asyncio.sleep(2)
+            self.app.load_games()
+
         try:
-            lib.tasks.check_task_and_create(self.app.load_games)
+            lib.tasks.check_task_and_create(_reload_magnets)
         except lib.tasks.TaskIsRunning as err:
             ui.utils.show_error_message("Already getting Game List. Please wait...")
 

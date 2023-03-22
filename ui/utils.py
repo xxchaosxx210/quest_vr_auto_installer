@@ -51,6 +51,17 @@ def async_progress_dialog(title: str, message: str, timeout: float | None):
 def load_progress_dialog(
     parent: wx.Window, title: str, message: str, maximum: int = 100
 ) -> wx.ProgressDialog:
+    """Shorthand function for creating wxProgressDialog
+
+    Args:
+        parent (wx.Window): the Parent window
+        title (str):
+        message (str):
+        maximum (int, optional): the maximum progress value. Defaults to 100.
+
+    Returns:
+        wx.ProgressDialog: the ProgressDialog
+    """
     return wx.ProgressDialog(
         title=title,
         message=message,
@@ -112,9 +123,18 @@ def enable_menu_items(menu: wx.Menu, enable: bool = True) -> int:
 
 
 class TextCtrlStaticBox(wx.StaticBox):
+    """a wxTextCtrl bound within a wxStaticBox parent"""
+
     def __init__(
         self, parent: wx.Window, texctrl_value: str, textctrl_style: int, label: str
     ):
+        """
+        Args:
+            parent (wx.Window): the parent window
+            texctrl_value (str): the initial value of the textctrl
+            textctrl_style (int): the style of the textctrl
+            label (str): the wxStaticBox label
+        """
         super().__init__(parent=parent, label=label)
 
         self.textctrl = wx.TextCtrl(

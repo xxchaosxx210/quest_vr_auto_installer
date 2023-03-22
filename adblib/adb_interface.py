@@ -13,6 +13,8 @@ from adblib.errors import RemoteDeviceError, UnInstallError
 # global adb path to use
 ADB_PATH_DEFAULT: str = ""
 
+ADB_DEFAULT_PORT: int = 5037
+
 
 class Code:
     """status code errors"""
