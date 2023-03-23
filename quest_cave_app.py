@@ -519,22 +519,29 @@ class QuestCaveApp(wxasync.WxAsyncApp):
 
         load_games_task = asyncio.create_task(self.load_games())
         load_adb_task = asyncio.create_task(adb_interface.start_adb())
+        is_app_updated = asyncio.create_task(self._is_app_updated())
 
         # check for any errors within the tasks
 
-        exceptions = await asyncio.gather(
-            load_adb_task, load_games_task, return_exceptions=True
+        results = await asyncio.gather(
+            load_adb_task, load_games_task, is_app_updated, return_exceptions=True
         )
 
-        for exception in exceptions:
-            if isinstance(exception, Exception):
-                self.exception_handler(exception)
+        for result in results:
+            if isinstance(result, Exception):
+                self.exception_handler(result)
+
+        # check if the app has been updated and prompt the user to restart the app
+        if isinstance(results[2], bool):
+            if not results[2]:
+                # returned false, app has an update
+                wx.CallAfter(self.prompt_user_for_new_update)
 
         # destroy the progress dialog and sleep for half a second to allow the dialog to destroy
         # before displaying another dialog to ask the user to select a quest device
-
         progress.Destroy()
         await asyncio.sleep(0.5)
+
         if not self.skip:
             await self.prompt_user_for_device()
 
@@ -562,3 +569,28 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             raise ValueError("Dialog did not return a wx.OK or Close id")
         if selected_device and self.install_listpanel is not None:
             self.set_selected_device(selected_device)
+
+    def prompt_user_for_new_update(self) -> None:
+        """prompts the user to download the latest version of the app"""
+        with wx.MessageDialog(
+            None,
+            "There is a new version of QuestCave availible. Would you like to download it now?",
+            "New Version Availible",
+            wx.OK | wx.CANCEL | wx.ICON_QUESTION,
+        ) as dlg:
+            result = dlg.ShowModal()
+            if result == wx.ID_CANCEL:
+                return
+            # start the download, add tempfile to windows task scheduler and close the app
+            self.frame.Close()
+
+    async def _is_app_updated(self) -> bool:
+        """connects to the api and checks if the app is up to date
+
+        Returns:
+            bool: True is app is up to date, False if not
+        """
+        app_details = await api.client.get_app_details()
+        if config.APP_VERSION < app_details.version:
+            return False
+        return True
