@@ -52,6 +52,21 @@ def create_auth_token_header(token: str) -> dict:
     return {"Authorization": f"Bearer {token}"}
 
 
+async def get_app_details() -> schemas.AppVersionResponse:
+    """retrieves the latest version and download links from the server
+
+    Returns:
+        schemas.AppVersionResponse: read the schema for more details
+    """
+    try:
+        json_response = await send_json_request(apiurls.URI_APP_DETAILS)
+        app_details = schemas.AppVersionResponse(**json_response)
+    except Exception as err:
+        raise err
+    else:
+        return app_details
+
+
 async def get_games() -> List[schemas.Game]:
     """gets the Quest 2 magnet links from the q2g server
 

@@ -20,5 +20,8 @@ URI_USERS_LOGIN = URI_USERS + "/token"
 URI_USER_INFO = URI_USERS + "/info"
 
 # Website Urls
-URI_INDEX = URI_DETA_MICRO + "/index"
-URI_HELP = URI_DETA_MICRO + "/help"
+URI_INDEX = URI_HOST + "/index"
+URI_HELP = URI_HOST + "/help"
+
+# APP Version
+URI_APP_DETAILS = URI_HOST + "/app-details"

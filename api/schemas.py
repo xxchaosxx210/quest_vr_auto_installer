@@ -119,3 +119,9 @@ class ErrorLog(BaseModel):
     exception: str
     traceback: str
     date_added: float
+
+
+class AppVersionResponse(BaseModel):
+    version: str
+    url: str
+    mirror_url: str
