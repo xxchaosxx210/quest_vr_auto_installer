@@ -53,6 +53,17 @@ async def _main():
         adb_interface.close_adb()
         app.monitoring_device_thread.stop()
         progress.Destroy()
+    # import atexit
+
+    # def run_setup():
+    #     import subprocess
+    #     import os
+
+    #     _path = os.path.join(os.getcwd(), "setup_installer", "questcave_setup.exe")
+
+    #     subprocess.run(["start", _path])
+
+    # atexit.register(run_setup)
 
 
 if __name__ == "__main__":

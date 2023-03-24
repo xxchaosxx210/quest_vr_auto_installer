@@ -3,7 +3,6 @@ adb_interface.py
 
 interfaces with the Android Debugging Bridge
 """
-import socket
 import subprocess
 import asyncio
 from typing import AsyncGenerator, List
@@ -11,11 +10,9 @@ from typing import AsyncGenerator, List
 from adblib.errors import RemoteDeviceError, UnInstallError
 
 # global adb path to use
-ADB_PATH_DEFAULT: str = ""
+ADB_DEFAULT_PATH: str = ""
 
 ADB_DEFAULT_PORT: int = 5037
-
-adb_port: int = 0
 
 
 class Code:
@@ -59,26 +56,25 @@ def close_adb() -> str:
     Returns:
         str: stdout from the process
     """
-    global adb_port
-    stdout = execute([ADB_PATH_DEFAULT, "-P", f"{adb_port}", "kill-server"])
+    stdout = execute([ADB_DEFAULT_PATH, "kill-server"])
     return stdout
 
 
-def check_port_avalibility(port: int = ADB_DEFAULT_PORT) -> bool:
-    """checks if the port is available
+# def check_port_avalibility(port: int = ADB_DEFAULT_PORT) -> bool:
+#     """checks if the port is available
 
-    Args:
-        port (int, optional): port to check. Defaults to ADB_DEFAULT_PORT.
+#     Args:
+#         port (int, optional): port to check. Defaults to ADB_DEFAULT_PORT.
 
-    Returns:
-        bool: true if port is available
-    """
-    try:
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
-            sock.bind(("localhost", port))
-            return True
-    except Exception:
-        return False
+#     Returns:
+#         bool: true if port is available
+#     """
+#     try:
+#         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+#             sock.bind(("localhost", port))
+#             return True
+#     except Exception:
+#         return False
 
 
 async def start_adb() -> str:
@@ -90,14 +86,15 @@ async def start_adb() -> str:
     Returns:
         str: decoded string from the stdout stream
     """
-    global adb_port
-    for port in range(ADB_DEFAULT_PORT, 65534):
-        if check_port_avalibility(port=port):
-            adb_port = port
-            break
-    stdout = await execute_subprocess(
-        [ADB_PATH_DEFAULT, "-P", f"{port}", "start-server"]
-    )
+    # global adb_port
+    # for port in range(ADB_DEFAULT_PORT, 65534):
+    #     if check_port_avalibility(port=port):
+    #         adb_port = port
+    #         break
+    # stdout = await execute_subprocess(
+    #     [ADB_DEFAULT_PATH, "-P", f"{port}", "start-server"]
+    # )
+    stdout = await execute_subprocess([ADB_DEFAULT_PATH, "start-server"])
     return stdout
 
 
@@ -110,7 +107,7 @@ def get_device_names() -> List[str]:
     Returns:
         List[str]: device names. empty list if no devices found
     """
-    commands = [ADB_PATH_DEFAULT, "devices"]
+    commands = [ADB_DEFAULT_PATH, "devices"]
     output = execute(commands)
     devices = output.strip().split("\n")[1:]
     connected_devices = []
@@ -123,7 +120,7 @@ def get_device_names() -> List[str]:
 
 async def async_get_device_names() -> List[str]:
     """same as get_device_names but async"""
-    commands = [ADB_PATH_DEFAULT, "devices"]
+    commands = [ADB_DEFAULT_PATH, "devices"]
     output = await execute_subprocess(commands)
     devices = output.strip().split("\n")[1:]
     connected_devices = []
@@ -149,7 +146,7 @@ def path_exists(device_name: str, path: str) -> bool:
     """
     "adb -s 1WMHHB62832202 shell test -d /sdcard/Android/obb/com.fitxr.boxvr"
     result: subprocess.CompletedProcess = subprocess.run(
-        [ADB_PATH_DEFAULT, "-s", device_name, "shell", "test", "-d", path],
+        [ADB_DEFAULT_PATH, "-s", device_name, "shell", "test", "-d", path],
         capture_output=True,
         startupinfo=_remove_showwindow_flag(),
         check=False,
@@ -177,7 +174,7 @@ def make_dir(device_name: str, path: str) -> str:
     Returns:
         str: utf-8 encoded stdout string
     """
-    commands = [ADB_PATH_DEFAULT, "-s", device_name, "shell", "mkdir", path]
+    commands = [ADB_DEFAULT_PATH, "-s", device_name, "shell", "mkdir", path]
     stdout = execute(commands)
     return stdout
 
@@ -198,7 +195,7 @@ async def install_apk(device_name, apk_path: str) -> str:
     # commands =
     # stdout = await execute_subprocess(commands)
     # return stdout
-    commands = [ADB_PATH_DEFAULT, "-s", device_name, "install", apk_path]
+    commands = [ADB_DEFAULT_PATH, "-s", device_name, "install", apk_path]
     return await execute_subprocess(commands)
 
 
@@ -225,7 +222,7 @@ async def uninstall(
         RemoteDeviceError: raises if return code is not 0
         UninstallError: raises if the package is not uninstalled
     """
-    commands = [ADB_PATH_DEFAULT, "-s", device_name, "uninstall"]
+    commands = [ADB_DEFAULT_PATH, "-s", device_name, "uninstall"]
     if options:
         commands.extend(options)
     commands.append(package_name)
@@ -263,7 +260,7 @@ async def get_installed_packages(
     Returns:
         List[str]: a list of package names
     """
-    commands = [ADB_PATH_DEFAULT, "-s", device_name, "shell", "pm", "list", "packages"]
+    commands = [ADB_DEFAULT_PATH, "-s", device_name, "shell", "pm", "list", "packages"]
     if options:
         commands.extend(options)
     stdout = await execute_subprocess(commands=commands)
@@ -290,7 +287,7 @@ async def get_package_generator(
     Yields:
         Generator[str]: package name on that line
     """
-    commands = [ADB_PATH_DEFAULT, "-s", device_name, "shell", "pm", "list", "packages"]
+    commands = [ADB_DEFAULT_PATH, "-s", device_name, "shell", "pm", "list", "packages"]
     if options:
         commands.extend(options)
     async for byte_line in execute_subprocess_by_line(commands=commands):
@@ -318,7 +315,7 @@ async def copy_path(device_name: str, local_path: str, destination_path: str) ->
     # wrap the local apk path in double quotes. ADB will kick up a fuss otherwise
     # local_path = f'\"{local_path}\"'
     command = [
-        ADB_PATH_DEFAULT,
+        ADB_DEFAULT_PATH,
         "-s",
         device_name,
         "push",
@@ -342,7 +339,7 @@ async def async_remove_path(device_name: str, path: str) -> str:
     Returns:
         str: utf-8 encoded stdout string
     """
-    commands = [ADB_PATH_DEFAULT, "-s", device_name, "shell", "rm", "-r", path]
+    commands = [ADB_DEFAULT_PATH, "-s", device_name, "shell", "rm", "-r", path]
     result = await execute_subprocess(commands)
     return result
 
@@ -357,7 +354,7 @@ def get_device_model(device_name: str) -> str:
         str: the model of the device
     """
     commands = [
-        ADB_PATH_DEFAULT,
+        ADB_DEFAULT_PATH,
         "-s",
         device_name,
         "shell",

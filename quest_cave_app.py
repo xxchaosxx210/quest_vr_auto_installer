@@ -11,8 +11,10 @@ import lib.config as config
 import lib.tasks
 import lib.debug as debug
 import lib.quest
+import lib.update
 import ui.utils
 import api.client
+import api.schemas
 import deluge.handler
 import adblib.adb_interface as adb_interface
 from lib.settings import Settings
@@ -517,25 +519,19 @@ class QuestCaveApp(wxasync.WxAsyncApp):
 
         # start the tasks
 
-        load_games_task = asyncio.create_task(self.load_games())
         load_adb_task = asyncio.create_task(adb_interface.start_adb())
-        is_app_updated = asyncio.create_task(self._is_app_updated())
+        load_games_task = asyncio.create_task(self.load_games())
+        get_app_details = asyncio.create_task(api.client.get_app_details())
 
         # check for any errors within the tasks
 
         results = await asyncio.gather(
-            load_adb_task, load_games_task, is_app_updated, return_exceptions=True
+            load_adb_task, load_games_task, get_app_details, return_exceptions=True
         )
 
         for result in results:
             if isinstance(result, Exception):
                 self.exception_handler(result)
-
-        # check if the app has been updated and prompt the user to restart the app
-        if isinstance(results[2], bool):
-            if not results[2]:
-                # returned false, app has an update
-                wx.CallAfter(self.prompt_user_for_new_update)
 
         # destroy the progress dialog and sleep for half a second to allow the dialog to destroy
         # before displaying another dialog to ask the user to select a quest device
@@ -543,7 +539,22 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         await asyncio.sleep(0.5)
 
         if not self.skip:
-            await self.prompt_user_for_device()
+            # Check for update
+            if isinstance(results[2], api.schemas.AppVersionResponse):
+                app_details: api.schemas.AppVersionResponse = results[2]
+                if await self.check_app_version_and_prompt_for_update(
+                    app_details=app_details
+                ):
+                    # user wants to update
+                    update_task = asyncio.create_task(
+                        self.start_the_update_process(app_details)
+                    )
+                    await asyncio.wait_for(update_task, None)
+                    self.frame.Close()
+                else:
+                    await self.prompt_user_for_device()
+            else:
+                await self.prompt_user_for_device()
 
     async def load_games(self) -> None:
         """
@@ -553,6 +564,15 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         if self.magnets_listpanel is None:
             return
         await asyncio.create_task(self.magnets_listpanel.load_magnets_from_api())
+
+    async def check_app_version_and_prompt_for_update(
+        self, app_details: api.schemas.AppVersionResponse
+    ) -> bool:
+        # check if the app has been updated and prompt the user to restart the app
+        if config.APP_VERSION < app_details.version:
+            if self.prompt_user_for_new_update(app_details) == wx.ID_OK:
+                return True
+        return False
 
     async def prompt_user_for_device(self) -> None:
         """
@@ -570,7 +590,9 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         if selected_device and self.install_listpanel is not None:
             self.set_selected_device(selected_device)
 
-    def prompt_user_for_new_update(self) -> None:
+    def prompt_user_for_new_update(
+        self, update_details: api.schemas.AppVersionResponse
+    ) -> int:
         """prompts the user to download the latest version of the app"""
         with wx.MessageDialog(
             None,
@@ -579,18 +601,33 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             wx.OK | wx.CANCEL | wx.ICON_QUESTION,
         ) as dlg:
             result = dlg.ShowModal()
-            if result == wx.ID_CANCEL:
-                return
-            # start the download, add tempfile to windows task scheduler and close the app
-            self.frame.Close()
+        return result
 
-    async def _is_app_updated(self) -> bool:
-        """connects to the api and checks if the app is up to date
-
-        Returns:
-            bool: True is app is up to date, False if not
-        """
-        app_details = await api.client.get_app_details()
-        if config.APP_VERSION < app_details.version:
-            return False
-        return True
+    async def start_the_update_process(
+        self, update_details: api.schemas.AppVersionResponse
+    ) -> None:
+        """starts the update process"""
+        if not lib.update.is_mediafire_url(update_details.mirror_url):
+            return
+        try:
+            url = await lib.update.get_download_url_from_mediafire(
+                update_details.mirror_url
+            )
+        except Exception as err:
+            _Log.error(err.__str__())
+        if not url:
+            return
+        progress = wx.ProgressDialog(
+            "Updating",
+            f"Downloading latest Version {update_details.version}",
+            maximum=100,
+            parent=self.frame,
+            style=wx.PD_ESTIMATED_TIME | wx.PD_APP_MODAL,
+        )
+        with open("test.exe", "+bw") as fp:
+            async for chunk, total, content_length, speed in lib.update.download(url):
+                if total <= 1024:
+                    progress.SetRange(content_length)
+                fp.write(chunk)
+                progress.Update(total)
+        progress.Destroy()

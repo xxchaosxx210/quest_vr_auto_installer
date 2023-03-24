@@ -4,8 +4,7 @@ this module provides functions to interact with the API backend
 """
 
 import logging
-from time import perf_counter
-from typing import Any, AsyncGenerator, Dict, Iterator, List, Tuple
+from typing import Any, Dict, Iterator, List
 from enum import Enum, auto as auto_enum
 
 import aiohttp
@@ -330,27 +329,3 @@ async def send_json_request(
                 )
             json_data: Dict[str, Any] = await response.json()
             return json_data
-
-
-async def download_update(
-    url: str,
-) -> AsyncGenerator[Tuple[bytes, int, int, float], None]:
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            if not response.status == 200:
-                raise ApiError(
-                    status_code=response.status,
-                    message=f"Failed to download update: {response.reason}",
-                )
-            content_length = int(response.headers.get("Content-Length", 0))
-            total_bytes = 0
-            start_time = None
-
-            async for chunk in response.content.iter_chunked(1024):
-                if not start_time:
-                    start_time = perf_counter()
-
-                total_bytes += len(chunk)
-                elapsed_time = perf_counter() - start_time
-                speed = total_bytes / elapsed_time if elapsed_time else 0.0
-                yield chunk, total_bytes, content_length, speed
