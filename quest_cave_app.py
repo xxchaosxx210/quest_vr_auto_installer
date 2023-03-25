@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import webbrowser
 from typing import List
 
 import wx
@@ -11,7 +12,6 @@ import lib.config as config
 import lib.tasks
 import lib.debug as debug
 import lib.quest
-import lib.update
 import ui.utils
 import api.client
 import api.schemas
@@ -546,10 +546,9 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     app_details=app_details
                 ):
                     # user wants to update
-                    update_task = asyncio.create_task(
-                        self.start_the_update_process(app_details)
-                    )
-                    await asyncio.wait_for(update_task, None)
+                    webbrowser.open(app_details.url)
+                    # wait 1/2 second and close the app
+                    await asyncio.sleep(0.5)
                     self.frame.Close()
                 else:
                     await self.prompt_user_for_device()
@@ -602,23 +601,3 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         ) as dlg:
             result = dlg.ShowModal()
         return result
-
-    async def start_the_update_process(
-        self, update_details: api.schemas.AppVersionResponse
-    ) -> None:
-        """starts the update process"""
-        progress = wx.ProgressDialog(
-            "Updating",
-            f"Downloading latest Version {update_details.version}",
-            maximum=100,
-            parent=self.frame,
-            style=wx.PD_ESTIMATED_TIME | wx.PD_APP_MODAL,
-        )
-        url = "https://drive.google.com/file/d/1ptBAVlo6BTY6GgRrwpWlCZNMAet4X00X/view?usp=sharing"
-        with open(".\\setup_installer\\test.exe", "+bw") as fp:
-            async for chunk, total, content_length, speed in lib.update.download(url):
-                if total <= 1024:
-                    progress.SetRange(content_length)
-                fp.write(chunk)
-                progress.Update(total)
-        progress.Destroy()
