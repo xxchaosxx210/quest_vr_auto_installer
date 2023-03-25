@@ -5,7 +5,7 @@ from typing import List
 
 import wx
 import wxasync
-
+from wakepy import keepawake
 
 import lib.utils
 import lib.config as config
@@ -277,23 +277,23 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     debug.FakeQuest.devices, selected_device
                 ).package_names
 
-            # run the install step
-            install_task = lib.tasks.check_task_and_create(
-                self.start_install_process, path=magnet_data.download_path
-            )
-            try:
-                await asyncio.wait_for(install_task, timeout=None)
-            except asyncio.CancelledError:
-                # User pressed the cancel button
-                self.on_install_update("Installation Cancelled")
-                self.on_install_update("Removing Packages...")
+            # run the install step and keep the screen awake
+            with keepawake(keep_screen_awake=True):
+                install_task = lib.tasks.check_task_and_create(
+                    self.start_install_process, path=magnet_data.download_path
+                )
                 try:
-                    await self.cleanup_from_cancel_installation(
-                        selected_device, magnet_data.download_path, quest_packages
-                    )
-                except Exception as err:
-                    self.exception_handler(err=err)
-                    return
+                    await asyncio.wait_for(install_task, timeout=None)
+                except asyncio.CancelledError:
+                    # User pressed the cancel button
+                    self.on_install_update("Installation Cancelled")
+                    self.on_install_update("Removing Packages...")
+                    try:
+                        await self.cleanup_from_cancel_installation(
+                            selected_device, magnet_data.download_path, quest_packages
+                        )
+                    except Exception as err:
+                        self.exception_handler(err=err)
 
     async def cleanup_from_cancel_installation(
         self, device_name: str, download_path: str, quest_packages: List[str]
@@ -356,6 +356,7 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     fake_quests=debug.FakeQuest.devices,
                     apk_dir=apk_path,
                     raise_exception=None,
+                    total_time_range=(62.0, 65.0),
                 )
             else:
                 # loop through all the sub directories searching for apk files
