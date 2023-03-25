@@ -546,10 +546,10 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     app_details=app_details
                 ):
                     # user wants to update
-                    # update_task = asyncio.create_task(
-                    #     self.start_the_update_process(app_details)
-                    # )
-                    # await asyncio.wait_for(update_task, None)
+                    update_task = asyncio.create_task(
+                        self.start_the_update_process(app_details)
+                    )
+                    await asyncio.wait_for(update_task, None)
                     self.frame.Close()
                 else:
                     await self.prompt_user_for_device()
@@ -607,16 +607,6 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         self, update_details: api.schemas.AppVersionResponse
     ) -> None:
         """starts the update process"""
-        if not lib.update.is_mediafire_url(update_details.mirror_url):
-            return
-        try:
-            url = await lib.update.get_download_url_from_mediafire(
-                update_details.mirror_url
-            )
-        except Exception as err:
-            _Log.error(err.__str__())
-        if not url:
-            return
         progress = wx.ProgressDialog(
             "Updating",
             f"Downloading latest Version {update_details.version}",
@@ -624,7 +614,8 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             parent=self.frame,
             style=wx.PD_ESTIMATED_TIME | wx.PD_APP_MODAL,
         )
-        with open("test.exe", "+bw") as fp:
+        url = "https://drive.google.com/file/d/1ptBAVlo6BTY6GgRrwpWlCZNMAet4X00X/view?usp=sharing"
+        with open(".\\setup_installer\\test.exe", "+bw") as fp:
             async for chunk, total, content_length, speed in lib.update.download(url):
                 if total <= 1024:
                     progress.SetRange(content_length)
