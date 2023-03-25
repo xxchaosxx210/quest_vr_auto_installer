@@ -546,10 +546,10 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     app_details=app_details
                 ):
                     # user wants to update
-                    update_task = asyncio.create_task(
-                        self.start_the_update_process(app_details)
-                    )
-                    await asyncio.wait_for(update_task, None)
+                    # update_task = asyncio.create_task(
+                    #     self.start_the_update_process(app_details)
+                    # )
+                    # await asyncio.wait_for(update_task, None)
                     self.frame.Close()
                 else:
                     await self.prompt_user_for_device()
