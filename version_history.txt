@@ -1,0 +1,12 @@
+Release history and bug fixes
+
+Thanks to Abbie for testing
+
+v1.0.3
+
+Screen now stays on during the install process
+Version check, app will now notify when there is a new release
+
+
+v1.0.2
+port check for the adb daemon

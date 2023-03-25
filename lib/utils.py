@@ -1,6 +1,5 @@
 import os
 import socket
-import asyncio
 import ctypes
 import logging
 import platform
