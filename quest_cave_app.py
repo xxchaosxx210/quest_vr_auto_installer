@@ -22,6 +22,7 @@ from adblib.errors import RemoteDeviceError, UnInstallError
 from api.schemas import LogErrorRequest
 
 import ui.dialogs.device_list as dld
+import ui.dialogs.update as update_dialog
 from ui.frames.main_frame import MainFrame
 from ui.panels.installed_listpanel import InstalledListPanel
 from ui.panels.magnets_listpanel import MagnetsListPanel
@@ -568,11 +569,31 @@ class QuestCaveApp(wxasync.WxAsyncApp):
     async def check_app_version_and_prompt_for_update(
         self, app_details: api.schemas.AppVersionResponse
     ) -> bool:
-        # check if the app has been updated and prompt the user to restart the app
-        if config.APP_VERSION < app_details.version:
-            if self.prompt_user_for_new_update(app_details) == wx.ID_OK:
-                return True
-        return False
+        """checks the app version and prompts the user if new update is availible
+
+        Args:
+            app_details (api.schemas.AppVersionResponse): _description_
+
+        Returns:
+            bool: returns True if User selected download. False if wants to skip
+        """
+        try:
+            if config.APP_VERSION < app_details.version:
+                dlg = update_dialog.UpdateDialog(
+                    parent=self.frame,
+                    id=wx.ID_ANY,
+                    title="Software Update",
+                    size=self.frame.GetSize(),
+                    style=wx.DEFAULT_DIALOG_STYLE,
+                    update_details=app_details,
+                )
+                result = await wxasync.AsyncShowDialogModal(dlg)
+                if result == update_dialog.ID_DOWNLOAD:
+                    return True
+            return False
+        except Exception as err:
+            self.exception_handler(err=err)
+            return False
 
     async def prompt_user_for_device(self) -> None:
         """
@@ -589,16 +610,3 @@ class QuestCaveApp(wxasync.WxAsyncApp):
             raise ValueError("Dialog did not return a wx.OK or Close id")
         if selected_device and self.install_listpanel is not None:
             self.set_selected_device(selected_device)
-
-    def prompt_user_for_new_update(
-        self, update_details: api.schemas.AppVersionResponse
-    ) -> int:
-        """prompts the user to download the latest version of the app"""
-        with wx.MessageDialog(
-            None,
-            "There is a new version of QuestCave availible. Would you like to download it now?",
-            "New Version Availible",
-            wx.OK | wx.CANCEL | wx.ICON_QUESTION,
-        ) as dlg:
-            result = dlg.ShowModal()
-        return result
