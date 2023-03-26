@@ -1,5 +1,6 @@
 import base64
 import traceback
+from typing import List
 
 from pydantic import BaseModel, validator
 from pydantic.fields import ModelField
@@ -121,7 +122,13 @@ class ErrorLog(BaseModel):
     date_added: float
 
 
+class AppLatestVersionDescription(BaseModel):
+    new_features: List[str]
+    bug_fixes: List[str]
+
+
 class AppVersionResponse(BaseModel):
     version: str
     url: str
     mirror_url: str
+    description: AppLatestVersionDescription
