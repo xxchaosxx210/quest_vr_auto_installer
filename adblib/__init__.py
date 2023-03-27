@@ -1,5 +1,6 @@
 import os
 import platform
+import logging
 
 from . import adb_interface
 
