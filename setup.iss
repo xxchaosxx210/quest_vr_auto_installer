@@ -2,7 +2,7 @@
 ; SEE THE DOCUMENTATION FOR DETAILS ON CREATING INNO SETUP SCRIPT FILES!
 
 #define MyAppName "QuestCave"
-#define MyAppVersion "1.0.4"
+#define MyAppVersion "1.0.3"
 #define MyAppPublisher "Paul Millar"
 #define MyAppExeName "QuestCave.exe"
 
@@ -20,7 +20,8 @@ LicenseFile=C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer
 ; Uncomment the following line to run in non administrative install mode (install for current user only.)
 ;PrivilegesRequired=lowest
 OutputDir=C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer\setup_installer\
-OutputBaseFilename=questcave_setup
+; OutputBaseFilename=questcave_setup
+OutputBaseFilename=questcave_setup_{#MyAppVersion}
 SetupIconFile=C:\Users\chaos\Documents\dev\python-projects\quest_vr_auto_installer\images\icon.ico
 Compression=lzma
 SolidCompression=yes
@@ -44,7 +45,24 @@ Name: "{autodesktop}\{#MyAppName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: de
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#StringChange(MyAppName, '&', '&&')}}"; Flags: nowait postinstall skipifsilent
 
+[Code]
+function InitializeSetup(): Boolean;
+var
+  ResultCode: Integer;
+begin
+  if FileExists(ExpandConstant('{pf32}\QuestCave\adblib\win64\adb.exe')) then
+  begin
+  // for some reason QuestCave exe doesnt close the adb properly. Works in the python script
+  Exec(ExpandConstant('{pf32}\QuestCave\adblib\win64\adb.exe'), 'kill-server', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  end;
+  Result := True;
+end;
 
-
-
-
+function InitializeUninstall(): Boolean;
+// Pre Uninstall
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{pf32}\QuestCave\adblib\win64\adb.exe'), 'kill-server', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Result := True;
+end;
