@@ -496,14 +496,32 @@ class MagnetsListPanel(ListCtrlPanel):
         retrieves the game links from the api. If connection issue then loads locally.
         If successful then stores those links to a local json file
         """
-        saved_magnets = config.load_local_quest_magnets(lib.config.QUEST_MAGNETS_PATH)
         try:
+            saved_magnets = config.load_local_quest_magnets(
+                lib.config.QUEST_MAGNETS_PATH
+            )
             # get the magnets from the api
             magnets: List[Game] = await client.get_games()
             # everything went ok save locallly
             config.save_local_quest_magnets(config.QUEST_MAGNETS_PATH, magnets)
             # enable Online mode
             self.app.set_mode(True)
+            # sort the magnets in alphaebetical order and load into listctrl
+            magnets = sorted(magnets, key=lambda item: item.display_name.lower())
+            self.app.set_mode(True)
+            await self.load_magnets_into_listctrl(magnets)
+            # check if any new entries have been added and prompt the user of updates
+            new_magnets = set(magnets) - set(saved_magnets)
+            if new_magnets:
+                # load an async dialog here passing new_magnets to it
+                await load_new_games_dialog(
+                    new_magnets,
+                    parent=self.app.frame,
+                    id=wx.ID_ANY,
+                    title="New Games Available",
+                    size=(-1, 600),
+                    style=wx.DEFAULT_DIALOG_STYLE,
+                )
         except (aiohttp.ClientConnectionError, client.ApiError) as err:
             # there was a network or http error load locally
             if isinstance(err, ApiError):
@@ -516,26 +534,6 @@ class MagnetsListPanel(ListCtrlPanel):
             # something else went wrong notify the user and return. Skip loading
             self.app.exception_handler(err)
             return
-        else:
-            # sort the magnets in alphaebetical order and load into listctrl
-            magnets = sorted(magnets, key=lambda item: item.display_name.lower())
-            self.app.set_mode(True)
-            await self.load_magnets_into_listctrl(magnets)
-            # check if any new entries have been added and prompt the user of updates
-            try:
-                new_magnets = set(magnets) - set(saved_magnets)
-            except Exception as err:
-                pass
-            if new_magnets:
-                # load an async dialog here passing new_magnets to it
-                await load_new_games_dialog(
-                    new_magnets,
-                    parent=self.app.frame,
-                    id=wx.ID_ANY,
-                    title="New Games Available",
-                    size=(400, 400),
-                    style=wx.DEFAULT_DIALOG_STYLE,
-                )
         finally:
             return
 

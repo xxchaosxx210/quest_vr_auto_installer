@@ -26,7 +26,7 @@ import lib.tasks
 
 # App Meta data
 APP_NAME = "QuestCave"
-APP_VERSION = "1.0.3"
+APP_VERSION = "1.0.4"
 AUTHOR = "Paul Millar"
 
 

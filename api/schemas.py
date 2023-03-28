@@ -1,5 +1,6 @@
 import base64
 import traceback
+from typing import Any
 
 from pydantic import BaseModel, validator
 from pydantic.fields import ModelField
@@ -15,6 +16,25 @@ class Game(BaseModel):
     date_added: float
     id: str
     key: str
+
+    def __eq__(self, other: Any) -> bool:
+        """check if class is the same instance and that the items match
+
+        Args:
+            other (Any): any type
+
+        Returns:
+            bool: True if the two are the same
+        """
+        return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+    def __hash__(self) -> int:
+        """make the class hashable so can be compared in a set match
+
+        Returns:
+            int: the hash of the class
+        """
+        return hash(tuple(sorted(self.__dict__.items())))
 
     @property
     def version_str(self) -> str:

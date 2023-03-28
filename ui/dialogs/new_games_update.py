@@ -1,4 +1,4 @@
-from typing import List
+from typing import Set
 
 import wx
 import wxasync
@@ -9,18 +9,18 @@ from api.schemas import Game
 from ui.panels.listctrl_panel import ListCtrlPanel
 
 
-async def load_dialog(games: List[Game], *args, **kwargs) -> None:
+async def load_dialog(games: Set[Game], *args, **kwargs) -> None:
     """load the new games update dialog
 
     Args:
-        games (List[Game]): the list of games that are new
+        games (Set[Game]): the list of games that are new
     """
     dialog = NewGamesUpdateDialog(games, *args, **kwargs)
     await wxasync.AsyncShowDialogModal(dialog)
 
 
 class NewGamesUpdateDialog(wx.Dialog):
-    def __init__(self, games: List[Game], *args, **kw):
+    def __init__(self, games: Set[Game], *args, **kw):
         super().__init__(*args, **kw)
 
         self._games = games
@@ -67,7 +67,7 @@ class NewGamesUpdateDialog(wx.Dialog):
         # close event
         wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close, self.close_btn)
 
-    def _do_layouts(self) -> None:
+    def _do_layout(self) -> None:
         BORDER = 5
         text_vbox = wx.BoxSizer(wx.VERTICAL)
         text_vbox.Add(self.title_ctrl, 0, wx.ALL, BORDER)
@@ -97,6 +97,6 @@ class NewGamesUpdateDialog(wx.Dialog):
         self._load_new_games_into_listctrl()
         self.CenterOnParent()
 
-    def _on_close(self, event: wx.CommandEvent) -> None:
+    async def _on_close(self, event: wx.CommandEvent) -> None:
         self.SetReturnCode(wx.ID_CLOSE)
         self.Close()
