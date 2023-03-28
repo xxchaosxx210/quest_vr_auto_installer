@@ -1,6 +1,3 @@
-# from typing import Tuple
-from html import escape
-
 import wx
 import wx.html
 import wxasync

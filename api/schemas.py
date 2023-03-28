@@ -17,6 +17,10 @@ class Game(BaseModel):
     key: str
 
     @property
+    def version_str(self) -> str:
+        return str(self.version)
+
+    @property
     def uri(self) -> str:
         return self.magnet
 

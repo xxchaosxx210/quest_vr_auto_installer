@@ -112,7 +112,7 @@ class ListCtrlPanel(wx.Panel):
         Args:
             parent (wx.Window): the parent window
             title (str | None): the title of the label static box. If none, no static box is created
-            columns (ColumnListType, optional): the column headers. Defaults to [].
+            columns (ColumnListType, optional): the column headers. Defaults to []. {"col": int, "heading": str, "width": int}
             toggle_col (bool): if set to true then the list_col_click event will ...
                     be bound and toggling will be enabled. Defaults to True.
         """
