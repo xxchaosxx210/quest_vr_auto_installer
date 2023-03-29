@@ -180,20 +180,22 @@ class AddGameDlg(wx.Dialog):
         )
         wxasync.AsyncBind(
             wx.EVT_LIST_ITEM_ACTIVATED,
-            self._on_double_click_magnet,
+            self._on_magnet_double_click,
             self.magnet_listpanel.listctrl,
         )
         wxasync.AsyncBind(
-            wx.EVT_BUTTON, self._on_magnet_url_click, self.magnet_url_sbox.button
+            wx.EVT_BUTTON,
+            self._on_get_torrent_button_click,
+            self.magnet_url_sbox.button,
         )
         wxasync.AsyncBind(
             wx.EVT_TEXT_ENTER,
-            self._on_magnet_url_textctrl_enter,
+            self._on_magnet_text_return_key_pressed,
             self.magnet_url_sbox.textctrl,
         )
         wxasync.AsyncBind(
             wx.EVT_TEXT_ENTER,
-            self._on_search_textctrl_enter,
+            self._on_search_textctrl_return_key_pressed,
             self.search_url_sbox.textctrl,
         )
 
@@ -216,7 +218,7 @@ class AddGameDlg(wx.Dialog):
         )
         return game_request
 
-    async def _on_magnet_url_click(self, evt: wx.CommandEvent) -> None:
+    async def _on_get_torrent_button_click(self, evt: wx.CommandEvent) -> None:
         """
         user clicked on the get button in the magnet url control
 
@@ -226,7 +228,7 @@ class AddGameDlg(wx.Dialog):
         url = self.magnet_url_sbox.get_text()
         await self.parse_and_check_url(url)
 
-    async def _on_magnet_url_textctrl_enter(self, evt: wx.CommandEvent) -> None:
+    async def _on_magnet_text_return_key_pressed(self, evt: wx.CommandEvent) -> None:
         """the magnet_url_sbox.textctrl Enter key pressed
 
         Args:
@@ -259,7 +261,7 @@ class AddGameDlg(wx.Dialog):
             return
         await self.process_metadata_from_magnet(magnet_link=url)
 
-    async def _on_double_click_magnet(self, evt: wx.ListEvent) -> None:
+    async def _on_magnet_double_click(self, evt: wx.ListEvent) -> None:
         """user double clicked on a magnet link in the magnet list control"""
         index = evt.GetIndex()
         if index < 0:
@@ -293,10 +295,11 @@ class AddGameDlg(wx.Dialog):
             show_error_message("".join(err.args))
 
     async def _on_close_button(self, evt: wx.CommandEvent) -> None:
-        """Admin clicked on the close button
+        """this is an async bound dialog so no need to call EndModal or Destroy
+        just set the return code and call Close
 
         Args:
-            evt (wx.CommandEvent): Not used
+            evt (wx.CommandEvent): not used
         """
         btn_id = evt.GetId()
         self.SetReturnCode(btn_id)
@@ -328,9 +331,12 @@ class AddGameDlg(wx.Dialog):
             wx.MessageBox("Magnet Saved", "QuestCave", wx.OK | wx.ICON_INFORMATION)
 
     async def _on_save_button(self, evt: wx.CommandEvent) -> None:
-        """user clicked on the save button"""
-        # get the values from the controls and validate them before
-        # sending new game request to the api
+        """save button pressed. Get the values from the controls and validate them before
+        sending new game request to the api
+
+        Args:
+            evt (wx.CommandEvent): not used
+        """
         try:
             game_request = await self.get_values_from_ui()
         except ValidationError as err:
@@ -343,10 +349,6 @@ class AddGameDlg(wx.Dialog):
         await self.add_game_to_database(game_request)
 
     async def _on_search_button_click(self, evt: wx.CommandEvent) -> None:
-        """
-        Search for magnet links from a web url
-        This is just a simple 1 page web scrape
-        """
         # get the button that was clicked and disable it initially.
         btn: wx.Button = evt.GetEventObject()
         wx.CallAfter(btn.Enable, enable=False)
@@ -360,8 +362,9 @@ class AddGameDlg(wx.Dialog):
             show_error_message(err.__str__())
             _Log.error(err.__str__())
 
-    async def _on_search_textctrl_enter(self, evt: wx.CommandEvent) -> None:
-        """user pressed enter in the web url control"""
+    async def _on_search_textctrl_return_key_pressed(
+        self, evt: wx.CommandEvent
+    ) -> None:
         wx.CallAfter(self.search_url_sbox.button.Enable, enable=False)
         url = evt.String
         try:
@@ -416,7 +419,8 @@ class AddGameDlg(wx.Dialog):
         return False
 
     async def check_and_add_magnet_links(self, magnet_urls: List[str]) -> None:
-        """iterate through the magnet urls and check if there is a match. If not then add the magnet link to the listctrl for editing
+        """iterate through the magnet urls and check if there is a match.
+        If not then add the magnet link to the listctrl for editing
 
         Args:
             magnet_urls List[str]: List of urls
