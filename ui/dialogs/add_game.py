@@ -89,7 +89,7 @@ class AddGameDlg(wx.Dialog):
         self.scrolled_win = wx.ScrolledWindow(self, -1)
         self.panel = wx.Panel(self.scrolled_win, -1)
         # Random URL magnet link search textbox
-        self.web_url_ctrl = ButtonTextCtrlStaticBox(
+        self.search_url_sbox = ButtonTextCtrlStaticBox(
             self.panel,
             "",
             wx.TE_NO_VSCROLL | wx.TE_PROCESS_ENTER,
@@ -98,7 +98,7 @@ class AddGameDlg(wx.Dialog):
         )
 
         # Magnet links list
-        self.mag_list_pnl = ListCtrlPanel(
+        self.magnet_listpanel = ListCtrlPanel(
             self.panel,
             None,
             [{"col": 0, "heading": "Magnet", "width": 100}],
@@ -106,7 +106,7 @@ class AddGameDlg(wx.Dialog):
         )
 
         # Add a magnet manually textctrl and button
-        self.mag_url_ctrl = ButtonTextCtrlStaticBox(
+        self.magnet_url_sbox = ButtonTextCtrlStaticBox(
             self.panel, "", wx.TE_NO_VSCROLL | wx.TE_PROCESS_ENTER, "Add Magnet", "Get"
         )
 
@@ -136,11 +136,11 @@ class AddGameDlg(wx.Dialog):
     def _do_laylout(self) -> None:
         ctrl_vbox = wx.BoxSizer(wx.VERTICAL)
         CTRL_VBOX_BORDER = 10
-        ctrl_vbox.Add(self.web_url_ctrl.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
-        ctrl_vbox.Add(self.mag_url_ctrl.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
+        ctrl_vbox.Add(self.search_url_sbox.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
+        ctrl_vbox.Add(self.magnet_url_sbox.sizer, 0, wx.EXPAND, CTRL_VBOX_BORDER)
 
         hbox_mag_listpanel = wx.BoxSizer(wx.HORIZONTAL)
-        hbox_mag_listpanel.Add(self.mag_list_pnl, 1, wx.ALL | wx.EXPAND, 0)
+        hbox_mag_listpanel.Add(self.magnet_listpanel, 1, wx.ALL | wx.EXPAND, 0)
 
         ctrl_vbox.Add(hbox_mag_listpanel, 1, wx.EXPAND, CTRL_VBOX_BORDER)
         ctrl_vbox.Add(self.torrent_files_box.sizer, 1, wx.EXPAND | wx.ALL, 0)
@@ -176,18 +176,25 @@ class AddGameDlg(wx.Dialog):
         wxasync.AsyncBind(wx.EVT_BUTTON, self._on_save_button, self.save_btn)
         wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_button, self.close_btn)
         wxasync.AsyncBind(
-            wx.EVT_BUTTON, self._on_weburlctrl_btn_click, self.web_url_ctrl.button
+            wx.EVT_BUTTON, self._on_search_button_click, self.search_url_sbox.button
         )
         wxasync.AsyncBind(
             wx.EVT_LIST_ITEM_ACTIVATED,
             self._on_double_click_magnet,
-            self.mag_list_pnl.listctrl,
+            self.magnet_listpanel.listctrl,
         )
         wxasync.AsyncBind(
-            wx.EVT_BUTTON, self._on_magnet_get_click, self.mag_url_ctrl.button
+            wx.EVT_BUTTON, self._on_magnet_url_click, self.magnet_url_sbox.button
         )
         wxasync.AsyncBind(
-            wx.EVT_TEXT_ENTER, self._on_web_url_ctrl_enter, self.web_url_ctrl.textctrl
+            wx.EVT_TEXT_ENTER,
+            self._on_magnet_url_textctrl_enter,
+            self.magnet_url_sbox.textctrl,
+        )
+        wxasync.AsyncBind(
+            wx.EVT_TEXT_ENTER,
+            self._on_search_textctrl_enter,
+            self.search_url_sbox.textctrl,
         )
 
     async def get_values_from_ui(self) -> schemas.AddGameRequest:
@@ -205,14 +212,14 @@ class AddGameDlg(wx.Dialog):
         )
         return game_request
 
-    async def _on_magnet_get_click(self, evt: wx.CommandEvent) -> None:
+    async def _on_magnet_url_click(self, evt: wx.CommandEvent) -> None:
         """
         user clicked on the get button in the magnet url control
 
         Args:
             evt (wx.CommandEvent): event is never used
         """
-        url = self.mag_url_ctrl.get_text()
+        url = self.magnet_url_sbox.get_text()
         # make sure the url is a valid magnet link
         match = mparser.MAG_LINK_PATTERN.match(url)
         if match is None:
@@ -231,12 +238,15 @@ class AddGameDlg(wx.Dialog):
             return
         await self.process_metadata_from_magnet(magnet_link=url)
 
+    async def _on_magnet_url_textctrl_enter(self, evt: wx.CommandEvent) -> None:
+        pass
+
     async def _on_double_click_magnet(self, evt: wx.ListEvent) -> None:
         """user double clicked on a magnet link in the magnet list control"""
         index = evt.GetIndex()
         if index < 0:
             return
-        magnet_link = self.mag_list_pnl.listctrl.GetItem(index, 0).GetText()
+        magnet_link = self.magnet_listpanel.listctrl.GetItem(index, 0).GetText()
         await self.process_metadata_from_magnet(magnet_link=magnet_link)
 
     @async_progress_dialog(
@@ -257,7 +267,7 @@ class AddGameDlg(wx.Dialog):
                 du.get_magnet_info(magnet_link, AddGameDlg.MAGNET_INFO_TIMEOUT)
             )
             meta_data = await asyncio.shield(magnet_info_task)
-            self.mag_url_ctrl.set_text(magnet_link)
+            self.magnet_url_sbox.set_text(magnet_link)
             self.add_magnet_data_to_ui(magnet_link, meta_data)
         except asyncio.CancelledError:
             _Log.info("Magnet Info Task timed out")
@@ -314,7 +324,7 @@ class AddGameDlg(wx.Dialog):
             return
         await self.add_game_to_database(game_request)
 
-    async def _on_weburlctrl_btn_click(self, evt: wx.CommandEvent) -> None:
+    async def _on_search_button_click(self, evt: wx.CommandEvent) -> None:
         """
         Search for magnet links from a web url
         This is just a simple 1 page web scrape
@@ -322,50 +332,28 @@ class AddGameDlg(wx.Dialog):
         # get the button that was clicked and disable it initially.
         btn: wx.Button = evt.GetEventObject()
         wx.CallAfter(btn.Enable, enable=False)
-        url = self.web_url_ctrl.get_text()
-        magnets = await self.get_magnets(url)
-        added_magnet_count, ignored_magnet_count = self.insert_magnets_into_listctrl(
-            magnets
-        )
-        if ignored_magnet_count > 0:
-            wx.adv.NotificationMessage(
-                "Already exists",
-                "Games already exist in the database",
-                self.GetParent(),
-                wx.ICON_INFORMATION,
-            ).Show(timeout=3)
-        wx.CallAfter(btn.Enable, enable=True)
-
-    async def _on_web_url_ctrl_enter(self, evt: wx.CommandEvent) -> None:
-        """user pressed enter in the web url control"""
-        print("enter pressed")
-
-    async def get_magnets(self, url: str) -> List[str]:
-        """simple web request and parse the HTML looking for magnet links
-
-        Args:
-            url (str): the url to search for magnet links
-
-        Raises:
-            Exception: any exception that is not handled
-
-        Returns:
-            List[str]: list of magnet links
-        """
+        url = self.search_url_sbox.get_text()
         try:
-            html = await mparser.MagnetParser.get_html(url)
-            parser = mparser.MagnetParser()
-            parser.feed(html)
-        except (aiohttp.ClientConnectionError, mparser.ParserConnectionError) as err:
-            show_error_message(err.__str__())
-            return []
-        except aiohttp.InvalidURL:
-            show_error_message("Url given was invalid")
-            return []
+            magnets = await self.search_for_magnet_links(url)
+            if magnets:
+                await self.check_and_add_magnet_links(magnets)
+            wx.CallAfter(btn.Enable, enable=True)
         except Exception as err:
-            raise err
-        else:
-            return parser.magnet_urls
+            show_error_message(err.__str__())
+            _Log.error(err.__str__())
+
+    async def _on_search_textctrl_enter(self, evt: wx.CommandEvent) -> None:
+        """user pressed enter in the web url control"""
+        wx.CallAfter(self.search_url_sbox.button.Enable, enable=False)
+        url = evt.String
+        try:
+            magnets = await self.search_for_magnet_links(url)
+            if magnets:
+                await self.check_and_add_magnet_links(magnets)
+        except Exception as err:
+            show_error_message(err.__str__())
+            _Log.error(err.__str__())
+        wx.CallAfter(self.search_url_sbox.button.Enable, enable=True)
 
     def add_magnet_data_to_ui(self, magnet_uri: str, meta: du.MetaData) -> None:
         """add the magnet data to the UI controls
@@ -409,56 +397,50 @@ class AddGameDlg(wx.Dialog):
                 return True
         return False
 
-    def insert_magnets_into_listctrl(self, magnets: List[str]) -> Tuple[int, int]:
-        """loops through the magnet links and checks if any match within the global
-        MagnetsListPanel. If no match is found then the magnet link is inserted to the
-        mag_lst_pnl listctrl.
+    async def check_and_add_magnet_links(self, magnet_urls: List[str]) -> None:
+        """iterate through the magnet urls and check if there is a match. If not then add the magnet link to the listctrl for editing
 
         Args:
-            magnets (List[str]): the magnets to check and insert
+            magnet_urls List[str]: List of urls
+        """
+        self.magnet_listpanel.listctrl.DeleteAllItems()
+        for index, magnet in enumerate(magnet_urls):
+            if not self.does_magnet_already_exist(magnet):
+                wx.CallAfter(
+                    self.magnet_listpanel.listctrl.InsertItem, index=index, label=magnet
+                )
+            else:
+                notify = wx.adv.NotificationMessage(
+                    "Already exists",
+                    "Games already exist in the database",
+                    self.GetParent(),
+                    wx.ICON_INFORMATION,
+                )
+                wx.CallAfter(notify.Show, timeout=3)
+
+    async def search_for_magnet_links(self, url: str) -> List[str]:
+        """gets the html document from the url, parses the HTML and searches for valid magnet links
+
+        Args:
+            url (str): the url to scrape
+
+        raises:
+            Exception: unhandled exceptions
 
         Returns:
-            Tuple[int, int]: Returns a tuple of magnets added and magnets ignored count
+            List[str]: a list of magnet links
         """
-        self.mag_list_pnl.listctrl.DeleteAllItems()
-        magnets_added_count = 0
-        magnets_ignored_count = 0
-        for index, magnet in enumerate(magnets):
-            if self.does_magnet_already_exist(magnet):
-                magnets_ignored_count += 1
-            else:
-                wx.CallAfter(
-                    self.mag_list_pnl.listctrl.InsertItem, index=index, label=magnet
-                )
-                magnets_added_count += 1
-        return magnets_added_count, magnets_ignored_count
-
-    async def process_link(url: str) -> None:
-        pass
-
-    async def search_magnets_from_url(url: str) -> List[Game]:
-        pass
-
-    # test the insert_magnets_into_listctrl method using a MagicMock
-    # def test_insert_magnets_into_listctrl(self):
-    #     # create a mock listctrl
-    #     mock_listctrl = MagicMock()
-    #     # create a mock magnet list
-    #     mock_magnets = ["magnet1", "magnet2"]
-    #     # create a mock magnet list panel
-    #     mock_mag_list_pnl = MagicMock()
-    #     mock_mag_list_pnl.listctrl = mock_listctrl
-    #     # set the global magnet list panel to the mock
-    #     MagnetsListPanel = mock_mag_list_pnl
-    #     # call the method
-    #     magnets_added_count, magnets_ignored_count = self.insert_magnets_into_listctrl(
-    #         mock_magnets
-    #     )
-    #     # check the return values
-    #     self.assertEqual(magnets_added_count, 2)
-    #     self.assertEqual(magnets_ignored_count, 0)
-    #     # check the mock listctrl was called
-    #     mock_listctrl.DeleteAllItems.assert_called_once()
-    #     mock_listctrl.InsertItem.assert_has_calls(
-    #         [call(index=0, label="magnet1"), call(index=1, label="magnet2")]
-    #     )
+        try:
+            html = await mparser.MagnetParser.get_html(url)
+            parser = mparser.MagnetParser()
+            parser.feed(html)
+        except (aiohttp.ClientConnectionError, mparser.ParserConnectionError) as err:
+            show_error_message(err.__str__())
+            return []
+        except aiohttp.InvalidURL:
+            show_error_message("Url given was invalid")
+            return []
+        except Exception as err:
+            raise err
+        else:
+            return parser.magnet_urls
