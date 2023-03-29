@@ -4,16 +4,19 @@ from typing import List, Tuple
 
 import aiohttp
 import wx
+import wx.adv
 import wxasync
 from pydantic.error_wrappers import ValidationError
 
 import lib.magnet_parser as mparser
 import lib.utils
+import lib.api_handler
 import deluge.utils as du
 import api.schemas as schemas
 import api.client as client
 from ui.utils import TextCtrlStaticBox, show_error_message, async_progress_dialog
 from ui.panels.listctrl_panel import ListCtrlPanel
+from ui.panels.magnets_listpanel import MagnetsListPanel
 from lib.settings import Settings
 from api.exceptions import ApiError
 
@@ -36,7 +39,14 @@ class ButtonTextCtrlStaticBox(TextCtrlStaticBox):
 
 
 class TorrentFilesStaticBox(wx.StaticBox):
+    """listctrl containing torrent files within a staticbox"""
+
     def __init__(self, parent: wx.Window, label: str):
+        """
+        Args:
+            parent (wx.Window): the parent window
+            label (str): the staticbox label
+        """
         super().__init__(parent, -1, label)
         self.treectrl = wx.TreeCtrl(
             self, -1, style=wx.TR_DEFAULT_STYLE | wx.TR_HIDE_ROOT
@@ -82,7 +92,7 @@ class AddGameDlg(wx.Dialog):
         self.web_url_ctrl = ButtonTextCtrlStaticBox(
             self.panel,
             "",
-            wx.TE_NO_VSCROLL,
+            wx.TE_NO_VSCROLL | wx.TE_PROCESS_ENTER,
             "Search for Magnet Links from Web Url",
             "Search",
         )
@@ -97,7 +107,7 @@ class AddGameDlg(wx.Dialog):
 
         # Add a magnet manually textctrl and button
         self.mag_url_ctrl = ButtonTextCtrlStaticBox(
-            self.panel, "", wx.TE_NO_VSCROLL, "Add Magnet", "Get"
+            self.panel, "", wx.TE_NO_VSCROLL | wx.TE_PROCESS_ENTER, "Add Magnet", "Get"
         )
 
         # Torrent files found from magnet link lookup
@@ -176,6 +186,9 @@ class AddGameDlg(wx.Dialog):
         wxasync.AsyncBind(
             wx.EVT_BUTTON, self._on_magnet_get_click, self.mag_url_ctrl.button
         )
+        wxasync.AsyncBind(
+            wx.EVT_TEXT_ENTER, self._on_web_url_ctrl_enter, self.web_url_ctrl.textctrl
+        )
 
     async def get_values_from_ui(self) -> schemas.AddGameRequest:
         """get the values from the ui and return them as a QuestMagnet object"""
@@ -205,6 +218,17 @@ class AddGameDlg(wx.Dialog):
         if match is None:
             show_error_message("Invalid Magnet. Please a correct Magnet link")
             return
+        # make sure the magnet link is not already in the database.
+        # use the MagnetListPanel list to check instead of requesting from the server
+        if self.does_magnet_already_exist(url):
+            notify = wx.adv.NotificationMessage(
+                "Already exists",
+                "Game already exists in the database",
+                self.GetParent(),
+                wx.ICON_INFORMATION,
+            )
+            notify.Show(2)
+            return
         await self.process_metadata_from_magnet(magnet_link=url)
 
     async def _on_double_click_magnet(self, evt: wx.ListEvent) -> None:
@@ -227,22 +251,25 @@ class AddGameDlg(wx.Dialog):
         Args:
             magnet_link (str): the magnet link to get the meta data from
         """
-        task = asyncio.create_task(
-            du.get_magnet_info(magnet_link, AddGameDlg.MAGNET_INFO_TIMEOUT)
-        )
-        # wait for the task to complete
-        # handle any errors
         try:
-            meta_data = await asyncio.shield(task)
-        except asyncio.CancelledError:
-            pass
-        except Exception as err:
-            show_error_message("".join(err.args))
-        else:
+            # get the magnet info on the torrent file
+            magnet_info_task = asyncio.create_task(
+                du.get_magnet_info(magnet_link, AddGameDlg.MAGNET_INFO_TIMEOUT)
+            )
+            meta_data = await asyncio.shield(magnet_info_task)
             self.mag_url_ctrl.set_text(magnet_link)
             self.add_magnet_data_to_ui(magnet_link, meta_data)
+        except asyncio.CancelledError:
+            _Log.info("Magnet Info Task timed out")
+        except Exception as err:
+            show_error_message("".join(err.args))
 
     async def _on_close_button(self, evt: wx.CommandEvent) -> None:
+        """Admin clicked on the close button
+
+        Args:
+            evt (wx.CommandEvent): Not used
+        """
         btn_id = evt.GetId()
         self.SetReturnCode(btn_id)
         self.Close()
@@ -251,6 +278,11 @@ class AddGameDlg(wx.Dialog):
         "Sending", "Adding Game Data to API server, Please wait...", 1000
     )
     async def add_game_to_database(self, game_request: schemas.AddGameRequest) -> None:
+        """adds the game to the database handles any exceptions
+
+        Args:
+            game_request (schemas.AddGameRequest): the game request to add to the database
+        """
         settings = Settings.load()
         if settings.token is None:
             _Log.error("Token was not found. Exiting _on_save_button")
@@ -287,16 +319,26 @@ class AddGameDlg(wx.Dialog):
         Search for magnet links from a web url
         This is just a simple 1 page web scrape
         """
+        # get the button that was clicked and disable it initially.
         btn: wx.Button = evt.GetEventObject()
         wx.CallAfter(btn.Enable, enable=False)
         url = self.web_url_ctrl.get_text()
         magnets = await self.get_magnets(url)
-        self.mag_list_pnl.listctrl.DeleteAllItems()
-        for index, magnet in enumerate(magnets):
-            wx.CallAfter(
-                self.mag_list_pnl.listctrl.InsertItem, index=index, label=magnet
-            )
+        added_magnet_count, ignored_magnet_count = self.insert_magnets_into_listctrl(
+            magnets
+        )
+        if ignored_magnet_count > 0:
+            wx.adv.NotificationMessage(
+                "Already exists",
+                "Games already exist in the database",
+                self.GetParent(),
+                wx.ICON_INFORMATION,
+            ).Show(timeout=3)
         wx.CallAfter(btn.Enable, enable=True)
+
+    async def _on_web_url_ctrl_enter(self, evt: wx.CommandEvent) -> None:
+        """user pressed enter in the web url control"""
+        print("enter pressed")
 
     async def get_magnets(self, url: str) -> List[str]:
         """simple web request and parse the HTML looking for magnet links
@@ -351,3 +393,72 @@ class AddGameDlg(wx.Dialog):
             root_item.path.pop(root_item.path.index(path_item))
             for sub_index, sub_item in enumerate(root_item.path):
                 self.torrent_files_box.treectrl.AppendItem(sub_tree_item_id, sub_item)
+
+    def does_magnet_already_exist(self, magnet_link: str) -> bool:
+        """iterates through the magnet list in the global MagnetsListPanel and looks
+        for a match
+
+        Args:
+            magnet_link (str): the magnet link to search for
+
+        Returns:
+            bool: Returns True if match found
+        """
+        for magnet in MagnetsListPanel.magnet_data_list:
+            if magnet.uri in magnet_link:
+                return True
+        return False
+
+    def insert_magnets_into_listctrl(self, magnets: List[str]) -> Tuple[int, int]:
+        """loops through the magnet links and checks if any match within the global
+        MagnetsListPanel. If no match is found then the magnet link is inserted to the
+        mag_lst_pnl listctrl.
+
+        Args:
+            magnets (List[str]): the magnets to check and insert
+
+        Returns:
+            Tuple[int, int]: Returns a tuple of magnets added and magnets ignored count
+        """
+        self.mag_list_pnl.listctrl.DeleteAllItems()
+        magnets_added_count = 0
+        magnets_ignored_count = 0
+        for index, magnet in enumerate(magnets):
+            if self.does_magnet_already_exist(magnet):
+                magnets_ignored_count += 1
+            else:
+                wx.CallAfter(
+                    self.mag_list_pnl.listctrl.InsertItem, index=index, label=magnet
+                )
+                magnets_added_count += 1
+        return magnets_added_count, magnets_ignored_count
+
+    async def process_link(url: str) -> None:
+        pass
+
+    async def search_magnets_from_url(url: str) -> List[Game]:
+        pass
+
+    # test the insert_magnets_into_listctrl method using a MagicMock
+    # def test_insert_magnets_into_listctrl(self):
+    #     # create a mock listctrl
+    #     mock_listctrl = MagicMock()
+    #     # create a mock magnet list
+    #     mock_magnets = ["magnet1", "magnet2"]
+    #     # create a mock magnet list panel
+    #     mock_mag_list_pnl = MagicMock()
+    #     mock_mag_list_pnl.listctrl = mock_listctrl
+    #     # set the global magnet list panel to the mock
+    #     MagnetsListPanel = mock_mag_list_pnl
+    #     # call the method
+    #     magnets_added_count, magnets_ignored_count = self.insert_magnets_into_listctrl(
+    #         mock_magnets
+    #     )
+    #     # check the return values
+    #     self.assertEqual(magnets_added_count, 2)
+    #     self.assertEqual(magnets_ignored_count, 0)
+    #     # check the mock listctrl was called
+    #     mock_listctrl.DeleteAllItems.assert_called_once()
+    #     mock_listctrl.InsertItem.assert_has_calls(
+    #         [call(index=0, label="magnet1"), call(index=1, label="magnet2")]
+    #     )

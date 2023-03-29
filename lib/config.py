@@ -90,7 +90,7 @@ def initalize_logger():
     sets up the logger and log handler
     """
     logging.basicConfig(
-        format="%(asctime)s %(message)s",
+        format="%(asctime)s - %(name)s - %(levelname)s - %(module)s:%(lineno)d - %(message)s",
         handlers=[logging.StreamHandler()],
         level=logging.INFO,
     )
