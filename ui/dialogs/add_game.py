@@ -198,7 +198,11 @@ class AddGameDlg(wx.Dialog):
         )
 
     async def get_values_from_ui(self) -> schemas.AddGameRequest:
-        """get the values from the ui and return them as a QuestMagnet object"""
+        """gets and parses the variables from the wxControls and returns a Request Object ready to be sent to the server
+
+        Returns:
+            schemas.AddGameRequest: check the api/schemas.py for more information on this class
+        """
         b64str = lib.utils.encode_str2b64(self.magnet_url_box.get_text())
         game_request = schemas.AddGameRequest(
             name=self.torrent_name_box.get_text(),
@@ -220,6 +224,23 @@ class AddGameDlg(wx.Dialog):
             evt (wx.CommandEvent): event is never used
         """
         url = self.magnet_url_sbox.get_text()
+        await self.parse_and_check_url(url)
+
+    async def _on_magnet_url_textctrl_enter(self, evt: wx.CommandEvent) -> None:
+        """the magnet_url_sbox.textctrl Enter key pressed
+
+        Args:
+            evt (wx.CommandEvent): textctrl
+        """
+        await self.parse_and_check_url(evt.String)
+
+    async def parse_and_check_url(self, url: str) -> None:
+        """Validates the url as a magnet link. Checks if the Magnet matches in the list of games.
+        if not then the magnet link gets processed for extra info and added to the listctrl
+
+        Args:
+            url (str): the url to validate and add
+        """
         # make sure the url is a valid magnet link
         match = mparser.MAG_LINK_PATTERN.match(url)
         if match is None:
@@ -237,9 +258,6 @@ class AddGameDlg(wx.Dialog):
             notify.Show(2)
             return
         await self.process_metadata_from_magnet(magnet_link=url)
-
-    async def _on_magnet_url_textctrl_enter(self, evt: wx.CommandEvent) -> None:
-        pass
 
     async def _on_double_click_magnet(self, evt: wx.ListEvent) -> None:
         """user double clicked on a magnet link in the magnet list control"""
