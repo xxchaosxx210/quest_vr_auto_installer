@@ -1,9 +1,12 @@
 import os
 import asyncio
+import logging
 from typing import Tuple
 from functools import wraps
 
 import wx
+
+_Log = logging.getLogger()
 
 
 def async_progress_dialog(title: str, message: str, timeout: float | None):
@@ -37,7 +40,10 @@ def async_progress_dialog(title: str, message: str, timeout: float | None):
             try:
                 task = asyncio.create_task(func(*args, **kwargs))
                 result = await asyncio.wait_for(task, timeout=timeout)
+            except asyncio.TimeoutError:
+                _Log.info("Task timed out")
             except Exception as e:
+                _Log.error(e.__str__())
                 dlg.Destroy()
                 raise e
             dlg.Destroy()

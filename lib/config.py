@@ -141,7 +141,13 @@ def async_log_handler(loop: asyncio.ProactorEventLoop, context: dict) -> None:
     if not exception:
         _Log.error(context.get("message", ""))
         return
+    if Settings is None:
+        from settings import Settings
+
+        print(f"Settings is None. Exception context: {context}")
+        return
     settings = Settings.load()
+
     tb_list: List[str] = traceback.format_tb(exception.__traceback__)
     tb_str = "".join(tb_list)
     error_request = LogErrorRequest(
