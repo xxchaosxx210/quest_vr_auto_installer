@@ -284,7 +284,7 @@ class MainFrame(wx.Frame):
             evt (wx.MenuEvent):
         """
         menu: wx.Menu = evt.GetMenu()
-        if menu.GetTitle() == USER_MENU_LABEL:
+        if isinstance(menu, wx.Menu) and menu.GetTitle() == USER_MENU_LABEL:
             settings = Settings.load()
             ui.utils.enable_menu_items(self.admin_submenu, settings.is_user_admin())
         evt.Skip()

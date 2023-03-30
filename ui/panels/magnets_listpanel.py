@@ -89,12 +89,17 @@ class MagnetsListPanel(ListCtrlPanel):
         )
         async def _reload_magnets():
             await asyncio.sleep(2)
-            self.app.load_games()
+            try:
+                self.app.load_games()
+            except Exception as err:
+                _Log.error(err.__str__())
 
         try:
             lib.tasks.check_task_and_create(_reload_magnets)
         except lib.tasks.TaskIsRunning:
             ui.utils.show_error_message("Already getting Game List. Please wait...")
+        except Exception as err:
+            _Log.error(err.__str__())
 
     def _on_col_left_click(self, evt: wx.ListEvent) -> None:
         """sort the magnets by alphabetical order.
