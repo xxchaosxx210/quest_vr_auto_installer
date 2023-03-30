@@ -12,42 +12,43 @@ _Log = logging.getLogger()
 def async_progress_dialog(title: str, message: str, timeout: float | None):
     """Async Decorator that displays a wxProgressDialog Pulse and closes once the function is finished
     either when exception is caught or function completes. Make sure youre using a wx.Window
-    class method with wx.Window as first argument
+    class method with wx.Window as first argument. If function then pass in the first argument
+    is wx.Window! I made this mistake and the exception gets swallowed into the never void!
 
     Args:
         title (str): the title of the progress dialog
         message (str): the message to display in the ProgressDialog
         timeout (float | None): if set to None then will not close until the task is complete
         else will quit once timeout in seconds has reached
+
+    Returns:
+        if a timeout error is caught then the decorator returns None. Just be careful of that. Otherwise
+        whatever the function returns will be returned
     """
 
     def decorator(func):
         @wraps(func)
         async def wrapper(*args, **kwargs):
-            if not isinstance(args[0], wx.Window):
-                raise TypeError(
-                    f"First argument must be a wx.Window. Got {type(args[0])} instead"
-                )
+            if not args or not isinstance(args[0], wx.Window):
+                raise TypeError(f"First argument must be a wx.Window.")
             parent: wx.Window = args[0]
-            dlg = wx.ProgressDialog(
+            with wx.ProgressDialog(
                 title=title,
                 message=message,
                 maximum=100,
                 parent=parent,
                 style=wx.PD_APP_MODAL | wx.PD_AUTO_HIDE,
-            )
-            dlg.Pulse()
-            try:
-                task = asyncio.create_task(func(*args, **kwargs))
-                result = await asyncio.wait_for(task, timeout=timeout)
-            except asyncio.TimeoutError:
-                _Log.info("Task timed out")
-            except Exception as e:
-                _Log.error(e.__str__())
-                dlg.Destroy()
-                raise e
-            dlg.Destroy()
-            return result
+            ) as dlg:
+                try:
+                    dlg.Pulse()
+                    task = asyncio.create_task(func(*args, **kwargs))
+                    result = await asyncio.wait_for(task, timeout=timeout)
+                    return result
+                except asyncio.TimeoutError:
+                    _Log.info("Task timed out")
+                except Exception as e:
+                    _Log.error(e.__str__())
+                    raise e
 
         return wrapper
 

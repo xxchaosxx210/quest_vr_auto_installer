@@ -77,6 +77,16 @@ class MagnetsListPanel(ListCtrlPanel):
 
     # Event Handler Functions
 
+    @ui.utils.async_progress_dialog(
+        "Loading Games List", "Loading the Games, Please wait...", 10
+    )
+    async def _reload_magnets(self) -> None:
+        await asyncio.sleep(2)
+        try:
+            await self.app.load_games()
+        except Exception as err:
+            _Log.error(err.__str__())
+
     def on_reload_magnets(self, evt: wx.CommandEvent | wx.MenuEvent) -> None:
         """triggered by either menu item event or Command Button event
 
@@ -84,18 +94,8 @@ class MagnetsListPanel(ListCtrlPanel):
             evt (wx.CommandEvent | wx.MenuEvent):
         """
 
-        @ui.utils.async_progress_dialog(
-            "Loading Games List", "Loading the Games, Please wait...", 10
-        )
-        async def _reload_magnets():
-            await asyncio.sleep(2)
-            try:
-                self.app.load_games()
-            except Exception as err:
-                _Log.error(err.__str__())
-
         try:
-            lib.tasks.check_task_and_create(_reload_magnets)
+            lib.tasks.check_task_and_create(self._reload_magnets)
         except lib.tasks.TaskIsRunning:
             ui.utils.show_error_message("Already getting Game List. Please wait...")
         except Exception as err:
