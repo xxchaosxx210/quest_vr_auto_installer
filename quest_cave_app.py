@@ -548,6 +548,9 @@ class QuestCaveApp(wxasync.WxAsyncApp):
                     app_details=app_details
                 ):
                     # user wants to update
+                    # delete local games list
+                    if config.remove_file(config.QUEST_MAGNETS_PATH):
+                        _Log.info("Removed local games list")
                     webbrowser.open(app_details.url)
                     # wait 1/2 second and close the app
                     await asyncio.sleep(0.5)

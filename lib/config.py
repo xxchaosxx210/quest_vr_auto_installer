@@ -195,6 +195,26 @@ def load_local_quest_magnets(path: str) -> List[Game]:
         return list(map(lambda item: Game(**item), json.load(fp)))
 
 
+def remove_file(path: str = QUEST_MAGNETS_PATH) -> bool:
+    """removes a file
+
+    Args:
+        path (str, optional): the path to the file. Defaults to QUEST_MAGNETS_PATH.
+
+    Returns:
+        bool: true if successful, false if not
+    """
+    try:
+        os.remove(path)
+    except (FileNotFoundError, PermissionError, IsADirectoryError):
+        pass
+    except OSError as err:
+        _Log.error(err.__str__())
+    else:
+        return True
+    return False
+
+
 def create_data_paths(
     base_path: str = APP_BASE_PATH,
     download_path: str = APP_DOWNLOADS_PATH,
