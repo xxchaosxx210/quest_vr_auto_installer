@@ -12,11 +12,11 @@ import lib.utils
 import lib.tasks
 import ui.utils
 import lib.api_handler
+import ui.dialogs.new_games_update as ngu
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info import ExtraGameInfoDlg
 from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
 from ui.dialogs.update_magnet import load_dialog as load_update_magnet_dialog
-from ui.dialogs.new_games_update import load_dialog as load_new_games_dialog
 from api.schemas import Game
 from lib.settings import Settings
 from api.exceptions import ApiError
@@ -504,27 +504,16 @@ class MagnetsListPanel(ListCtrlPanel):
             )
             # get the magnets from the api
             magnets: List[Game] = await client.get_games()
+            # compare the magnets from the api with the magnets from the local file
             # everything went ok save locallly
             config.save_local_quest_magnets(config.QUEST_MAGNETS_PATH, magnets)
             # enable Online mode
             self.app.set_mode(True)
+            # check if there are any new magnets
+            magnets = await self.check_and_prompt_on_new_magnets(magnets, saved_magnets)
             # sort the magnets in alphaebetical order and load into listctrl
             magnets = sorted(magnets, key=lambda item: item.display_name.lower())
             await self.load_magnets_into_listctrl(magnets)
-
-            # check if any new entries have been added and prompt the user of updates
-            new_magnets = set(magnets) - set(saved_magnets)
-            if new_magnets:
-                # load an async dialog here passing new_magnets to it
-                await load_new_games_dialog(
-                    new_magnets,
-                    parent=self.app.frame,
-                    id=wx.ID_ANY,
-                    title="New Games Available",
-                    size=(-1, 600),
-                    style=wx.DEFAULT_DIALOG_STYLE,
-                )
-
         except (aiohttp.ClientConnectionError, client.ApiError) as err:
             # there was a network or http error load locally
             if isinstance(err, ApiError):
@@ -538,21 +527,34 @@ class MagnetsListPanel(ListCtrlPanel):
             self.app.exception_handler(err)
             return
 
-    # async def check_new_magnets_and_prompt_user(
-    #     self, magnets: List[Game], saved_magnets: List[Game]
-    # ) -> Set[Game]:
-    #     # check if any new entries have been added and prompt the user of updates
-    #     new_magnets = set(magnets) - set(saved_magnets)
-    #     if new_magnets:
-    #         # load an async dialog here passing new_magnets to it
-    #         await load_new_games_dialog(
-    #             new_magnets,
-    #             parent=self.app.frame,
-    #             id=wx.ID_ANY,
-    #             title="New Games Available",
-    #             size=(-1, 600),
-    #             style=wx.DEFAULT_DIALOG_STYLE,
-    #         )
+    async def check_and_prompt_on_new_magnets(
+        self, magnets: List[Game], saved_magnets: List[Game]
+    ) -> List[Game]:
+        """checks if there are any new magnets and prompts the user to load the new ones or
+        all of them
+
+        Args:
+            magnets (List[Game]): magnets from the api
+            saved_magnets (List[Game]): magnets from the local file
+
+        Returns:
+            List[Game]: returns the magnets to load into the magnet listctrl
+        """
+        # check if any new entries have been added and prompt the user of updates
+        new_magnets = set(magnets) - set(saved_magnets)
+        if new_magnets:
+            # load an async dialog here passing new_magnets to it
+            result = await ngu.load_dialog(
+                new_magnets,
+                parent=self.app.frame,
+                id=wx.ID_ANY,
+                title="New Games Available",
+                size=(-1, 600),
+                style=wx.DEFAULT_DIALOG_STYLE,
+            )
+            if result == ngu.ID_LOAD_NEW:
+                return list(new_magnets)
+        return magnets
 
     async def load_magnets_into_listctrl(self, games: List[Game]) -> None:
         self.clear_list()
