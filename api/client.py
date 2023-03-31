@@ -268,6 +268,27 @@ async def add_game(token: str, game_request: schemas.AddGameRequest) -> None:
         raise err
 
 
+async def delete_game(token: str, key: str) -> None:
+    """deletes a game from the database
+
+    Args:
+        token (str): admin token
+        key (str): the game key
+
+    Raises:
+        404 Not Found: if game does not exist
+    """
+    try:
+        await send_json_request(
+            uri=apiurls.URI_DELETE_GAME + f"/{key}",
+            token=token,
+            request_type=RequestType.DELETE,
+        )
+    except Exception as err:
+        _Log.error(err.__str__())
+        raise err
+
+
 async def send_json_request(
     uri: str,
     token: str | None = None,

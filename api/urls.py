@@ -13,6 +13,7 @@ URI_HOST = URI_LOCAL_HOST
 URI_GAMES = urljoin(URI_HOST, "/games")
 URI_SEARCH_GAME = URI_GAMES + "/search"
 URI_UPDATE_GAME = URI_GAMES + "/update"
+URI_DELETE_GAME = URI_GAMES
 URI_ADD_GAME = URI_GAMES + "/add"
 URI_USERS = urljoin(URI_HOST, "/users")
 URI_LOGS = urljoin(URI_HOST, "/logs")
