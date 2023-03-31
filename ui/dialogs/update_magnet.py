@@ -1,5 +1,6 @@
 import base64
 from typing import Any, Tuple
+import logging
 
 import wx
 import aiohttp
@@ -13,6 +14,9 @@ from lib.settings import Settings
 from lib.utils import format_timestamp_to_str, get_changed_properties
 
 
+_Log = logging.getLogger()
+
+
 async def load_dialog(parent: wx.Frame, title: str, magnet: Game) -> int:
     dlg = MagnetUpdateDlg(
         parent=parent,
@@ -23,6 +27,29 @@ async def load_dialog(parent: wx.Frame, title: str, magnet: Game) -> int:
     )
     result = await wxasync.AsyncShowDialogModal(dlg)
     return result
+
+
+async def delete_game(dialog: wx.Dialog, key: str) -> bool:
+    """sends a delete request to the backend and deletes the game
+
+    Args:
+        dialog (wx.Dialog): The dialog window to close
+        key (str): the key related to the game in the database
+
+    Returns:
+        bool: returns True if the game was deleted successfully
+    """
+    try:
+        await api.client.delete_game(key)
+    except ApiError as e:
+        show_error_message(dialog, e)
+    except Exception as err:
+        _Log.error(err.__str__())
+        raise err
+    else:
+        return True
+    finally:
+        return False
 
 
 class MagnetUpdateDlg(wx.Dialog):
@@ -46,22 +73,28 @@ class MagnetUpdateDlg(wx.Dialog):
         self._do_events()
         self._do_properties()
 
+    def _do_properties(self, size: Tuple[int, int]):
+        self.SetSize(size)
+        self.CenterOnParent()
+
+    def _do_controls(self):
         self.panel = wx.Panel(self, -1)
 
-        self.static_txtctrls = self._create_static_text_ctrls(self.panel, magnet)
-
-        panel_vbox = wx.BoxSizer(wx.VERTICAL)
-
-        for st_txt_ctrl in self.static_txtctrls.values():
-            panel_vbox.Add(st_txt_ctrl.sizer, 0, wx.EXPAND, 0)
-
+        self.static_txtctrls = self._create_static_text_ctrls(
+            self.panel, self.original_magnet_data
+        )
         self.update_btn = wx.Button(self.panel, wx.ID_SAVE, "Update")
         self.delete_btn = wx.Button(self.panel, wx.ID_DELETE, "Delete")
         self.close_btn = wx.Button(self.panel, wx.ID_CLOSE, "Close")
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_button, self.close_btn)
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_update_button, self.update_btn)
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_delete_button, self.delete_btn)
 
+    def _do_layout(self):
+        panel_vbox = wx.BoxSizer(wx.VERTICAL)
+
+        # Game Panel Ctrl Sizer
+        for st_txt_ctrl in self.static_txtctrls.values():
+            panel_vbox.Add(st_txt_ctrl.sizer, 0, wx.EXPAND, 0)
+
+        # Button Sizer
         btn_hbox = wx.BoxSizer(wx.HORIZONTAL)
         btn_hbox.Add(self.update_btn, 0, wx.EXPAND, 0)
         btn_hbox.Add(self.delete_btn, 0, wx.EXPAND, 0)
@@ -70,25 +103,16 @@ class MagnetUpdateDlg(wx.Dialog):
         # panel_vbox.AddStretchSpacer(1)
         panel_vbox.Add(btn_hbox, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         panel_vbox.AddSpacer(10)
-        self.panel.SetSizerAndFit(panel_vbox)
+        self.panel.SetSizer(panel_vbox)
 
         gs = wx.GridSizer(cols=1)
         gs.Add(self.panel, 1, wx.EXPAND | wx.ALL, 0)
         self.SetSizerAndFit(gs)
-        self.SetSize(size)
-        self.CenterOnParent()
-
-    def _do_properties(self):
-        pass
-
-    def _do_controls(self):
-        pass
-
-    def _do_layout(self):
-        pass
 
     def _do_events(self):
-        pass
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_button, self.close_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_update_button, self.update_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_delete_button, self.delete_btn)
 
     def _create_static_text_ctrls(self, parent: wx.Panel, magnet: Game) -> dict:
         """create the static text controls in a dict for iterating and sorting
@@ -222,4 +246,12 @@ class MagnetUpdateDlg(wx.Dialog):
             return
 
     async def _on_delete_button(self, evt: wx.CommandEvent) -> None:
+        with wx.MessageDialog(
+            self,
+            "Are you sure you want to delete this magnet?",
+            "Delete Magnet",
+            wx.OK | wx.CANCEL | wx.ICON_EXCLAMATION,
+        ) as dlg:
+            if dlg.ShowModal() == wx.ID_OK:
+                _Log.info("Deleting magnet")
         evt.Skip()
