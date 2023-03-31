@@ -41,37 +41,54 @@ class MagnetUpdateDlg(wx.Dialog):
 
         self.original_magnet_data = magnet
 
-        panel = wx.Panel(self, -1)
+        self._do_controls()
+        self._do_layout()
+        self._do_events()
+        self._do_properties()
 
-        self.static_txtctrls = self._create_static_text_ctrls(panel, magnet)
+        self.panel = wx.Panel(self, -1)
+
+        self.static_txtctrls = self._create_static_text_ctrls(self.panel, magnet)
 
         panel_vbox = wx.BoxSizer(wx.VERTICAL)
 
         for st_txt_ctrl in self.static_txtctrls.values():
             panel_vbox.Add(st_txt_ctrl.sizer, 0, wx.EXPAND, 0)
 
-        update_btn = wx.Button(panel, wx.ID_SAVE, "Update")
-        delete_btn = wx.Button(panel, wx.ID_DELETE, "Delete")
-        close_btn = wx.Button(panel, wx.ID_CLOSE, "Close")
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_button, close_btn)
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_update_button, update_btn)
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_delete_button, delete_btn)
+        self.update_btn = wx.Button(self.panel, wx.ID_SAVE, "Update")
+        self.delete_btn = wx.Button(self.panel, wx.ID_DELETE, "Delete")
+        self.close_btn = wx.Button(self.panel, wx.ID_CLOSE, "Close")
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_button, self.close_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_update_button, self.update_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_delete_button, self.delete_btn)
 
         btn_hbox = wx.BoxSizer(wx.HORIZONTAL)
-        btn_hbox.Add(update_btn, 0, wx.EXPAND, 0)
-        btn_hbox.Add(delete_btn, 0, wx.EXPAND, 0)
-        btn_hbox.Add(close_btn, 0, wx.EXPAND, 0)
+        btn_hbox.Add(self.update_btn, 0, wx.EXPAND, 0)
+        btn_hbox.Add(self.delete_btn, 0, wx.EXPAND, 0)
+        btn_hbox.Add(self.close_btn, 0, wx.EXPAND, 0)
 
         # panel_vbox.AddStretchSpacer(1)
         panel_vbox.Add(btn_hbox, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
         panel_vbox.AddSpacer(10)
-        panel.SetSizerAndFit(panel_vbox)
+        self.panel.SetSizerAndFit(panel_vbox)
 
         gs = wx.GridSizer(cols=1)
-        gs.Add(panel, 1, wx.EXPAND | wx.ALL, 0)
+        gs.Add(self.panel, 1, wx.EXPAND | wx.ALL, 0)
         self.SetSizerAndFit(gs)
         self.SetSize(size)
         self.CenterOnParent()
+
+    def _do_properties(self):
+        pass
+
+    def _do_controls(self):
+        pass
+
+    def _do_layout(self):
+        pass
+
+    def _do_events(self):
+        pass
 
     def _create_static_text_ctrls(self, parent: wx.Panel, magnet: Game) -> dict:
         """create the static text controls in a dict for iterating and sorting
