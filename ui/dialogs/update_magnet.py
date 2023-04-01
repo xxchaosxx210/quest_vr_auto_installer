@@ -31,7 +31,7 @@ async def load_dialog(parent: wx.Frame, title: str, magnet: Game) -> int:
     return result
 
 
-# @async_progress_dialog("Removing...", "Removing Game please wait...", timeout=5)
+@async_progress_dialog("Removing...", "Removing Game please wait...", timeout=5)
 async def delete_game(dialog: wx.Dialog, token: str, key: str) -> bool:
     """sends a delete request to the backend and deletes the game
 
@@ -45,14 +45,12 @@ async def delete_game(dialog: wx.Dialog, token: str, key: str) -> bool:
     try:
         # if 204 is returned then the game was deleted successfully
         await api.client.delete_game(token, key)
-    except ApiError as e:
-        show_error_message(e.message, f"Code: {e.status_code}")
-    except Exception as err:
-        show_error_message(e.__str__())
-    else:
         return True
-    finally:
-        return False
+    except ApiError as err:
+        show_error_message(err.message, f"Code: {err.status_code}")
+    except Exception as err:
+        show_error_message(err.__str__())
+    return False
 
 
 class MagnetUpdateDlg(wx.Dialog):

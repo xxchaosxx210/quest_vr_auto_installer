@@ -4,6 +4,7 @@ this module provides functions to interact with the API backend
 """
 
 import logging
+from http import HTTPStatus
 from typing import Any, Dict, Iterator, List
 from enum import Enum, auto as auto_enum
 
@@ -281,29 +282,6 @@ async def delete_game(token: str, key: str) -> bool:
     Returns:
         bool: True if status code is 204 NO_CONTENT
     """
-    # uri = apiurls.URI_DELETE_GAME + f"/{key}"
-    # headers = create_auth_token_header(token)
-    # async with aiohttp.ClientSession() as session:
-    #     async with session.delete(uri, headers=headers) as response:
-    #         if response.status == 204:
-    #             return True
-    #         error = await response.json()
-    #         raise ApiError(
-    #             status_code=response.status,
-    #             message=error.get("detail", "Unknown Error"),
-    #         )
-    # try:
-    #     response = await send_json_request(
-    #         uri=apiurls.URI_DELETE_GAME + f"/{key}",
-    #         token=token,
-    #         request_type=RequestType.DELETE,
-    #     )
-    # except ApiError as err:
-    #     if err.status_code == 204:
-    #         return True
-    #     raise err
-    # except Exception as err:
-    #     raise err
     try:
         await send_json_request(
             apiurls.URI_DELETE_GAME + f"/{key}", token, request_type=RequestType.DELETE
@@ -315,6 +293,7 @@ async def delete_game(token: str, key: str) -> bool:
     except Exception as err:
         _Log.error(err.__str__())
         raise err
+    return False
 
 
 async def send_json_request(
@@ -325,23 +304,26 @@ async def send_json_request(
     request_type: RequestType = RequestType.GET,
     timeout: float = 5.0,
 ) -> dict:
-    """abstract function for connecting and handling json api requests and responses
+    """handles JSON API requests and responses. It takes in several arguments such as the endpoint URI, JWT token, query parameters, JSON query, request type, and timeout. It uses the
+    aiohttp
+     library to create an HTTP client session and sends the request to the specified endpoint using the specified request type. If the response is not a JSON object or if the response status code is not 200, an
+    ApiError
+     is raised. Otherwise, the JSON data is returned.
 
-    Args:
-        uri (str): the endpoint to connect to
-        token (str | None, optional): the JWT token to auth None of no oauth required. Defaults to None.
-        params (dict, optional): query. Defaults to {}.
-        _json (dict, optional): json query. Defaults to {}.
-        request_type (RequestType, optional): check the RequestType Enum class for details. Defaults to RequestType.GET.
-        timeout (float, optional): timeout until the connection drops. Defaults to 5.0.
+        Args:
+            uri (str): the endpoint to connect to
+            token (str | None, optional): the JWT token to auth None of no oauth required. Defaults to None.
+            params (dict, optional): query. Defaults to {}.
+            _json (dict, optional): json query. Defaults to {}.
+            request_type (RequestType, optional): check the RequestType Enum class for details. Defaults to RequestType.GET.
+            timeout (float, optional): timeout until the connection drops. Defaults to 5.0.
 
-    Raises:
-        TypeError: if the RequestType Enum is not found
-        ApiError: if return code is not 200
-        ApiError: if the content type is not a json response
+        Raises:
+            TypeError: if the RequestType Enum is not found
+            ApiError: if return code is not 200, 201, 204
 
-    Returns:
-        dict: json object
+        Returns:
+            dict: json object
     """
     if token is None:
         headers = {}
@@ -371,10 +353,18 @@ async def send_json_request(
                     status_code=response.status,
                     message=bytes_error_resp.decode("utf-8"),
                 )
-            if response.status != 200 and response.status != 201:
+            if (
+                response.status != HTTPStatus.OK
+                and response.status != HTTPStatus.ACCEPTED
+                and response.status != HTTPStatus.NO_CONTENT
+            ):
                 json_error_data: Dict[str, str] = await response.json()
+                if not isinstance(json_error_data, dict):
+                    # sometimes errors do not come with any messages
+                    json_error_data = {}
                 raise ApiError(
-                    status_code=response.status, message=json_error_data["detail"]
+                    status_code=response.status,
+                    message=json_error_data.get("detail", ""),
                 )
             json_data: Dict[str, Any] = await response.json()
             return json_data
