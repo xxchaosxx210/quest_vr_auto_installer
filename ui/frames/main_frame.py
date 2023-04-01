@@ -23,6 +23,7 @@ from ui.dialogs.user_info import UserInfoDlg
 from ui.dialogs.add_game import AddGameDlg
 from ui.dialogs.about import load_dialog as load_about_dialog
 from ui.dialogs.device_list import open_device_selection_dialog
+from ui.dialogs.update_magnet import load_dialog as load_update_magnet_dialog
 from ui.frames.logs_frame import LogsFrame
 from lib.settings import Settings
 from api.exceptions import ApiError
@@ -147,6 +148,8 @@ class MainFrame(wx.Frame):
         menu = wx.Menu()
         install_dlg_m_item = menu.Append(wx.ID_ANY, "Show Install Dialog")
         self.Bind(wx.EVT_MENU, self._on_show_install_dialog, install_dlg_m_item)
+        update_mag_m_item = menu.Append(wx.ID_ANY, "Show Update Magnet Dialog")
+        self.Bind(wx.EVT_MENU, self._on_show_update_magnet_dialog, update_mag_m_item)
         menu.AppendSeparator()
         raise_caught_error_m_item = menu.Append(wx.ID_ANY, "Raise Caught Exception")
         self.Bind(
@@ -427,6 +430,19 @@ class MainFrame(wx.Frame):
         dlg.writeline("If you can see this text")
         dlg.writeline("then the dialog is working")
         dlg.writeline("another new line")
+
+    def _on_show_update_magnet_dialog(self, evt: wx.MenuEvent) -> None:
+        """shows the update magnet dialog box for testing purposes
+
+        Args:
+            evt (wx.MenuEvent):
+        """
+        try:
+            tasks.check_task_and_create(
+                load_update_magnet_dialog, parent=self, title="Demo", magnet=None
+            )
+        except tasks.TaskIsRunning:
+            ui.utils.show_error_message("Task is alreasy running")
 
     def on_show(self, evt: wx.ShowEvent) -> None:
         """

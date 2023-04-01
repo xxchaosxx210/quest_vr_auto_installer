@@ -19,7 +19,7 @@ from lib.utils import format_timestamp_to_str, get_changed_properties
 _Log = logging.getLogger()
 
 
-async def load_dialog(parent: wx.Frame, title: str, magnet: Game) -> int:
+async def load_dialog(parent: wx.Frame, title: str, magnet: Game | None) -> int:
     dlg = MagnetUpdateDlg(
         parent=parent,
         title=title,
@@ -60,7 +60,7 @@ class MagnetUpdateDlg(wx.Dialog):
         title: str,
         size: Tuple[int, int],
         style: int,
-        magnet: Game,
+        magnet: Game | None,
     ):
         from quest_cave_app import QuestCaveApp
 
@@ -115,7 +115,7 @@ class MagnetUpdateDlg(wx.Dialog):
         wxasync.AsyncBind(wx.EVT_BUTTON, self._on_update_button, self.update_btn)
         wxasync.AsyncBind(wx.EVT_BUTTON, self._on_delete_button, self.delete_btn)
 
-    def _create_static_text_ctrls(self, parent: wx.Panel, magnet: Game) -> dict:
+    def _create_static_text_ctrls(self, parent: wx.Panel, magnet: Game | None) -> dict:
         """create the static text controls in a dict for iterating and sorting
 
         Args:
@@ -126,31 +126,55 @@ class MagnetUpdateDlg(wx.Dialog):
             dict: returns the textctrlstatoxs stored within dict
         """
         ctrls = {}
-        ctrls["key"] = TextCtrlStaticBox(
-            parent, magnet.key, wx.TE_READONLY | wx.TE_NO_VSCROLL, "Key"
-        )
-        ctrls["name"] = TextCtrlStaticBox(parent, magnet.name, wx.TE_NO_VSCROLL, "Name")
-        ctrls["display_name"] = TextCtrlStaticBox(
-            parent, magnet.display_name, wx.TE_NO_VSCROLL, "Display Name"
-        )
-        ctrls["magnet"] = TextCtrlStaticBox(
-            parent, magnet.decoded_uri, wx.TE_MULTILINE, "Magnet Link"
-        )
-        ctrls["version"] = TextCtrlStaticBox(
-            parent, str(magnet.version), wx.TE_NO_VSCROLL, "Version"
-        )
-        ctrls["filesize"] = TextCtrlStaticBox(
-            parent, f"{magnet.filesize}", wx.TE_READONLY, "FileSize (Bytes)"
-        )
-        ctrls["date_added"] = TextCtrlStaticBox(
-            parent,
-            format_timestamp_to_str(magnet.date_added, True),
-            wx.TE_READONLY,
-            "Date Added",
-        )
-        ctrls["id"] = TextCtrlStaticBox(
-            parent, magnet.id, wx.TE_NO_VSCROLL, "Torrent ID"
-        )
+        if magnet is not None:
+            ctrls["key"] = TextCtrlStaticBox(
+                parent, magnet.key, wx.TE_READONLY | wx.TE_NO_VSCROLL, "Key"
+            )
+            ctrls["name"] = TextCtrlStaticBox(
+                parent, magnet.name, wx.TE_NO_VSCROLL, "Name"
+            )
+            ctrls["display_name"] = TextCtrlStaticBox(
+                parent, magnet.display_name, wx.TE_NO_VSCROLL, "Display Name"
+            )
+            ctrls["magnet"] = TextCtrlStaticBox(
+                parent, magnet.decoded_uri, wx.TE_MULTILINE, "Magnet Link"
+            )
+            ctrls["version"] = TextCtrlStaticBox(
+                parent, str(magnet.version), wx.TE_NO_VSCROLL, "Version"
+            )
+            ctrls["filesize"] = TextCtrlStaticBox(
+                parent, f"{magnet.filesize}", wx.TE_READONLY, "FileSize (Bytes)"
+            )
+            ctrls["date_added"] = TextCtrlStaticBox(
+                parent,
+                format_timestamp_to_str(magnet.date_added, True),
+                wx.TE_READONLY,
+                "Date Added",
+            )
+            ctrls["id"] = TextCtrlStaticBox(
+                parent, magnet.id, wx.TE_NO_VSCROLL, "Torrent ID"
+            )
+        else:
+            ctrls["key"] = TextCtrlStaticBox(
+                parent, "", wx.TE_READONLY | wx.TE_NO_VSCROLL, "Key"
+            )
+            ctrls["name"] = TextCtrlStaticBox(parent, "", wx.TE_NO_VSCROLL, "Name")
+            ctrls["display_name"] = TextCtrlStaticBox(
+                parent, "", wx.TE_NO_VSCROLL, "Display Name"
+            )
+            ctrls["magnet"] = TextCtrlStaticBox(
+                parent, "", wx.TE_MULTILINE, "Magnet Link"
+            )
+            ctrls["version"] = TextCtrlStaticBox(
+                parent, "", wx.TE_NO_VSCROLL, "Version"
+            )
+            ctrls["filesize"] = TextCtrlStaticBox(
+                parent, "", wx.TE_READONLY, "FileSize (Bytes)"
+            )
+            ctrls["date_added"] = TextCtrlStaticBox(
+                parent, "", wx.TE_READONLY, "Date Added"
+            )
+            ctrls["id"] = TextCtrlStaticBox(parent, "", wx.TE_NO_VSCROLL, "Torrent ID")
 
         return ctrls
 
@@ -199,6 +223,9 @@ class MagnetUpdateDlg(wx.Dialog):
         Args:
             evt (wx.CommandEvent): button event not used
         """
+        if self.original_magnet_data is None:
+            # ignore
+            return
         # get the string values from the textctrls and convert back to a dict
         data = self._get_values_from_controls()
         # get the original magnet object and convert into a dict exclude the date_added and key fields
@@ -216,6 +243,8 @@ class MagnetUpdateDlg(wx.Dialog):
         Args:
             data_to_update (dict):
         """
+        if self.original_magnet_data is None:
+            return
         settings = Settings.load()
         if settings.token is None:
             return
@@ -243,10 +272,20 @@ class MagnetUpdateDlg(wx.Dialog):
             # self.original_magnet_data = updated_magnet
             # Need to update the original_magnet_data here
             self.original_magnet_data = updated_magnet
-        finally:
-            return
 
     async def _on_delete_button(self, evt: wx.CommandEvent) -> None:
+        """handles the event of clicking on a delete button. It first checks if there is any original magnet data, and if not, it returns.
+        If there is original magnet data, it displays a message dialog asking the user if they are sure they want to delete the magnet.
+        If the user clicks OK, it loads the user's settings, creates an asynchronous task to delete the game using the user's token and the magnet's key,
+        and waits for the task to complete. If the task is successful, it displays a notification message indicating that the magnet has been deleted, sets the return code to CLOSE,
+        and closes the dialog. Finally, it skips the event.
+
+        Args:
+            evt (wx.CommandEvent): Not used
+        """
+        if self.original_magnet_data is None:
+            return
+        # prompt before deleting
         with wx.MessageDialog(
             self,
             "Are you sure you want to delete this magnet?",
@@ -256,6 +295,7 @@ class MagnetUpdateDlg(wx.Dialog):
             return_code = dlg.ShowModal()
 
         if return_code == wx.ID_OK:
+            # send a delete request within a task for the entry and notify if successful
             settings = Settings.load()
             task = asyncio.create_task(
                 delete_game(self, settings.token, self.original_magnet_data.key)
