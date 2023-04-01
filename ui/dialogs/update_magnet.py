@@ -1,15 +1,17 @@
+import asyncio
 import base64
 from typing import Any, Tuple
 import logging
 
 import wx
+import wx.adv
 import aiohttp
 import wxasync
 
 import api.client
 from api.schemas import Game
 from api.exceptions import ApiError
-from ui.utils import TextCtrlStaticBox, show_error_message
+from ui.utils import TextCtrlStaticBox, show_error_message, async_progress_dialog
 from lib.settings import Settings
 from lib.utils import format_timestamp_to_str, get_changed_properties
 
@@ -29,7 +31,8 @@ async def load_dialog(parent: wx.Frame, title: str, magnet: Game) -> int:
     return result
 
 
-async def delete_game(dialog: wx.Dialog, key: str) -> bool:
+# @async_progress_dialog("Removing...", "Removing Game please wait...", timeout=5)
+async def delete_game(dialog: wx.Dialog, token: str, key: str) -> bool:
     """sends a delete request to the backend and deletes the game
 
     Args:
@@ -40,12 +43,12 @@ async def delete_game(dialog: wx.Dialog, key: str) -> bool:
         bool: returns True if the game was deleted successfully
     """
     try:
-        await api.client.delete_game(key)
+        # if 204 is returned then the game was deleted successfully
+        await api.client.delete_game(token, key)
     except ApiError as e:
-        show_error_message(dialog, e)
+        show_error_message(e.message, f"Code: {e.status_code}")
     except Exception as err:
-        _Log.error(err.__str__())
-        raise err
+        show_error_message(e.__str__())
     else:
         return True
     finally:
@@ -71,7 +74,7 @@ class MagnetUpdateDlg(wx.Dialog):
         self._do_controls()
         self._do_layout()
         self._do_events()
-        self._do_properties()
+        self._do_properties(size)
 
     def _do_properties(self, size: Tuple[int, int]):
         self.SetSize(size)
@@ -252,6 +255,18 @@ class MagnetUpdateDlg(wx.Dialog):
             "Delete Magnet",
             wx.OK | wx.CANCEL | wx.ICON_EXCLAMATION,
         ) as dlg:
-            if dlg.ShowModal() == wx.ID_OK:
-                _Log.info("Deleting magnet")
+            return_code = dlg.ShowModal()
+
+        if return_code == wx.ID_OK:
+            settings = Settings.load()
+            task = asyncio.create_task(
+                delete_game(self, settings.token, self.original_magnet_data.key)
+            )
+            result = await asyncio.wait_for(task, None)
+            if result:
+                wx.adv.NotificationMessage(
+                    "Magnet Deleted", "Magnet has been deleted", self.GetParent()
+                ).Show(timeout=3)
+                self.SetReturnCode(wx.CLOSE)
+                self.Close()
         evt.Skip()

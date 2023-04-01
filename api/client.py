@@ -268,7 +268,7 @@ async def add_game(token: str, game_request: schemas.AddGameRequest) -> None:
         raise err
 
 
-async def delete_game(token: str, key: str) -> None:
+async def delete_game(token: str, key: str) -> bool:
     """deletes a game from the database
 
     Args:
@@ -277,13 +277,41 @@ async def delete_game(token: str, key: str) -> None:
 
     Raises:
         404 Not Found: if game does not exist
+
+    Returns:
+        bool: True if status code is 204 NO_CONTENT
     """
+    # uri = apiurls.URI_DELETE_GAME + f"/{key}"
+    # headers = create_auth_token_header(token)
+    # async with aiohttp.ClientSession() as session:
+    #     async with session.delete(uri, headers=headers) as response:
+    #         if response.status == 204:
+    #             return True
+    #         error = await response.json()
+    #         raise ApiError(
+    #             status_code=response.status,
+    #             message=error.get("detail", "Unknown Error"),
+    #         )
+    # try:
+    #     response = await send_json_request(
+    #         uri=apiurls.URI_DELETE_GAME + f"/{key}",
+    #         token=token,
+    #         request_type=RequestType.DELETE,
+    #     )
+    # except ApiError as err:
+    #     if err.status_code == 204:
+    #         return True
+    #     raise err
+    # except Exception as err:
+    #     raise err
     try:
         await send_json_request(
-            uri=apiurls.URI_DELETE_GAME + f"/{key}",
-            token=token,
-            request_type=RequestType.DELETE,
+            apiurls.URI_DELETE_GAME + f"/{key}", token, request_type=RequestType.DELETE
         )
+    except ApiError as err:
+        if err.status_code == 204:
+            return True
+        raise err
     except Exception as err:
         _Log.error(err.__str__())
         raise err

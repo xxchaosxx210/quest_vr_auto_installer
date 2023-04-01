@@ -30,7 +30,7 @@ def async_progress_dialog(title: str, message: str, timeout: float | None):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             if not args or not isinstance(args[0], wx.Window):
-                raise TypeError(f"First argument must be a wx.Window.")
+                raise TypeError("First argument must be a wx.Window.")
             parent: wx.Window = args[0]
             with wx.ProgressDialog(
                 title=title,
