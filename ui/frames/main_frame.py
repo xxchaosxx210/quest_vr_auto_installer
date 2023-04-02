@@ -32,6 +32,7 @@ from api.exceptions import ApiError
 _Log = logging.getLogger()
 
 
+# The menubar wx.Menu Labels
 USER_MENU_LABEL = "User"
 SEARCH_MENU_LABEL = "Search"
 DEBUG_MENU_LABEL = "Debug"
@@ -45,22 +46,31 @@ class MainFrame(wx.Frame):
 
         super().__init__(*args, **kw)
         self.app: QuestCaveApp = wx.GetApp()
-        self.main_panel = MainPanel(parent=self)
-        self.__do_properties()
+        self.__do_controls()
+        self.__do_events()
         self.__do_layout()
-        self.SetSize((800, 200))
+        self.__do_properties()
 
+    def __do_events(self) -> None:
         # capture the on Window show event
         self.Bind(wx.EVT_SHOW, self.on_show)
 
+    def __do_controls(self) -> None:
+        """create the controls for the main frame"""
+        self.main_panel = MainPanel(parent=self)
+        self.__do_statusbar()
+        self.__do_menubar()
+
     def __do_properties(self) -> None:
-        """set up the statusbar, icon and menubar for the main window"""
+        self.SetIcon(wx.Icon(ui.paths.ICON_PATH))
+        self.SetSize((800, 200))
+
+    def __do_statusbar(self) -> None:
+        """create the status bar for the main frame"""
         self.statusbar = wx.StatusBar(self)
         self.statusbar.SetFieldsCount(2)
         self.statusbar.SetStatusWidths([-2, -1])
         self.SetStatusBar(self.statusbar)
-        self._create_menubar()
-        self.SetIcon(wx.Icon(ui.paths.ICON_PATH))
 
     def __do_layout(self) -> None:
         """set up the layout for the main window"""
@@ -68,7 +78,8 @@ class MainFrame(wx.Frame):
         gs.Add(self.main_panel, 1, wx.ALL | wx.EXPAND, 0)
         self.SetSizerAndFit(gs)
 
-    def _create_menubar(self) -> None:
+    def __do_menubar(self) -> None:
+        """create the menu bar for the main frame"""
         menubar = wx.MenuBar()
         menubar.Append(self._create_user_menu(), USER_MENU_LABEL)
         menubar.Append(self._create_search_menu(), SEARCH_MENU_LABEL)
@@ -80,6 +91,8 @@ class MainFrame(wx.Frame):
         self.SetMenuBar(menubar)
 
     def _create_help_menu(self) -> wx.Menu:
+        """Creates the help menu for the main window"""
+
         def on_about_menu_item(evt: wx.MenuEvent) -> None:
             asyncio.create_task(
                 load_about_dialog(
@@ -145,6 +158,7 @@ class MainFrame(wx.Frame):
         return menu
 
     def _create_debug_menu(self) -> wx.Menu:
+        """Creates the debug menu for the main window"""
         menu = wx.Menu()
         install_dlg_m_item = menu.Append(wx.ID_ANY, "Show Install Dialog")
         self.Bind(wx.EVT_MENU, self._on_show_install_dialog, install_dlg_m_item)
@@ -213,7 +227,7 @@ class MainFrame(wx.Frame):
         return menu
 
     def _on_disconnect_device(self, evt: wx.MenuEvent) -> None:
-        """simulates a device being disconnected
+        """simulates a device being disconnected (Debug only)
 
         Args:
             evt (wx.MenuEvent):
@@ -227,10 +241,11 @@ class MainFrame(wx.Frame):
             _Log.error(f"Failed to remove device {device_name}. Reason: Not found")
 
     def _on_device_dialog(self, evt: wx.MenuEvent) -> None:
-        """opens a DeviceListDialog
+        """opens a DeviceListDialog and creates background running task to
+        check for new quest devices connected
 
         Args:
-            evt (wx.MenuEvent): _description_
+            evt (wx.MenuEvent):
         """
 
         async def new_device_selection_task():
@@ -243,6 +258,19 @@ class MainFrame(wx.Frame):
         tasks.check_task_and_create(new_device_selection_task)
 
     def _on_add_game_dialog(self, evt: wx.MenuEvent) -> None:
+        """This method is triggered when the user selects an option to add a new game from a menu.
+         The method first loads the user's settings and checks if the user is an admin.
+         If the user is not an admin, an error message is displayed and the method exits.
+
+        If the user is an admin, the method creates an instance of the AddGameDlg
+        dialog box and displays it asynchronously using the
+        wxasync.AsyncShowDialogModal method.
+        If the user clicks the "Save" button in the dialog box, the game is saved to the database
+        (although this functionality is not implemented in the code snippet provided).
+
+        Args:
+            evt (wx.MenuEvent): Not implemented
+        """
         settings = Settings.load()
         if not settings.is_user_admin():
             ui.utils.show_error_message(
@@ -257,13 +285,17 @@ class MainFrame(wx.Frame):
             else:
                 result_code = await wxasync.AsyncShowDialogModal(dlg)
                 if result_code == wx.ID_SAVE:
-                    # save game to database
+                    # FINISH THIS PLEASE!!!!
                     pass
 
         if Settings.load().is_user_admin():
-            asyncio.get_event_loop().create_task(open_dialog())
+            try:
+                tasks.check_task_and_create(open_dialog)
+            except tasks.TaskIsRunning:
+                ui.utils.show_error_message("A task is already running")
 
     def _on_logs_frame(self, evt: wx.MenuEvent) -> None:
+        """opens a LogsFrame to show the logs"""
         dlg = LogsFrame(self, size=(500, 500))
         dlg.Show()
 
