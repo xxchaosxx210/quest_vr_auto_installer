@@ -156,7 +156,7 @@ class MagnetUpdateDlg(wx.Dialog):
         self.SetSizerAndFit(gs)
 
     def _do_events(self):
-        wxasync.AsyncBind(wx.EVT_BUTTON, self._on_close_button, self.close_btn)
+        wxasync.AsyncBind(wx.EVT_BUTTON, self.__on_close_event, self.close_btn)
         wxasync.AsyncBind(wx.EVT_BUTTON, self._on_update_button, self.update_btn)
         wxasync.AsyncBind(wx.EVT_BUTTON, self._on_delete_button, self.delete_btn)
 
@@ -257,10 +257,6 @@ class MagnetUpdateDlg(wx.Dialog):
             for name, ctrl in self.static_txtctrls.items()
         }
 
-    async def _on_close_button(self, evt: wx.CommandEvent) -> None:
-        self.SetReturnCode(wx.CLOSE)
-        self.Close()
-
     async def _on_update_button(self, evt: wx.CommandEvent) -> None:
         """update button pressed check if any data has been changed in the textctrls
         update if change has been made and send to api
@@ -347,6 +343,21 @@ class MagnetUpdateDlg(wx.Dialog):
             )
             result = await asyncio.wait_for(task, None)
             if result:
-                self.SetReturnCode(evt.GetId())
-                self.Close()
+                await self.__on_close_event(evt)
         evt.Skip()
+
+    async def __on_close_event(self, evt: wx.CommandEvent) -> None:
+        """universal close handler sets the correct return code and closes the dialog
+
+        Args:
+            evt (wx.CommandEvent): used to obtain the button id which was clicked from
+        """
+        btn_id = evt.GetId()
+        if self.IsModal():
+            # modal dialog
+            self.EndModal(btn_id)
+            self.Destroy()
+        else:
+            # async dialog
+            self.SetReturnCode(btn_id)
+            self.Close()
