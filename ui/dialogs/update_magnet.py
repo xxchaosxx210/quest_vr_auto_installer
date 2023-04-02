@@ -1,17 +1,33 @@
+"""
+update_magnate.py
+
+Defines a dialog window for updating or deleting a game magnet. 
+It allows the user to view and modify the properties of a game magnet, 
+such as its name, display name, magnet link, version, file size, and date added. 
+The user can update the magnet by clicking the "Update" button, 
+which sends a request to the API to update the magnet with the new values. 
+The user can also delete the magnet by clicking the "Delete" button, 
+which prompts the user to confirm the deletion and then sends a request to the API to delete the magnet. 
+The dialog window is created using wxPython and is asynchronous using asyncio."""
+
 import asyncio
 import base64
 from typing import Any, Tuple
 import logging
 
 import wx
-import wx.adv
 import aiohttp
 import wxasync
 
 import api.client
 from api.schemas import Game
 from api.exceptions import ApiError
-from ui.utils import TextCtrlStaticBox, show_error_message, async_progress_dialog
+from ui.utils import (
+    TextCtrlStaticBox,
+    show_error_message,
+    async_progress_dialog,
+    BitmapButtonLabel,
+)
 from lib.settings import Settings
 from lib.utils import format_timestamp_to_str, get_changed_properties
 
@@ -84,30 +100,59 @@ class MagnetUpdateDlg(wx.Dialog):
         self.static_txtctrls = self._create_static_text_ctrls(
             self.panel, self.original_magnet_data
         )
-        self.update_btn = wx.Button(self.panel, wx.ID_SAVE, "Update")
-        self.delete_btn = wx.Button(self.panel, wx.ID_DELETE, "Delete")
-        self.close_btn = wx.Button(self.panel, wx.ID_CLOSE, "Close")
+        MIN_BUTTON_SIZE = (100, 30)
+        self.update_btn = BitmapButtonLabel(
+            self.panel,
+            wx.ID_SAVE,
+            "Update",
+            wx.ArtProvider.GetBitmap(wx.ART_FILE_SAVE, wx.ART_BUTTON),
+            (10, 10),
+            MIN_BUTTON_SIZE,
+        )
+        self.delete_btn = BitmapButtonLabel(
+            self.panel,
+            wx.ID_DELETE,
+            "Delete",
+            wx.ArtProvider.GetBitmap(wx.ART_DELETE, wx.ART_BUTTON),
+            (10, 10),
+            MIN_BUTTON_SIZE,
+        )
+        self.close_btn = BitmapButtonLabel(
+            self.panel,
+            wx.ID_CLOSE,
+            "Close",
+            wx.ArtProvider.GetBitmap(wx.ART_CLOSE, wx.ART_BUTTON),
+            (10, 10),
+            MIN_BUTTON_SIZE,
+        )
 
     def _do_layout(self):
+        BORDER = 5
         panel_vbox = wx.BoxSizer(wx.VERTICAL)
 
         # Game Panel Ctrl Sizer
         for st_txt_ctrl in self.static_txtctrls.values():
-            panel_vbox.Add(st_txt_ctrl.sizer, 0, wx.EXPAND, 0)
+            txtctrl_hbox = wx.BoxSizer(wx.HORIZONTAL)
+            txtctrl_hbox.Add(st_txt_ctrl.sizer, 1, wx.EXPAND, BORDER)
+            panel_vbox.Add(txtctrl_hbox, 0, wx.EXPAND, 0)
+            panel_vbox.AddSpacer(BORDER * 2)
+
+        panel_vbox.AddStretchSpacer(1)
 
         # Button Sizer
         btn_hbox = wx.BoxSizer(wx.HORIZONTAL)
-        btn_hbox.Add(self.update_btn, 0, wx.EXPAND, 0)
         btn_hbox.Add(self.delete_btn, 0, wx.EXPAND, 0)
+        btn_hbox.AddSpacer(BORDER * 2)
+        btn_hbox.Add(self.update_btn, 0, wx.EXPAND, 0)
+        btn_hbox.AddSpacer(BORDER * 2)
         btn_hbox.Add(self.close_btn, 0, wx.EXPAND, 0)
 
-        # panel_vbox.AddStretchSpacer(1)
-        panel_vbox.Add(btn_hbox, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        panel_vbox.Add(btn_hbox, 0, wx.ALIGN_RIGHT, 0)
         panel_vbox.AddSpacer(10)
         self.panel.SetSizer(panel_vbox)
 
         gs = wx.GridSizer(cols=1)
-        gs.Add(self.panel, 1, wx.EXPAND | wx.ALL, 0)
+        gs.Add(self.panel, 1, wx.EXPAND | wx.ALL, 20)
         self.SetSizerAndFit(gs)
 
     def _do_events(self):
@@ -302,9 +347,6 @@ class MagnetUpdateDlg(wx.Dialog):
             )
             result = await asyncio.wait_for(task, None)
             if result:
-                wx.adv.NotificationMessage(
-                    "Magnet Deleted", "Magnet has been deleted", self.GetParent()
-                ).Show(timeout=3)
-                self.SetReturnCode(wx.CLOSE)
+                self.SetReturnCode(evt.GetId())
                 self.Close()
         evt.Skip()

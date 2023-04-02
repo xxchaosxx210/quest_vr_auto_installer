@@ -1,6 +1,6 @@
 import logging
 import asyncio
-from typing import List
+from typing import List, Union
 
 import wx
 import aiohttp
@@ -87,13 +87,14 @@ class MagnetsListPanel(ListCtrlPanel):
         except Exception as err:
             _Log.error(err.__str__())
 
-    def on_reload_magnets(self, evt: wx.CommandEvent | wx.MenuEvent) -> None:
-        """triggered by either menu item event or Command Button event
+    def on_reload_magnets(
+        self, evt: Union[wx.CommandEvent, wx.MenuEvent, None]
+    ) -> None:
+        """reloads the games magnet listctrl
 
         Args:
-            evt (wx.CommandEvent | wx.MenuEvent):
+            evt (Union[wx.CommandEvent, wx.MenuEvent, None]): not used
         """
-
         try:
             lib.tasks.check_task_and_create(self._reload_magnets)
         except lib.tasks.TaskIsRunning:
@@ -387,7 +388,7 @@ class MagnetsListPanel(ListCtrlPanel):
     async def find_and_launch_magnet_update_dialog(
         self, settings: Settings, magnet_data: MagnetData
     ) -> None:
-        """async function for launching the update magnet frame with the magnet to update
+        """async function for launching the update magnet dialog with the magnet to update
 
         Args:
             settings (Settings): _description_
@@ -403,9 +404,13 @@ class MagnetsListPanel(ListCtrlPanel):
         if len(magnets) < 1:
             return
         # open the magnet dialog with the first magnet
-        await load_update_magnet_dialog(
+        return_code = await load_update_magnet_dialog(
             parent=self.app.frame, title="Update Game", magnet=magnets[0]
         )
+        if return_code == wx.ID_DELETE:
+            # Game was deleted and closed reload the magnet listctrl
+            self.on_reload_magnets(None)
+        _Log.info(f"Update Magnet Dialog returned with code: {return_code}")
 
     def _get_list_items(self) -> List[dict]:
         """gets each item row from the listctrl and the magnet data associated with it
