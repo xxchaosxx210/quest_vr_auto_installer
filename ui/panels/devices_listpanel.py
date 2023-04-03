@@ -20,7 +20,18 @@ EVT_DEVICE_SELECTED = wx.PyEventBinder(newEVT_DEVICE_SELECTED, 1)
 
 
 class DeviceEvent(wx.PyCommandEvent):
+    """Event that is fired when a Quest device is selected in the listctrl"""
+
     def __init__(self, event_type: int, id: int, index: int, device_name: str = ""):
+        """constructor for the DeviceEvent that gets triggered when a device is selected
+        in the listctrl
+
+        Args:
+            event_type (int): newEVT_DEVICE_SELECTED
+            id (int): the ID of the window that generated the event
+            index (int): the index of the device in the listctrl
+            device_name (str, optional): name of the device. Defaults to "".
+        """
         super().__init__(event_type, id)
         self.DeviceName = device_name
         self._device_name = device_name
@@ -28,13 +39,29 @@ class DeviceEvent(wx.PyCommandEvent):
         self._index = index
 
     def GetIndex(self) -> int:
+        """gets the index of the device in the listctrl
+
+        Returns:
+            int: index id
+        """
         return self._index
 
     def GetDeviceName(self) -> str:
+        """gets the name of the device
+
+        Returns:
+            str: device name
+        """
         return self._device_name
 
 
 class DevicesListPanel(ListCtrlPanel):
+    """ListCtrlPanel that displays the connected Quest devices
+
+    Args:
+        ListCtrlPanel (_type_): inheits from. Check listctrl_panel.py for documentation
+    """
+
     def __init__(self, parent: wx.Window):
         from quest_cave_app import QuestCaveApp
 
@@ -47,6 +74,12 @@ class DevicesListPanel(ListCtrlPanel):
         self.insert_button_panel(self._create_button_panel(), 0, flag=wx.ALIGN_RIGHT)
 
     def _create_button_panel(self) -> wx.Panel:
+        """creates a panel with buttons on them
+        if debug mode then fake gnerate and remove buttons are added
+
+        Returns:
+            wx.Panel: the newly created panel
+        """
         # create the button panel
         button_panel = wx.Panel(self, -1)
 

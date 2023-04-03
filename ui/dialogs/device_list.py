@@ -27,6 +27,8 @@ async def open_device_selection_dialog(
 
 
 class DeviceListDlg(wx.Dialog):
+    """dialog for selecting a Quest 2 device"""
+
     __instance: "DeviceListDlg | None" = None
 
     def __init__(self, *args, **kw):
