@@ -105,6 +105,7 @@ class ListCtrlPanel(wx.Panel):
         title: str | None,
         columns: ColumnListType = [],
         toggle_col: bool = True,
+        border: int = 0,
     ):
         """contains a CustomListCtrl and a StaticBoxSizer (Optional)
         CustomListCtrl has alphabetical sorting by default
@@ -115,38 +116,68 @@ class ListCtrlPanel(wx.Panel):
             columns (ColumnListType, optional): the column headers. Defaults to []. {"col": int, "heading": str, "width": int}
             toggle_col (bool): if set to true then the list_col_click event will ...
                     be bound and toggling will be enabled. Defaults to True.
+            border (int, optional): the border for the sizer. Defaults to 0.
         """
         super().__init__(parent=parent)
 
+        self.__title = title
+        self.__columns = columns
+        self.__toggle_col = toggle_col
+        # border sizer
+        self.__border = border
+
+        self.__do_create_controls()
+        self.__do_bind_events()
+        self.__do_layout()
+
+    def __do_create_controls(self) -> None:
         self.listctrl = CustomListCtrl(
             parent=self,
             id=-1,
-            columns=columns,
-            toggle_col=toggle_col,
+            columns=self.__columns,
+            toggle_col=self.__toggle_col,
             style=wx.LC_REPORT,
         )
-        self.listctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_listitem_selected)
-        self.listctrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click)
-        self.listctrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_double_click)
 
         self.bitmap_buttons: Dict[str, wx.BitmapButton] = {}
-
-        if title is not None:
-            self._staticbox = wx.StaticBox(self, label=title)
+        if self.__title is not None:
+            # create a static box with a sizer
+            self._staticbox = wx.StaticBox(self, label=self.__title)
             self._staticbox_sizer = wx.StaticBoxSizer(self._staticbox, wx.VERTICAL)
 
-        for column in columns:
+        # setup the listctrl headers
+        for column in self.__columns:
             self.listctrl.InsertColumn(
                 col=column["col"], heading=column["heading"], width=column["width"]
             )
 
-        if title is not None:
-            self._staticbox_sizer.Add(self.listctrl, proportion=1, flag=wx.EXPAND)
+    def __do_bind_events(self) -> None:
+        self.listctrl.Bind(wx.EVT_LIST_ITEM_SELECTED, self.on_listitem_selected)
+        self.listctrl.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_right_click)
+        self.listctrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_double_click)
+
+    def __do_layout(self) -> None:
+        if self.__title is not None:
+            # put the listctrl in the static box sizer
+            self._staticbox_sizer.Add(
+                self.listctrl,
+                proportion=1,
+                flag=wx.EXPAND | wx.ALL,
+                border=self.__border,
+            )
             self.SetSizer(sizer=self._staticbox_sizer)
         else:
-            gs = wx.GridSizer(cols=1)
-            gs.Add(self.listctrl, proportion=1, flag=wx.EXPAND | wx.ALL, border=0)
-            self.SetSizer(gs)
+            # put the listctrl in a horizontal box sizer
+            hbox = wx.BoxSizer(wx.HORIZONTAL)
+            hbox.Add(
+                self.listctrl,
+                proportion=1,
+                flag=wx.EXPAND | wx.ALL,
+                border=self.__border,
+            )
+            vbox = wx.BoxSizer(wx.VERTICAL)
+            vbox.Add(hbox, proportion=1, flag=wx.EXPAND | wx.ALL, border=self.__border)
+            self.SetSizer(vbox)
 
     def disable_list(self) -> bool:
         return self.listctrl.Enable(False)
@@ -209,6 +240,8 @@ class ListCtrlPanel(wx.Panel):
             hbox_btns.Add(button, 0, wx.EXPAND, 0)
             hbox_btns.AddSpacer(border)
         return hbox_btns
+
+    # Override methods
 
     def on_item_double_click(self, evt: wx.ListEvent) -> None:
         evt.Skip()
