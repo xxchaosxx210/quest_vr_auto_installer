@@ -71,7 +71,8 @@ class DevicesListPanel(ListCtrlPanel):
         super().__init__(
             parent=parent, title="Devices", columns=columns, toggle_col=False
         )
-        self.insert_button_panel(self._create_button_panel(), 0, flag=wx.ALIGN_RIGHT)
+        btn_panel = self._create_button_panel()
+        self.insert_button_panel(btn_panel, 0, flag=wx.ALIGN_RIGHT, spacer=10)
 
     def _create_button_panel(self) -> wx.Panel:
         """creates a panel with buttons on them

@@ -25,7 +25,8 @@ class InstalledListPanel(ListCtrlPanel):
 
         self.app.install_listpanel = self
 
-        self.insert_button_panel(self._create_button_panel(), 0, flag=wx.ALIGN_RIGHT)
+        btn_panel = self._create_button_panel()
+        self.insert_button_panel(btn_panel, 0, flag=wx.ALIGN_RIGHT)
 
     def _create_button_panel(self) -> wx.Panel:
         # create the button panel

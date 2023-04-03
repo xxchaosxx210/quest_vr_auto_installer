@@ -167,6 +167,7 @@ class ListCtrlPanel(wx.Panel):
         proportion: int = 0,
         flag: int = wx.EXPAND,
         border: int = 0,
+        spacer: int = 0,
     ) -> bool:
         """Inserts a Panel into the StaticBoxSizer of ListPanel
 
@@ -184,6 +185,8 @@ class ListCtrlPanel(wx.Panel):
         if sizer is None:
             return False
         sizer.Insert(sizer_index, button_panel, proportion, flag, border)
+        if spacer > 0:
+            sizer.AddSpacer(spacer)
         self.Layout()
         return True
 
