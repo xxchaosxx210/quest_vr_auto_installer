@@ -143,7 +143,7 @@ class ListCtrlPanel(wx.Panel):
         if self.__title is not None:
             # create a static box with a sizer
             self._staticbox = wx.StaticBox(self, label=self.__title)
-            self._staticbox_sizer = wx.StaticBoxSizer(self._staticbox, wx.VERTICAL)
+            self._staticbox_sizer = wx.StaticBoxSizer(self._staticbox, wx.HORIZONTAL)
 
         # setup the listctrl headers
         for column in self.__columns:
@@ -157,6 +157,8 @@ class ListCtrlPanel(wx.Panel):
         self.listctrl.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_item_double_click)
 
     def __do_layout(self) -> None:
+        # main boxsizer to fit controls into
+        vbox = wx.BoxSizer(wx.VERTICAL)
         if self.__title is not None:
             # put the listctrl in the static box sizer
             self._staticbox_sizer.Add(
@@ -165,7 +167,12 @@ class ListCtrlPanel(wx.Panel):
                 flag=wx.EXPAND | wx.ALL,
                 border=self.__border,
             )
-            self.SetSizer(sizer=self._staticbox_sizer)
+            vbox.Add(
+                self._staticbox_sizer,
+                proportion=1,
+                flag=wx.EXPAND | wx.ALL,
+                border=self.__border,
+            )
         else:
             # put the listctrl in a horizontal box sizer
             hbox = wx.BoxSizer(wx.HORIZONTAL)
@@ -175,9 +182,8 @@ class ListCtrlPanel(wx.Panel):
                 flag=wx.EXPAND | wx.ALL,
                 border=self.__border,
             )
-            vbox = wx.BoxSizer(wx.VERTICAL)
             vbox.Add(hbox, proportion=1, flag=wx.EXPAND | wx.ALL, border=self.__border)
-            self.SetSizer(vbox)
+        self.SetSizer(vbox)
 
     def disable_list(self) -> bool:
         return self.listctrl.Enable(False)

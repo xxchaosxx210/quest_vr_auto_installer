@@ -52,7 +52,11 @@ class MagnetsListPanel(ListCtrlPanel):
             {"col": COLUMN_ETA, "heading": "ETA", "width": 70},
         ]
         super().__init__(
-            parent=parent, title="Games Availible", columns=columns, toggle_col=True
+            parent=parent,
+            title="Games Availible",
+            columns=columns,
+            toggle_col=True,
+            border=10,
         )
         self.app.magnets_listpanel = self
         self.insert_button_panel(self._create_button_panel())
