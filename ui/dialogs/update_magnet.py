@@ -23,11 +23,11 @@ import api.client
 from api.schemas import Game
 from api.exceptions import ApiError
 from ui.utils import (
-    TextCtrlStaticBox,
     show_error_message,
     async_progress_dialog,
-    BitmapButtonLabel,
 )
+from ui.ctrls.textctrl_staticbox import TextCtrlStaticBox
+from ui.ctrls.bitmap_button_label import BitmapButtonLabel
 from lib.settings import Settings
 from lib.utils import format_timestamp_to_str, get_changed_properties
 

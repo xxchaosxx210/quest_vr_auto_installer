@@ -14,7 +14,8 @@ import lib.api_handler
 import deluge.utils as du
 import api.schemas as schemas
 import api.client as client
-from ui.utils import TextCtrlStaticBox, show_error_message, async_progress_dialog
+from ui.utils import show_error_message, async_progress_dialog
+from ui.ctrls.textctrl_staticbox import TextCtrlStaticBox
 from ui.panels.listctrl_panel import ListCtrlPanel
 from ui.panels.magnets_listpanel import MagnetsListPanel
 from lib.settings import Settings

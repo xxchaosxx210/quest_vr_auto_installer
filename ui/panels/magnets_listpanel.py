@@ -13,7 +13,7 @@ import lib.tasks
 import ui.utils
 import lib.api_handler
 import ui.dialogs.new_games_update as ngu
-import ui.consts as uiconsts
+import ui.consts
 from deluge.handler import MagnetData, QueueRequest
 from ui.dialogs.extra_game_info import ExtraGameInfoDlg
 from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
@@ -57,17 +57,19 @@ class MagnetsListPanel(ListCtrlPanel):
             title="Games Availible",
             columns=columns,
             toggle_col=True,
-            border=uiconsts.SMALL_BORDER,
+            border=ui.consts.SMALL_BORDER,
         )
         self.app.magnets_listpanel = self
-        btn_panel = self._create_button_panel()
-        self.insert_button_panel(btn_panel)
+        btn_panel = self.__create_button_panel()
+        self.insert_button_panel(
+            btn_panel, flag=wx.ALIGN_RIGHT, border=ui.consts.SMALL_BORDER
+        )
         self.__do_bind_events()
 
     def __do_bind_events(self) -> None:
         self.Bind(wx.EVT_LIST_COL_CLICK, self._on_col_left_click, self.listctrl)
 
-    def _create_button_panel(self) -> wx.Panel:
+    def __create_button_panel(self) -> wx.Panel:
         # create the button panel
         button_panel = wx.Panel(self, -1)
 

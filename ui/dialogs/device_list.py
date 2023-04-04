@@ -5,7 +5,7 @@ import wxasync
 
 import ui.panels.devices_listpanel as devices_panel
 import ui.consts
-from ui.utils import BitmapButtonLabel
+from ui.ctrls.bitmap_button_label import BitmapButtonLabel
 
 
 async def open_device_selection_dialog(

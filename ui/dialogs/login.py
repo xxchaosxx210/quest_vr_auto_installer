@@ -7,7 +7,7 @@ import wx
 import lib.tasks as tasks
 import api.client
 from api.exceptions import ApiError
-from ui.utils import TextCtrlStaticBox
+from ui.ctrls.textctrl_staticbox import TextCtrlStaticBox
 
 _Log = logging.getLogger()
 

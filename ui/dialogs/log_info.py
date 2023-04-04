@@ -3,7 +3,7 @@ import wx
 
 from api.schemas import ErrorLog
 from lib.utils import format_timestamp_to_str
-from ui.utils import TextCtrlStaticBox
+from ui.ctrls.textctrl_staticbox import TextCtrlStaticBox
 
 
 class LogInfoDlg(wx.Dialog):
