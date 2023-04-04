@@ -355,6 +355,7 @@ async def send_json_request(
                 )
             if (
                 response.status != HTTPStatus.OK
+                and response.status != HTTPStatus.CREATED
                 and response.status != HTTPStatus.ACCEPTED
                 and response.status != HTTPStatus.NO_CONTENT
             ):
