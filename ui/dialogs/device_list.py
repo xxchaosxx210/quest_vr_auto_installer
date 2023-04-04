@@ -4,6 +4,7 @@ import wx
 import wxasync
 
 import ui.panels.devices_listpanel as devices_panel
+import ui.consts
 from ui.utils import BitmapButtonLabel
 
 
@@ -62,14 +63,13 @@ class DeviceListDlg(wx.Dialog):
         wxasync.AsyncBind(wx.EVT_SHOW, self._on_show, self)
 
     def __do_layout(self):
-        BORDER = 5
         dev_lstpnl_hbox = wx.BoxSizer(wx.HORIZONTAL)
-        dev_lstpnl_hbox.Add(self.device_listpanel, 1, wx.EXPAND | wx.ALL, BORDER)
+        dev_lstpnl_hbox.Add(self.device_listpanel, 1, wx.EXPAND | wx.ALL, 0)
 
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(dev_lstpnl_hbox, 1, wx.EXPAND | wx.ALL, BORDER)
-        vbox.Add(self._skip_btn, 0, wx.ALIGN_CENTER_HORIZONTAL, BORDER)
-        vbox.AddSpacer(BORDER)
+        vbox.Add(dev_lstpnl_hbox, 1, wx.EXPAND | wx.ALL, 0)
+        vbox.Add(self._skip_btn, 0, wx.ALIGN_CENTER_HORIZONTAL, 0)
+        vbox.AddSpacer(ui.consts.LARGE_BORDER)
         self.SetSizerAndFit(vbox)
         # set the size of the dialog to 60% of the parent frame
         parent_width, parent_height = self.GetParent().GetSize()
