@@ -77,7 +77,9 @@ class DevicesListPanel(ListCtrlPanel):
             border=ui.consts.SMALL_BORDER,
         )
         btn_panel = self._create_button_panel()
-        self.insert_button_panel(btn_panel, 0, flag=wx.ALIGN_RIGHT, spacer=10)
+        self.insert_button_panel(
+            btn_panel, 0, flag=wx.ALIGN_RIGHT, spacer=ui.consts.LARGE_BORDER
+        )
 
     def _create_button_panel(self) -> wx.Panel:
         """creates a panel with buttons on them

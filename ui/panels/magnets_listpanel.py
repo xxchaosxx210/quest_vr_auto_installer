@@ -62,7 +62,10 @@ class MagnetsListPanel(ListCtrlPanel):
         self.app.magnets_listpanel = self
         btn_panel = self.__create_button_panel()
         self.insert_button_panel(
-            btn_panel, flag=wx.ALIGN_RIGHT, border=ui.consts.SMALL_BORDER
+            btn_panel,
+            flag=wx.ALIGN_RIGHT,
+            border=ui.consts.SMALL_BORDER,
+            spacer=ui.consts.LARGE_BORDER,
         )
         self.__do_bind_events()
 
@@ -75,8 +78,9 @@ class MagnetsListPanel(ListCtrlPanel):
 
         # create the buttons and store them into the super classes bitmap_buttons dict
         self.bitmap_buttons["refresh"] = ui.utils.create_bitmap_button(
-            "refresh.png", "Refresh Games List", button_panel, size=(24, 24)
+            "refresh.png", "Reload Games", button_panel, size=(24, 24)
         )
+
         self.Bind(wx.EVT_BUTTON, self.on_reload_magnets, self.bitmap_buttons["refresh"])
 
         hbox_btns = ListCtrlPanel.create_bitmap_button_sizer(self.bitmap_buttons)

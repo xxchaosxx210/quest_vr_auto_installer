@@ -5,6 +5,7 @@ import wx
 import lib.config
 import lib.tasks
 import ui.utils
+import ui.consts
 import lib.debug as debug
 from ui.panels.listctrl_panel import ListCtrlPanel, ColumnListType
 from adblib import adb_interface
@@ -20,7 +21,11 @@ class InstalledListPanel(ListCtrlPanel):
         self.app: QuestCaveApp = wx.GetApp()
         columns: ColumnListType = [{"col": 0, "heading": "Name", "width": 100}]
         super().__init__(
-            parent=parent, title="Installed Games", columns=columns, toggle_col=False
+            parent=parent,
+            title="Installed Games",
+            columns=columns,
+            toggle_col=False,
+            border=ui.consts.SMALL_BORDER,
         )
 
         self.app.install_listpanel = self
