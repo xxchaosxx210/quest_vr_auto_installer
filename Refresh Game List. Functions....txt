@@ -1,5 +1,0 @@
-Refresh Game List. Functions...
-
-magnets_listpanel.on_refresh_click
-quest_cave_app.load_games
-self.app.magnets_listpanel.load_magnets_from_api
