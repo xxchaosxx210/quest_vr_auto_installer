@@ -2,6 +2,12 @@ Release history and bug fixes
 
 Thanks to Abbie for testing
 
+v.1.0.4
+
+User now gets notified when new games have been added
+Load new Games only when new Games avalible
+Improvements to the Admin functionality (Admin only)
+
 v1.0.3
 
 Screen now stays on during the install process
