@@ -1,4 +1,4 @@
-REM runs mypy without the missing imports
+REM Runs mypy without the missing imports. Put this in your Project Folder
 @ECHO OFF
 cls
 ECHO Checking Project Files...

@@ -1,3 +1,4 @@
+@REM This will build the python project into an exe package using pyinstaller
 @echo off
 
 rem Build executable
