@@ -3,17 +3,11 @@
 from urllib.parse import urljoin
 
 
-import api.utils
-
-
 URI_LOCAL_HOST = "http://127.0.0.1:8000"
 URI_DETA_MICRO = "https://6vppvi.deta.dev"
 
-# change this to one of the above hosts
-if api.utils.test_host(URI_LOCAL_HOST):
-    URI_HOST = URI_LOCAL_HOST
-else:
-    URI_HOST = URI_DETA_MICRO
+URI_HOST = URI_LOCAL_HOST
+# URI_HOST = URI_DETA_MICRO
 
 URI_GAMES = urljoin(URI_HOST, "/games")
 URI_SEARCH_GAME = URI_GAMES + "/search"

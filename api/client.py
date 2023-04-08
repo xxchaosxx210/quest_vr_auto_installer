@@ -2,7 +2,6 @@
 client.py version 1.0.0 06/03/2023.
 this module provides functions to interact with the API backend
 """
-
 import logging
 from http import HTTPStatus
 from typing import Any, Dict, Iterator, List
@@ -15,7 +14,7 @@ import api.urls as apiurls
 from api.exceptions import ApiError
 
 
-_Log = logging.getLogger(__name__)
+_Log = logging.getLogger()
 
 
 class RequestType(Enum):

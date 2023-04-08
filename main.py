@@ -31,7 +31,7 @@ async def _main():
         sys.exit("Unable to locate the Deluge Daemon. Please reinstall Deluge Torrent")
     multiprocessing.freeze_support()
     # initialize the apps global options before the App is created
-    QuestCaveApp.init_global_options(args.debug, args.skip)
+    QuestCaveApp.init_global_options(args.debug, args.skip, args.localhost)
     app = QuestCaveApp()
     # catch any unhandled exceptions in the event loop
     asyncio.get_event_loop().set_exception_handler(config.async_log_handler)

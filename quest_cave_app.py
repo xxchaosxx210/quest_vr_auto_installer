@@ -15,6 +15,7 @@ import lib.quest
 import ui.utils
 import api.client
 import api.schemas
+import api.urls
 import deluge.handler
 import adblib.adb_interface as adb_interface
 from lib.settings import Settings
@@ -49,6 +50,8 @@ class QuestCaveApp(wxasync.WxAsyncApp):
     debug_mode: bool = False
     # gloabl skip flag
     skip: bool = False
+    # local_host
+    local_host: bool = False
 
     def on_device_event(self, event: dict) -> None:
         """handles the device events. Update GUI
@@ -157,10 +160,11 @@ class QuestCaveApp(wxasync.WxAsyncApp):
         self.statusbar.SetStatusText(text=text)
 
     @staticmethod
-    def init_global_options(debug: bool, skip: bool) -> None:
+    def init_global_options(debug: bool, skip: bool, localhost: bool) -> None:
         """sets the global debug and skip flags"""
         QuestCaveApp.debug_mode = debug
         QuestCaveApp.skip = skip
+        QuestCaveApp.local_host = localhost
 
     def OnInit(self) -> bool:
         """app has loaded create the main frame
